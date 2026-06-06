@@ -1,0 +1,30 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('marcas', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('empresa_id')
+                ->nullable()
+                ->constrained('empresas')
+                ->nullOnDelete();
+
+            $table->string('nombre');
+            $table->timestamps();
+
+            $table->unique(['empresa_id', 'nombre']);
+            $table->index('nombre');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('marcas');
+    }
+};
