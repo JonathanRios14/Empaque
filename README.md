@@ -1,5 +1,5 @@
 <p align="center">
-   <img src="public/images/plasencia-logocafe.png" width="220" alt="Plasencia Logo">
+    <img src="https://raw.githubusercontent.com/JonathanRios14/Empaque/main/public/img/plasencia-logocafe.png" width="220" alt="Plasencia Logo">
 </p>
 
 # Sistema de Empaque
