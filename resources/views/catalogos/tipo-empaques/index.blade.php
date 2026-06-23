@@ -4,12 +4,18 @@
     <meta charset="UTF-8">
     <title>Tipos de Empaque | Sistema de Empaque</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    @include('layouts.theme-script')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="bg-[#f5f2ec] text-gray-800">
+<body class="bg-[#f5f2ec] text-gray-800 transition-colors duration-300">
 
-<div x-data="{ sidebarOpen: true, catalogos: true, seguridad: false, produccion: false }" class="flex min-h-screen">
+<div x-data="{
+    sidebarOpen: localStorage.getItem('sidebarOpen') === null ? true : localStorage.getItem('sidebarOpen') === 'true',
+    catalogos: true,
+    seguridad: false,
+    produccion: false
+}" class="flex min-h-screen">
 
     @include('layouts.sidebar')
 
@@ -19,15 +25,21 @@
             'description' => 'Catálogo de tipos de empaque sincronizados desde la API.'
         ])
 
-        <section class="p-6">
-            <div class="max-w-6xl mx-auto">
-                <div class="bg-white rounded-2xl border border-[#e5d8c7] shadow-sm overflow-hidden">
+        <section class="p-4 lg:p-6">
+            <div class="w-full max-w-[1600px] mx-auto">
 
-                    <div class="p-6 border-b border-[#e5d8c7]">
+                <div class="theme-card theme-shadow bg-white rounded-2xl border border-[#e5d8c7] shadow-sm overflow-hidden">
+
+                    <div class="p-6 border-b border-[#e5d8c7] theme-border">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             <div>
-                                <h2 class="text-lg font-bold text-[#3b2818]">Listado de tipos de empaque</h2>
-                                <p class="text-sm text-gray-500">Aquí puedes ver los tipos de empaque registrados en el catálogo.</p>
+                                <h2 class="theme-title text-lg font-bold text-[#3b2818]">
+                                    Listado de tipos de empaque
+                                </h2>
+
+                                <p class="theme-text text-sm text-gray-500">
+                                    Aquí puedes ver los tipos de empaque registrados en el catálogo.
+                                </p>
                             </div>
 
                             <form method="GET" action="{{ route('catalogos.tipo-empaques.index') }}" class="flex gap-2">
@@ -36,11 +48,12 @@
                                            name="buscar"
                                            value="{{ request('buscar') }}"
                                            placeholder="Buscar tipo de empaque"
-                                           class="w-72 rounded-xl border-gray-300 text-sm pr-10 focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
+                                           class="theme-input w-72 rounded-xl border-gray-300 text-sm pr-10 focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
 
                                     @if(request('buscar'))
                                         <a href="{{ route('catalogos.tipo-empaques.index') }}"
-                                           class="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-gray-400 hover:text-[#5b3a1e] hover:bg-[#f3efe7] transition">
+                                           class="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-gray-400 hover:text-[#5b3a1e] hover:bg-[#f3efe7] transition"
+                                           title="Limpiar búsqueda">
                                             ×
                                         </a>
                                     @endif
@@ -71,7 +84,9 @@
                             $ordenActual = request('orden', 'nombre');
                             $direccionActual = request('direccion', 'asc');
 
-                            if ($ordenActual !== $campo) return '↕';
+                            if ($ordenActual !== $campo) {
+                                return '↕';
+                            }
 
                             return $direccionActual === 'asc' ? '↑' : '↓';
                         };
@@ -79,23 +94,26 @@
 
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
-                            <thead class="bg-[#f3efe7] text-[#3b2818]">
+                            <thead class="theme-table-head bg-[#f3efe7] text-[#3b2818]">
                                 <tr>
                                     <th class="px-6 py-4 text-left font-semibold">
                                         <a href="{{ $sortLink('id') }}" class="inline-flex items-center gap-2 hover:text-[#5b3a1e]">
-                                            ID <span class="text-xs">{{ $sortIcon('id') }}</span>
+                                            ID
+                                            <span class="text-xs">{{ $sortIcon('id') }}</span>
                                         </a>
                                     </th>
 
                                     <th class="px-6 py-4 text-left font-semibold">
                                         <a href="{{ $sortLink('nombre') }}" class="inline-flex items-center gap-2 hover:text-[#5b3a1e]">
-                                            Tipo de empaque <span class="text-xs">{{ $sortIcon('nombre') }}</span>
+                                            Tipo de empaque
+                                            <span class="text-xs">{{ $sortIcon('nombre') }}</span>
                                         </a>
                                     </th>
 
                                     <th class="px-6 py-4 text-left font-semibold">
                                         <a href="{{ $sortLink('productos_count') }}" class="inline-flex items-center gap-2 hover:text-[#5b3a1e]">
-                                            Productos <span class="text-xs">{{ $sortIcon('productos_count') }}</span>
+                                            Productos
+                                            <span class="text-xs">{{ $sortIcon('productos_count') }}</span>
                                         </a>
                                     </th>
                                 </tr>
@@ -103,22 +121,28 @@
 
                             <tbody>
                                 @forelse ($tipoEmpaques as $tipoEmpaque)
-                                    <tr class="border-b border-gray-100 hover:bg-[#faf7f2] transition">
-                                        <td class="px-6 py-4 text-gray-500">#{{ $tipoEmpaque->id }}</td>
-
+                                    <tr class="theme-row border-b border-gray-100 theme-border hover:bg-[#faf7f2] transition">
                                         <td class="px-6 py-4">
-                                            <span class="font-semibold text-[#3b2818]">{{ $tipoEmpaque->nombre }}</span>
+                                            <span class="theme-text text-gray-500">
+                                                #{{ $tipoEmpaque->id }}
+                                            </span>
                                         </td>
 
                                         <td class="px-6 py-4">
-                                            <span class="px-3 py-1 rounded-full bg-[#f3efe7] text-[#5b3a1e] text-xs font-semibold border border-[#e5d8c7]">
+                                            <span class="theme-title font-semibold text-[#3b2818]">
+                                                {{ $tipoEmpaque->nombre }}
+                                            </span>
+                                        </td>
+
+                                        <td class="px-6 py-4">
+                                            <span class="theme-badge px-3 py-1 rounded-full bg-[#f3efe7] text-[#5b3a1e] text-xs font-semibold border border-[#e5d8c7]">
                                                 {{ $tipoEmpaque->productos_count }} producto(s)
                                             </span>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="3" class="px-6 py-10 text-center text-gray-500">
+                                        <td colspan="3" class="theme-text px-6 py-10 text-center text-gray-500">
                                             No hay tipos de empaque registrados.
                                         </td>
                                     </tr>
@@ -127,14 +151,14 @@
                         </table>
                     </div>
 
-                    <div class="px-6 py-3 border-t border-[#e5d8c7] bg-[#fbf8f3] flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                        <p class="text-sm text-gray-500">
+                    <div class="theme-soft px-6 py-3 border-t border-[#e5d8c7] theme-border bg-[#fbf8f3] flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <p class="theme-text text-sm text-gray-500">
                             Mostrando
-                            <span class="font-semibold text-[#3b2818]">{{ $tipoEmpaques->firstItem() ?? 0 }}</span>
+                            <span class="theme-title font-semibold text-[#3b2818]">{{ $tipoEmpaques->firstItem() ?? 0 }}</span>
                             a
-                            <span class="font-semibold text-[#3b2818]">{{ $tipoEmpaques->lastItem() ?? 0 }}</span>
+                            <span class="theme-title font-semibold text-[#3b2818]">{{ $tipoEmpaques->lastItem() ?? 0 }}</span>
                             de
-                            <span class="font-semibold text-[#3b2818]">{{ $tipoEmpaques->total() }}</span>
+                            <span class="theme-title font-semibold text-[#3b2818]">{{ $tipoEmpaques->total() }}</span>
                             tipo(s) de empaque
                         </p>
 

@@ -48,6 +48,7 @@ class CatalogoController extends Controller
             'capa',
             'presentacion',
             'tipoEmpaque',
+            'actividades',
         ]);
 
     if ($request->filled('buscar')) {
@@ -71,7 +72,37 @@ class CatalogoController extends Controller
                 })
                 ->orWhereHas('tipoEmpaque', function ($q) use ($buscar) {
                     $q->where('nombre', 'like', "%{$buscar}%");
+                })
+                ->orWhereHas('actividades', function ($q) use ($buscar) {
+                    $q->where('nombre', 'like', "%{$buscar}%")
+                      ->orWhere('codigo_actividad', 'like', "%{$buscar}%");
                 });
+        });
+    }
+
+    if ($request->filled('marca_id')) {
+        $query->where('productos.marca_id', $request->marca_id);
+    }
+
+    if ($request->filled('vitola_id')) {
+        $query->where('productos.vitola_id', $request->vitola_id);
+    }
+
+    if ($request->filled('capa_id')) {
+        $query->where('productos.capa_id', $request->capa_id);
+    }
+
+    if ($request->filled('tipo_empaque_id')) {
+        $query->where('productos.tipo_empaque_id', $request->tipo_empaque_id);
+    }
+
+    if ($request->filled('presentacion_id')) {
+        $query->where('productos.presentacion_id', $request->presentacion_id);
+    }
+
+    if ($request->filled('actividad_id')) {
+        $query->whereHas('actividades', function ($q) use ($request) {
+            $q->where('actividades.id', $request->actividad_id);
         });
     }
 
@@ -95,7 +126,24 @@ class CatalogoController extends Controller
         ->paginate(10)
         ->appends($request->query());
 
-    return view('catalogos.productos.index', compact('productos', 'orden', 'direccion'));
+    $marcas = Marca::orderBy('nombre')->get();
+    $vitolas = Vitola::orderBy('nombre')->get();
+    $capas = Capa::orderBy('nombre')->get();
+    $tipoEmpaques = TipoEmpaque::orderBy('nombre')->get();
+    $presentaciones = Presentacion::orderBy('nombre')->get();
+    $actividades = Actividad::orderBy('nombre')->get();
+
+    return view('catalogos.productos.index', compact(
+        'productos',
+        'orden',
+        'direccion',
+        'marcas',
+        'vitolas',
+        'capas',
+        'tipoEmpaques',
+        'presentaciones',
+        'actividades'
+    ));
 }
 
 public function showProducto(Producto $producto)

@@ -1,10 +1,10 @@
 <section>
     <header>
-        <h2 class="text-lg font-bold text-[#3b2818]">
+        <h2 class="theme-title text-lg font-bold text-[#3b2818]">
             Actualizar contraseña
         </h2>
 
-        <p class="mt-1 text-sm text-gray-600">
+        <p class="theme-text mt-1 text-sm text-gray-600">
             Usa una contraseña segura para proteger tu cuenta.
         </p>
     </header>
@@ -18,7 +18,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div>
-                <label for="current_password" class="block text-sm font-semibold text-[#3b2818] mb-2">
+                <label for="current_password" class="theme-title block text-sm font-semibold text-[#3b2818] mb-2">
                     Contraseña actual
                 </label>
 
@@ -27,7 +27,7 @@
                            name="current_password"
                            :type="showCurrent ? 'text' : 'password'"
                            autocomplete="current-password"
-                           class="w-full rounded-xl border-gray-300 text-sm pr-20 focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
+                           class="theme-input w-full rounded-xl border-gray-300 text-sm pr-20 focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
 
                     <button type="button"
                             @click="showCurrent = !showCurrent"
@@ -40,7 +40,7 @@
             </div>
 
             <div>
-                <label for="password" class="block text-sm font-semibold text-[#3b2818] mb-2">
+                <label for="password" class="theme-title block text-sm font-semibold text-[#3b2818] mb-2">
                     Nueva contraseña
                 </label>
 
@@ -49,7 +49,7 @@
                            name="password"
                            :type="showNew ? 'text' : 'password'"
                            autocomplete="new-password"
-                           class="w-full rounded-xl border-gray-300 text-sm pr-20 focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
+                           class="theme-input w-full rounded-xl border-gray-300 text-sm pr-20 focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
 
                     <button type="button"
                             @click="showNew = !showNew"
@@ -62,7 +62,7 @@
             </div>
 
             <div>
-                <label for="password_confirmation" class="block text-sm font-semibold text-[#3b2818] mb-2">
+                <label for="password_confirmation" class="theme-title block text-sm font-semibold text-[#3b2818] mb-2">
                     Confirmar contraseña
                 </label>
 
@@ -71,7 +71,7 @@
                            name="password_confirmation"
                            :type="showConfirm ? 'text' : 'password'"
                            autocomplete="new-password"
-                           class="w-full rounded-xl border-gray-300 text-sm pr-20 focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
+                           class="theme-input w-full rounded-xl border-gray-300 text-sm pr-20 focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
 
                     <button type="button"
                             @click="showConfirm = !showConfirm"
@@ -84,23 +84,19 @@
             </div>
         </div>
 
-        <div class="flex items-center justify-end gap-4 pt-4 border-t border-[#eee3d5]">
+        <div class="flex items-center justify-end gap-4 pt-4 border-t border-[#eee3d5] theme-border">
             <button type="submit"
                     class="px-5 py-2.5 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
                 Guardar contraseña
             </button>
 
-            @if (session('status') === 'password-updated')
-                <p
-                    x-data="{ show: true }"
-                    x-show="show"
-                    x-transition
-                    x-init="setTimeout(() => show = false, 2500)"
-                    class="text-sm text-green-600"
-                >
-                    Contraseña actualizada.
-                </p>
-            @endif
+         @if (session('status') === 'password-updated')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    mostrarToast('success', 'Contraseña actualizada correctamente.');
+});
+</script>
+@endif
         </div>
     </form>
 </section>

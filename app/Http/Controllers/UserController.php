@@ -103,35 +103,43 @@ $roles = Role::where('name', '!=', 'SuperAdmin')
         return view('usuarios.edit', compact('user', 'roles'));
     }
 
-    public function update(Request $request, User $user)
-    {
-        if ($user->hasRole('SuperAdmin') && auth()->id() !== $user->id) {
-    return redirect()
-        ->route('usuarios.index')
-        ->with('error', 'No puedes actualizar el usuario SuperAdmin.');
-}
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users,email,' . $user->id],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', 'exists:roles,name', 'not_in:SuperAdmin'],
-        ]);
-
-        $user->name = $request->name;
-        $user->email = $request->email;
-
-        if ($request->filled('password')) {
-            $user->password = Hash::make($request->password);
-        }
-
-        $user->save();
-
-        $user->syncRoles([$request->role]);
-
+   public function update(Request $request, User $user)
+{
+    if ($user->hasRole('SuperAdmin') && auth()->id() !== $user->id) {
         return redirect()
             ->route('usuarios.index')
-            ->with('success', 'Usuario actualizado correctamente.');
+            ->with('error', 'No puedes actualizar el usuario SuperAdmin.');
     }
+
+    $rules = [
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'email', 'unique:users,email,' . $user->id],
+        'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+    ];
+
+    if (! $user->hasRole('SuperAdmin')) {
+        $rules['role'] = ['required', 'exists:roles,name', 'not_in:SuperAdmin'];
+    }
+
+    $request->validate($rules);
+
+    $user->name = $request->name;
+    $user->email = $request->email;
+
+    if ($request->filled('password')) {
+        $user->password = Hash::make($request->password);
+    }
+
+    $user->save();
+
+    if (! $user->hasRole('SuperAdmin')) {
+        $user->syncRoles([$request->role]);
+    }
+
+    return redirect()
+        ->route('usuarios.index')
+        ->with('success', 'Usuario actualizado correctamente.');
+}
 
     public function destroy(User $user)
     {

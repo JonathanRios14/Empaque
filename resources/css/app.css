@@ -58,3 +58,1243 @@
     color: #ffffff;
 }
 
+/* ================================
+   Tema oscuro azul marino
+================================ */
+
+html.dark-navy body {
+    background: #0f172a !important;
+    color: #e5e7eb !important;
+}
+
+html.dark-navy .theme-card {
+    background: #111c33 !important;
+    border-color: #263650 !important;
+    color: #e5e7eb !important;
+}
+
+html.dark-navy .theme-soft {
+    background: #16233d !important;
+    border-color: #263650 !important;
+}
+
+html.dark-navy .theme-title {
+    color: #f8fafc !important;
+}
+
+html.dark-navy .theme-text {
+    color: #94a3b8 !important;
+}
+
+html.dark-navy .theme-border {
+    border-color: #263650 !important;
+}
+
+html.dark-navy .theme-table-head {
+    background: #16233d !important;
+    color: #e5e7eb !important;
+}
+
+html.dark-navy .theme-row:hover {
+    background: #172845 !important;
+}
+
+html.dark-navy .theme-input {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+    color: #e5e7eb !important;
+}
+
+html.dark-navy .theme-input::placeholder {
+    color: #64748b !important;
+}
+
+html.dark-navy .theme-badge {
+    background: #16233d !important;
+    color: #38bdf8 !important;
+    border-color: #263650 !important;
+}
+
+html.dark-navy .theme-button-secondary {
+    background: #16233d !important;
+    color: #e5e7eb !important;
+    border-color: #263650 !important;
+}
+
+html.dark-navy .theme-button-secondary:hover {
+    background: #1e2f4f !important;
+}
+
+html.dark-navy .theme-shadow {
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28) !important;
+}
+
+/* ================================
+   Fix Dashboard - Dark Navy
+================================ */
+
+html.dark-navy .soft-panel {
+    background:
+        radial-gradient(circle at top right, rgba(56, 189, 248, 0.10), transparent 35%),
+        linear-gradient(135deg, #111c33 0%, #16233d 100%) !important;
+    border-color: #263650 !important;
+}
+
+html.dark-navy .stat-card {
+    background: #111c33 !important;
+    border-color: #263650 !important;
+    color: #e5e7eb !important;
+}
+
+html.dark-navy .stat-card p,
+html.dark-navy .stat-card h2 {
+    color: #f8fafc !important;
+}
+
+html.dark-navy .stat-card p.text-xs {
+    color: #94a3b8 !important;
+}
+
+html.dark-navy .dashboard-ring {
+    background: conic-gradient(#38bdf8 var(--porcentaje), #263650 0) !important;
+}
+
+html.dark-navy .dashboard-ring > div {
+    background: #111c33 !important;
+    border-color: #263650 !important;
+}
+
+html.dark-navy .dashboard-ring span {
+    color: #f8fafc !important;
+}
+
+html.dark-navy .dashboard-ring span.text-xs {
+    color: #94a3b8 !important;
+}
+
+/* Tarjetas pequeñas dentro del resumen de catálogos */
+html.dark-navy .theme-card a.rounded-2xl {
+    background: #16233d !important;
+    border-color: #263650 !important;
+}
+
+html.dark-navy .theme-card a.rounded-2xl:hover {
+    background: #1e2f4f !important;
+}
+
+html.dark-navy .theme-card a.rounded-2xl p {
+    color: #94a3b8 !important;
+}
+
+html.dark-navy .theme-card a.rounded-2xl p.font-bold,
+html.dark-navy .theme-card a.rounded-2xl p.text-2xl {
+    color: #f8fafc !important;
+}
+
+/* Separadores y listas recientes */
+html.dark-navy .theme-card .divide-y > * {
+    border-color: #263650 !important;
+}
+
+html.dark-navy .theme-card a.block:hover {
+    background: #172845 !important;
+}
+
+html.dark-navy .theme-card a.block p,
+html.dark-navy .theme-card div.p-4 p {
+    color: #f8fafc !important;
+}
+
+html.dark-navy .theme-card a.block p.text-xs,
+html.dark-navy .theme-card div.p-4 p.text-xs {
+    color: #94a3b8 !important;
+}
+
+/* Barras del gráfico */
+html.dark-navy .chart-bar {
+    background-color: #38bdf8 !important;
+}
+
+html.dark-navy .theme-card .bg-\[\#f3efe7\] {
+    background: #263650 !important;
+}
+
+/* Badges café dentro del dashboard */
+html.dark-navy .theme-card span.bg-\[\#f3efe7\],
+html.dark-navy .soft-panel span.bg-\[\#f3efe7\] {
+    background: #16233d !important;
+    color: #38bdf8 !important;
+    border-color: #263650 !important;
+}
+
+/* Textos que quedaron café o gris muy claro */
+html.dark-navy .theme-card .text-\[\#3b2818\],
+html.dark-navy .soft-panel .text-\[\#3b2818\],
+html.dark-navy .theme-card .text-\[\#24160d\],
+html.dark-navy .soft-panel .text-\[\#24160d\] {
+    color: #f8fafc !important;
+}
+
+html.dark-navy .theme-card .text-gray-500,
+html.dark-navy .soft-panel .text-gray-500,
+html.dark-navy .theme-card .text-gray-600,
+html.dark-navy .soft-panel .text-gray-600 {
+    color: #94a3b8 !important;
+}
+
+/* ================================
+   Dark Navy: botones, topbar y sidebar
+================================ */
+
+/* Botones café principales en modo oscuro */
+html.dark-navy .bg-\[\#5b3a1e\],
+html.dark-navy .bg-\[\#3b2818\],
+html.dark-navy .bg-\[\#24160d\] {
+    background-color: #38bdf8 !important;
+     color: #0b1220 !important;
+}
+
+html.dark-navy .hover\:bg-\[\#3b2818\]:hover,
+html.dark-navy .hover\:bg-\[\#5b3a1e\]:hover {
+    background: #7dd3fc !important;
+    color: #0b1220 !important;
+}
+
+/* Botones secundarios café/beige */
+html.dark-navy .bg-\[\#f3efe7\],
+html.dark-navy .bg-\[\#fbf8f3\] {
+    background-color: #16233d !important;
+}
+
+html.dark-navy .text-\[\#5b3a1e\],
+html.dark-navy .text-\[\#3b2818\],
+html.dark-navy .text-\[\#24160d\] {
+    color: #38bdf8 !important;
+}
+
+html.dark-navy .border-\[\#e5d8c7\],
+html.dark-navy .border-\[\#d8c6a3\] {
+    border-color: #263650 !important;
+}
+
+/* Topbar */
+html.dark-navy .app-topbar {
+    background: #0b1220 !important;
+    border-color: #1e293b !important;
+}
+
+html.dark-navy .app-topbar-title {
+    color: #f8fafc !important;
+}
+
+html.dark-navy .app-topbar-description {
+    color: #94a3b8 !important;
+}
+
+html.dark-navy .app-theme-button {
+    background: #16233d !important;
+    color: #e5e7eb !important;
+}
+
+html.dark-navy .app-theme-button:hover {
+    background: #1e2f4f !important;
+}
+
+/* Dropdown perfil */
+html.dark-navy .app-profile-dropdown {
+    background: #111c33 !important;
+    border-color: #263650 !important;
+}
+
+html.dark-navy .app-profile-header {
+    background: #16233d !important;
+}
+
+html.dark-navy .app-profile-name {
+    color: #f8fafc !important;
+}
+
+html.dark-navy .app-profile-email {
+    color: #94a3b8 !important;
+}
+
+html.dark-navy .app-profile-link {
+    color: #e5e7eb !important;
+    border-color: #263650 !important;
+}
+
+html.dark-navy .app-profile-link:hover {
+    background: #1e2f4f !important;
+}
+
+/* Sidebar */
+html.dark-navy .app-sidebar {
+    background: #0b1220 !important;
+    color: #e5e7eb !important;
+}
+
+html.dark-navy .app-sidebar-header {
+    border-color: #1e293b !important;
+}
+
+html.dark-navy .sidebar-link {
+    color: #cbd5e1 !important;
+}
+
+html.dark-navy .sidebar-link:hover {
+    background: #0f172a !important;
+    color: #ffffff !important;
+}
+
+html.dark-navy .sidebar-active {
+    background: #0f172a !important;
+    color: #38bdf8 !important;
+    box-shadow: none !important;
+}
+
+/* Curvas del activo en modo oscuro: mismo fondo del contenido */
+html.dark-navy .sidebar-active::before {
+    box-shadow: 8px 8px 0 #0f172a !important;
+}
+
+html.dark-navy .sidebar-active::after {
+    box-shadow: 8px -8px 0 #0f172a !important;
+}
+
+html.dark-navy .sidebar-sub-link {
+    color: #94a3b8 !important;
+}
+
+html.dark-navy .sidebar-sub-link:hover {
+    background: rgba(56, 189, 248, 0.10) !important;
+    color: #e0f2fe !important;
+}
+
+html.dark-navy .sidebar-sub-active {
+    background: rgba(56, 189, 248, 0.16) !important;
+    color: #38bdf8 !important;
+}
+
+/* Botón hamburguesa sidebar */
+html.dark-navy .app-sidebar-toggle:hover {
+    background: rgba(56, 189, 248, 0.10) !important;
+}
+
+/* ================================
+   Fix final Dashboard - Dark Navy
+================================ */
+
+/* Botón "Ver usuarios" que queda blanco */
+html.dark-navy a[href*="usuarios"].bg-white {
+    background: #16233d !important;
+    color: #e5e7eb !important;
+    border-color: #263650 !important;
+}
+
+html.dark-navy a[href*="usuarios"].bg-white:hover {
+    background: #1e2f4f !important;
+    color: #ffffff !important;
+}
+
+/* Badge "Sistema activo" */
+html.dark-navy .soft-panel .inline-flex.bg-white {
+    background: #16233d !important;
+    color: #38bdf8 !important;
+    border-color: #263650 !important;
+}
+
+/* Puntito de Sistema activo */
+html.dark-navy .soft-panel .inline-flex.bg-white span.bg-green-500 {
+    background: #22c55e !important;
+}
+
+/* Iconos/cards de Marcas y Roles que quedan café/blanco raro */
+html.dark-navy .stat-card .bg-\[\#8a5a2b\],
+html.dark-navy .stat-card .bg-\[\#c9a66b\] {
+    background: #1e40af !important;
+    color: #ffffff !important;
+}
+
+/* Icono de Productos */
+html.dark-navy .stat-card .bg-\[\#5b3a1e\] {
+    background: #2563eb !important;
+    color: #ffffff !important;
+}
+
+/* Icono de Usuarios */
+html.dark-navy .stat-card .bg-\[\#24160d\] {
+    background: #0ea5e9 !important;
+    color: #ffffff !important;
+}
+
+/* Textos dentro de los contadores */
+html.dark-navy .stat-card .text-\[\#24160d\] {
+    color: #f8fafc !important;
+}
+ 
+
+/* ================================
+   Fix hover claro en modo oscuro
+================================ */
+
+html.dark-navy .theme-card .hover\:bg-\[\#faf7f2\]:hover,
+html.dark-navy .theme-card .hover\:bg-\[\#f3efe7\]:hover,
+html.dark-navy .theme-soft.hover\:bg-\[\#f3efe7\]:hover,
+html.dark-navy label.theme-soft:hover,
+html.dark-navy label.theme-card:hover {
+    background-color: #1e2f4f !important;
+    color: #e5e7eb !important;
+}
+
+html.dark-navy .theme-card button.hover\:bg-\[\#faf7f2\]:hover .theme-title,
+html.dark-navy .theme-card button.hover\:bg-\[\#faf7f2\]:hover .theme-text {
+    color: #f8fafc !important;
+}
+
+html.dark-navy .theme-card button.hover\:bg-\[\#faf7f2\]:hover span,
+html.dark-navy .theme-card label:hover span,
+html.dark-navy .theme-card label:hover p {
+    color: #f8fafc !important;
+}
+
+html.dark-navy .dark-hover-safe:hover {
+    background-color: #1e2f4f !important;
+}
+
+html.dark-navy .dark-hover-safe:hover * {
+    color: #f8fafc !important;
+}
+
+/* ================================
+   Tema claro más limpio
+================================ */
+
+/* Fondo general claro, excepto login */
+html:not(.dark-navy) body:not(.login-bg) {
+    background: #f8fafc !important;
+}
+
+/* Secciones sticky que antes quedaban beige */
+html:not(.dark-navy) .theme-soft {
+    background: #f8fafc !important;
+}
+
+/* Sidebar activo en tema claro: mismo fondo del contenido */
+html:not(.dark-navy) .sidebar-active {
+    background: #f8fafc !important;
+    color: #5b3a1e !important;
+    box-shadow: none !important;
+}
+
+/* Curvas del activo en claro */
+html:not(.dark-navy) .sidebar-active::before {
+    box-shadow: 8px 8px 0 #f8fafc !important;
+}
+
+html:not(.dark-navy) .sidebar-active::after {
+    box-shadow: 8px -8px 0 #f8fafc !important;
+}
+
+/* ================================
+   Tema claro moderno navy elegante
+   Fondo claro + navegación azul oscuro
+================================ */
+
+/* Fondo claro limpio */
+html:not(.dark-navy) body:not(.login-bg) {
+    background: #f8fafc !important;
+}
+
+/* Topbar en tema claro */
+html:not(.dark-navy) .app-topbar {
+    background: #0b1220 !important;
+    border-color: #1e293b !important;
+}
+
+html:not(.dark-navy) .app-topbar-title {
+    color: #ffffff !important;
+}
+
+html:not(.dark-navy) .app-topbar-description {
+    color: #cbd5e1 !important;
+}
+
+/* Sidebar en tema claro */
+html:not(.dark-navy) .app-sidebar {
+    background: #0b1220 !important;
+    color: #e5e7eb !important;
+}
+
+html:not(.dark-navy) .app-sidebar-header {
+    border-color: #1e293b !important;
+}
+
+html:not(.dark-navy) .sidebar-link {
+    color: #cbd5e1 !important;
+}
+
+html:not(.dark-navy) .sidebar-link:hover {
+    background: #111c33 !important;
+    color: #ffffff !important;
+}
+
+/* Item seleccionado del sidebar unido al fondo claro */
+html:not(.dark-navy) .sidebar-active {
+    background: #f8fafc !important;
+    color: #0b1220 !important;
+    box-shadow: none !important;
+}
+
+html:not(.dark-navy) .sidebar-active::before {
+    box-shadow: 8px 8px 0 #f8fafc !important;
+}
+
+html:not(.dark-navy) .sidebar-active::after {
+    box-shadow: 8px -8px 0 #f8fafc !important;
+}
+
+/* Submenú del sidebar */
+html:not(.dark-navy) .sidebar-sub-link {
+    color: #cbd5e1 !important;
+}
+
+html:not(.dark-navy) .sidebar-sub-link:hover {
+    background: #111c33 !important;
+    color: #ffffff !important;
+}
+
+html:not(.dark-navy) .sidebar-sub-active {
+    background: #111c33 !important;
+    color: #38bdf8 !important;
+}
+
+/* Botón hamburguesa sidebar */
+html:not(.dark-navy) .app-sidebar-toggle:hover {
+    background: #111c33 !important;
+}
+
+/* Botón de tema en topbar */
+html:not(.dark-navy) .app-theme-button {
+    background: rgba(255, 255, 255, 0.10) !important;
+    color: #ffffff !important;
+}
+
+html:not(.dark-navy) .app-theme-button:hover {
+    background: rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Botones principales café -> navy */
+html:not(.dark-navy) .bg-\[\#5b3a1e\],
+html:not(.dark-navy) .bg-\[\#3b2818\],
+html:not(.dark-navy) .bg-\[\#24160d\] {
+    background-color: #0b1220 !important;
+}
+
+html:not(.dark-navy) .hover\:bg-\[\#3b2818\]:hover,
+html:not(.dark-navy) .hover\:bg-\[\#5b3a1e\]:hover {
+    background-color: #111c33 !important;
+}
+
+/* Textos café -> navy oscuro */
+html:not(.dark-navy) .text-\[\#5b3a1e\],
+html:not(.dark-navy) .text-\[\#3b2818\],
+html:not(.dark-navy) .text-\[\#24160d\] {
+    color: #0b1220 !important;
+}
+
+/* Badges beige/café -> navy suave */
+html:not(.dark-navy) .theme-badge,
+html:not(.dark-navy) span.bg-\[\#f3efe7\] {
+    background: #eff6ff !important;
+    color: #0b1220 !important;
+    border-color: #bfdbfe !important;
+}
+
+/* Botones secundarios */
+html:not(.dark-navy) .theme-button-secondary,
+html:not(.dark-navy) a.bg-\[\#f3efe7\] {
+    background: #eff6ff !important;
+    color: #0b1220 !important;
+    border-color: #bfdbfe !important;
+}
+
+html:not(.dark-navy) .theme-button-secondary:hover,
+html:not(.dark-navy) a.bg-\[\#f3efe7\]:hover {
+    background: #dbeafe !important;
+}
+
+/* Inputs focus navy */
+html:not(.dark-navy) input:focus,
+html:not(.dark-navy) select:focus,
+html:not(.dark-navy) textarea:focus {
+    border-color: #0b1220 !important;
+    box-shadow: 0 0 0 1px #0b1220 !important;
+}
+
+/* Checkboxes */
+html:not(.dark-navy) input[type="checkbox"] {
+    color: #0b1220 !important;
+}
+
+/* Bordes beige -> gris suave limpio */
+html:not(.dark-navy) .border-\[\#e5d8c7\],
+html:not(.dark-navy) .border-\[\#d8c6a3\],
+html:not(.dark-navy) .border-\[\#eee3d5\] {
+    border-color: #e2e8f0 !important;
+}
+
+/* Fondos suaves sin beige */
+html:not(.dark-navy) .bg-\[\#fbf8f3\],
+html:not(.dark-navy) .bg-\[\#f9f5ee\],
+html:not(.dark-navy) .bg-\[\#f3efe7\] {
+    background-color: #f8fafc !important;
+}
+
+/* Hover tablas en claro */
+html:not(.dark-navy) .hover\:bg-\[\#faf7f2\]:hover,
+html:not(.dark-navy) .theme-row:hover {
+    background-color: #f1f5f9 !important;
+}
+
+/* Cards suaves en claro */
+html:not(.dark-navy) .theme-soft {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+
+/* Cards principales */
+html:not(.dark-navy) .theme-card {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+/* Títulos y textos */
+html:not(.dark-navy) .theme-title {
+    color: #0b1220 !important;
+}
+
+html:not(.dark-navy) .theme-text {
+    color: #64748b !important;
+}
+
+html:not(.dark-navy) .theme-border {
+    border-color: #e2e8f0 !important;
+}
+
+/* Encabezados de tabla */
+html:not(.dark-navy) .theme-table-head {
+    background: #f1f5f9 !important;
+    color: #0b1220 !important;
+}
+
+/* Dropdown perfil en tema claro */
+html:not(.dark-navy) .app-profile-dropdown {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+html:not(.dark-navy) .app-profile-header {
+    background: #f8fafc !important;
+}
+
+html:not(.dark-navy) .app-profile-name {
+    color: #0b1220 !important;
+}
+
+html:not(.dark-navy) .app-profile-email {
+    color: #64748b !important;
+}
+
+html:not(.dark-navy) .app-profile-link {
+    color: #0b1220 !important;
+    border-color: #e2e8f0 !important;
+}
+
+html:not(.dark-navy) .app-profile-link:hover {
+    background: #f1f5f9 !important;
+}
+
+/* Paginación / bloques inferiores */
+html:not(.dark-navy) .pagination-cafe nav,
+html:not(.dark-navy) .pagination-cafe div {
+    color: #0b1220 !important;
+}
+
+/* Enlaces hover */
+html:not(.dark-navy) a:not(.text-white):hover {
+    color: #0f172a;
+}
+/* ================================
+   Fix dashboard tema claro navy
+   Iconos marcas/vitolas + gráfico circular
+================================ */
+
+/* Iconos de cards que quedaron café */
+html:not(.dark-navy) .stat-card .bg-\[\#5b3a1e\],
+html:not(.dark-navy) .stat-card .bg-\[\#3b2818\],
+html:not(.dark-navy) .stat-card .bg-\[\#24160d\],
+html:not(.dark-navy) .stat-card .bg-\[\#8a5a2b\],
+html:not(.dark-navy) .stat-card .bg-\[\#c9a66b\] {
+    background: #0b1220 !important;
+    color: #ffffff !important;
+}
+
+/* Si alguna card usa texto café en el icono */
+html:not(.dark-navy) .stat-card .text-\[\#5b3a1e\],
+html:not(.dark-navy) .stat-card .text-\[\#3b2818\],
+html:not(.dark-navy) .stat-card .text-\[\#24160d\] {
+    color: #0b1220 !important;
+}
+
+/* Gráfico circular en tema claro */
+html:not(.dark-navy) .dashboard-ring {
+    background: conic-gradient(#0b1220 var(--porcentaje), #e2e8f0 0) !important;
+}
+
+/* Centro del gráfico circular */
+html:not(.dark-navy) .dashboard-ring > div {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+/* Texto dentro del gráfico */
+html:not(.dark-navy) .dashboard-ring span {
+    color: #0b1220 !important;
+}
+
+html:not(.dark-navy) .dashboard-ring span.text-xs {
+    color: #64748b !important;
+}
+
+/* Barras o detalles de gráficos que quedaron café */
+html:not(.dark-navy) .chart-bar {
+    background-color: #0b1220 !important;
+}
+
+/* Hover más limpio de cards del dashboard */
+html:not(.dark-navy) .stat-card:hover {
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* ================================
+   Fix botones navy tema claro
+   Evita texto oscuro en hover
+================================ */
+
+/* Botones principales navy */
+html:not(.dark-navy) a.bg-\[\#5b3a1e\],
+html:not(.dark-navy) a.bg-\[\#3b2818\],
+html:not(.dark-navy) a.bg-\[\#24160d\],
+html:not(.dark-navy) button.bg-\[\#5b3a1e\],
+html:not(.dark-navy) button.bg-\[\#3b2818\],
+html:not(.dark-navy) button.bg-\[\#24160d\] {
+    color: #ffffff !important;
+}
+
+/* Hover de botones principales navy */
+html:not(.dark-navy) a.bg-\[\#5b3a1e\]:hover,
+html:not(.dark-navy) a.bg-\[\#3b2818\]:hover,
+html:not(.dark-navy) a.bg-\[\#24160d\]:hover,
+html:not(.dark-navy) button.bg-\[\#5b3a1e\]:hover,
+html:not(.dark-navy) button.bg-\[\#3b2818\]:hover,
+html:not(.dark-navy) button.bg-\[\#24160d\]:hover {
+    color: #ffffff !important;
+    background-color: #111c33 !important;
+}
+
+/* Botones que ya tienen text-white */
+html:not(.dark-navy) .text-white:hover {
+    color: #ffffff !important;
+}
+
+/* Evita que enlaces dentro de botones se oscurezcan */
+html:not(.dark-navy) a.text-white:hover,
+html:not(.dark-navy) button.text-white:hover {
+    color: #ffffff !important;
+}
+
+/* ================================
+   Paginación modo claro / dark
+================================ */
+
+.pagination-item {
+    min-width: 2.35rem;
+    height: 2.35rem;
+    padding: 0 0.75rem;
+    border-radius: 0.85rem;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #475569;
+    font-size: 0.875rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .18s ease;
+}
+
+.pagination-item:hover {
+    background: #f1f5f9;
+    color: #0b1220 !important;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+}
+
+.pagination-active {
+    background: #0b1220 !important;
+    color: #ffffff !important;
+    border-color: #0b1220 !important;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+}
+
+.pagination-active:hover {
+    background: #111c33 !important;
+    color: #ffffff !important;
+}
+
+.pagination-dots {
+    min-width: 2rem;
+    height: 2.35rem;
+    padding: 0 0.5rem;
+    color: #94a3b8;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Dark navy */
+html.dark-navy .pagination-item {
+    background: #0f172a !important;
+    border-color: #263650 !important;
+    color: #cbd5e1 !important;
+}
+
+html.dark-navy .pagination-item:hover {
+    background: #1e2f4f !important;
+    border-color: #38bdf8 !important;
+    color: #ffffff !important;
+}
+
+html.dark-navy .pagination-active {
+    background: #38bdf8 !important;
+    color: #0b1220 !important;
+    border-color: #38bdf8 !important;
+    box-shadow: 0 10px 24px rgba(56, 189, 248, 0.20);
+}
+
+html.dark-navy .pagination-active:hover {
+    background: #7dd3fc !important;
+    color: #0b1220 !important;
+}
+
+html.dark-navy .pagination-dots {
+    color: #64748b !important;
+}
+
+/* Mobile buttons */
+html.dark-navy .theme-button-secondary {
+    background: #16233d !important;
+    color: #e5e7eb !important;
+    border-color: #263650 !important;
+}
+
+html.dark-navy .theme-button-secondary:hover {
+    background: #1e2f4f !important;
+    color: #ffffff !important;
+}
+
+/* ================================
+   Fix hover encabezados de tabla en dark
+================================ */
+
+/* Encabezado de tablas */
+html.dark-navy .theme-table-head {
+    background: #16233d !important;
+    color: #e5e7eb !important;
+}
+
+/* Texto y enlaces dentro del thead */
+html.dark-navy .theme-table-head th,
+html.dark-navy .theme-table-head a,
+html.dark-navy thead th,
+html.dark-navy thead a {
+    color: #e5e7eb !important;
+}
+
+/* Hover de links del encabezado */
+html.dark-navy .theme-table-head a:hover,
+html.dark-navy thead a:hover {
+    color: #38bdf8 !important;
+}
+
+/* Iconos de ordenamiento */
+html.dark-navy .theme-table-head span,
+html.dark-navy thead th span {
+    color: #94a3b8 !important;
+}
+
+/* Icono de ordenamiento en hover */
+html.dark-navy .theme-table-head a:hover span,
+html.dark-navy thead a:hover span {
+    color: #38bdf8 !important;
+}
+
+
+/* ================================
+   KPI cards hover definitivo
+================================ */
+/* ================================
+   KPI cards hover limpio
+================================ */
+
+.kpi-card {
+    transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+
+.kpi-card:hover {
+    border-color:#38bdf8 !important;
+    box-shadow:
+        0 0 0 1px #38bdf8,
+        0 18px 40px rgba(56,189,248,.14) !important;
+    transform: translateY(-3px);
+}
+
+html.dark-navy .kpi-card:hover, html.dark-navy .user-card:hover {
+    border-color:#38bdf8 !important;
+    box-shadow:
+        0 0 0 1px #38bdf8,
+        0 18px 40px rgba(56,189,248,.14) !important;
+}
+
+/* FIX card usuarios hover */
+
+.user-card:hover{
+    border-color:#38bdf8 !important;
+    box-shadow:
+        0 0 0 1px #38bdf8,
+        0 18px 40px rgba(56,189,248,.14) !important;
+    transform: translateY(-3px);
+}
+
+html.dark-navy .user-card:hover{
+    border-color:#38bdf8 !important;
+    box-shadow:
+        0 0 0 1px #38bdf8,
+        0 18px 40px rgba(56,189,248,.14) !important;
+}
+
+/* ================================
+   SweetAlert tema claro / dark
+================================ */
+
+.app-swal-popup {
+    border-radius: 1.5rem !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18) !important;
+}
+
+.app-swal-title {
+    font-weight: 800 !important;
+}
+
+.app-swal-text {
+    color: inherit !important;
+}
+
+.app-swal-confirm,
+.app-swal-cancel {
+    border-radius: 0.9rem !important;
+    font-weight: 700 !important;
+    padding: 0.7rem 1.1rem !important;
+}
+
+html.dark-navy .app-swal-popup {
+    border-color: #263650 !important;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45) !important;
+}
+
+html.dark-navy .swal2-success-circular-line-left,
+html.dark-navy .swal2-success-circular-line-right,
+html.dark-navy .swal2-success-fix {
+    background: #0f172a !important;
+}
+
+/* ================================
+   Toast progress bar tema dark
+================================ */
+
+.swal2-timer-progress-bar {
+    background: #0b1220 !important;
+    height: 4px !important;
+}
+
+html.dark-navy .swal2-timer-progress-bar {
+    background: linear-gradient(90deg, #38bdf8, #7dd3fc) !important;
+}
+
+/* ================================
+   Fix autofill Chrome login
+================================ */
+
+.login-input:-webkit-autofill,
+.login-input:-webkit-autofill:hover,
+.login-input:-webkit-autofill:focus,
+.login-input:-webkit-autofill:active {
+    -webkit-text-fill-color: #0f172a !important;
+    caret-color: #0f172a !important;
+    box-shadow: 0 0 0 1000px #ffffff inset !important;
+    transition: background-color 9999s ease-in-out 0s;
+}
+
+html.login-dark .login-input:-webkit-autofill,
+html.login-dark .login-input:-webkit-autofill:hover,
+html.login-dark .login-input:-webkit-autofill:focus,
+html.login-dark .login-input:-webkit-autofill:active {
+    -webkit-text-fill-color: #e5e7eb !important;
+    caret-color: #e5e7eb !important;
+    box-shadow: 0 0 0 1000px #0b1220 inset !important;
+}
+
+/* ================================
+   Loader sincronización tipo pacman
+================================ */
+
+.sync-loader {
+    width: 90px;
+    height: 24px;
+    padding: 2px 0;
+    box-sizing: border-box;
+    display: flex;
+    animation: sync-loader-bg 3s infinite steps(6);
+    background:
+        linear-gradient(#0b1220 0 0) 0 0 / 0% 100% no-repeat,
+        radial-gradient(circle 3px, #cbd5e1 90%, transparent) 0 0 / 20% 100%
+        #0b1220;
+    overflow: hidden;
+    border-radius: 999px;
+}
+
+.sync-loader::before {
+    content: "";
+    width: 20px;
+    transform: translate(-100%);
+    border-radius: 50%;
+    background: #38bdf8;
+    animation:
+        sync-loader-mouth .25s .153s infinite steps(5) alternate,
+        sync-loader-move 3s infinite linear;
+}
+
+html.dark-navy .sync-loader {
+    background:
+        linear-gradient(#0f172a 0 0) 0 0 / 0% 100% no-repeat,
+        radial-gradient(circle 3px, #38bdf8 90%, transparent) 0 0 / 20% 100%
+        #0f172a;
+}
+html.dark-navy .sync-loader::before {
+    background: #7dd3fc;
+}
+
+@keyframes sync-loader-mouth {
+    0% {
+        clip-path: polygon(50% 50%,100% 0,100% 0,0 0,0 100%,100% 100%,100% 100%);
+    }
+
+    100% {
+        clip-path: polygon(50% 50%,100% 65%,100% 0,0 0,0 100%,100% 100%,100% 35%);
+    }
+}
+
+@keyframes sync-loader-move {
+    100% {
+        transform: translate(90px);
+    }
+}
+
+@keyframes sync-loader-bg {
+    100% {
+        background-size: 120% 100%, 20% 100%;
+    }
+}
+
+/* ================================
+   Scrollbar global elegante
+================================ */
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #94a3b8 transparent;
+}
+
+html.dark-navy * {
+    scrollbar-color: #334155 transparent;
+}
+
+/* Chrome, Edge, Brave */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+    background-clip: content-box;
+}
+
+/* Dark mode */
+html.dark-navy ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+html.dark-navy ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+    background-clip: content-box;
+}
+
+/* Scroll horizontal de tablas */
+.overflow-x-auto::-webkit-scrollbar {
+    height: 7px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+html.dark-navy .overflow-x-auto::-webkit-scrollbar-thumb {
+    background: #334155;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+html.dark-navy .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+.loader-sincronizar {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255,255,255,.25);
+    border-top-color: #fff;
+    border-radius: 9999px;
+    animation: giroLoader .7s linear infinite;
+}
+
+@keyframes giroLoader {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ================================
+   Botones filtros productos dark
+================================ */
+
+html.dark-navy .filter-submit-btn,
+html.dark-navy .sync-main-btn {
+    background: #38bdf8 !important;
+    color: #0b1220 !important;
+}
+
+html.dark-navy .filter-submit-btn:hover,
+html.dark-navy .sync-main-btn:hover {
+    background: #7dd3fc !important;
+    color: #0b1220 !important;
+}
+
+html.dark-navy .filter-clear-btn {
+    background: #111c33 !important;
+    color: #e5e7eb !important;
+    border-color: #263650 !important;
+}
+
+html.dark-navy .filter-clear-btn:hover {
+    background: rgba(239, 68, 68, 0.12) !important;
+    color: #fca5a5 !important;
+    border-color: rgba(248, 113, 113, 0.35) !important;
+}
+
+/* ================================
+   Badge filtros activos
+================================ */
+
+html.dark-navy .active-filters-badge {
+    background: #082f49 !important;
+    color: #7dd3fc !important;
+    border-color: #38bdf8 !important;
+}
+
+/* ================================
+   Fix definitivo badge filtros activos
+================================ */
+
+.active-filters-badge {
+    background-color: #eff6ff !important;
+    color: #0369a1 !important;
+    border-color: #bae6fd !important;
+}
+
+html.dark-navy span.active-filters-badge,
+html.dark-navy .active-filters-badge {
+    background-color: rgba(56, 189, 248, 0.14) !important;
+    background-image: none !important;
+    color: #7dd3fc !important;
+    border-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+/* ================================
+   Unificar botones principales en dark
+   Azul usado en Sincronizar / Filtrar
+================================ */
+
+html.dark-navy .filter-submit-btn,
+html.dark-navy .sync-main-btn,
+html.dark-navy button.bg-\[\#5b3a1e\],
+html.dark-navy a.bg-\[\#5b3a1e\],
+html.dark-navy button.bg-\[\#3b2818\],
+html.dark-navy a.bg-\[\#3b2818\],
+html.dark-navy button.bg-\[\#0f172a\],
+html.dark-navy a.bg-\[\#0f172a\],
+html.dark-navy button.bg-\[\#24160d\],
+html.dark-navy a.bg-\[\#24160d\] {
+    background-color: #38bdf8 !important;
+    color: #0b1220 !important;
+    border-color: #38bdf8 !important;
+}
+
+html.dark-navy .filter-submit-btn:hover,
+html.dark-navy .sync-main-btn:hover,
+html.dark-navy button.bg-\[\#5b3a1e\]:hover,
+html.dark-navy a.bg-\[\#5b3a1e\]:hover,
+html.dark-navy button.bg-\[\#3b2818\]:hover,
+html.dark-navy a.bg-\[\#3b2818\]:hover,
+html.dark-navy button.bg-\[\#0f172a\]:hover,
+html.dark-navy a.bg-\[\#0f172a\]:hover,
+html.dark-navy button.bg-\[\#24160d\]:hover,
+html.dark-navy a.bg-\[\#24160d\]:hover {
+    background-color: #7dd3fc !important;
+    color: #0b1220 !important;
+    border-color: #7dd3fc !important;
+}
+

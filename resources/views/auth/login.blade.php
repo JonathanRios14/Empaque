@@ -4,21 +4,266 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | Sistema de Empaque</title>
+
+    {{-- Cargar tema antes del CSS para evitar parpadeo --}}
+    <script>
+        (function () {
+            const theme = localStorage.getItem('systemTheme');
+
+            if (theme === 'dark-navy') {
+                document.documentElement.classList.add('login-dark', 'dark-navy');
+            }
+        })();
+    </script>
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
+        /* ================================
+           Login tema claro navy elegante
+        ================================ */
+
         .login-bg {
             background:
-                radial-gradient(circle at top left, rgba(201, 166, 107, 0.18), transparent 32%),
-                radial-gradient(circle at bottom right, rgba(91, 58, 30, 0.28), transparent 35%),
-                linear-gradient(135deg, #24160d 0%, #3b2818 48%, #5b3a1e 100%);
+                radial-gradient(circle at top left, rgba(56, 189, 248, 0.10), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(15, 23, 42, 0.24), transparent 36%),
+                linear-gradient(135deg, #0b1220 0%, #0f172a 52%, #111c33 100%);
         }
 
-        .glass-card {
-            backdrop-filter: blur(18px);
-            background: rgba(255, 255, 255, 0.97);
+        .login-wrapper {
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid rgba(226, 232, 240, 0.85);
+            box-shadow: 0 30px 80px rgba(15, 23, 42, 0.26);
         }
 
+        .login-form-panel {
+            background: rgba(255, 255, 255, 0.98);
+        }
+
+        .login-logo-box {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+        }
+
+        .login-title {
+            color: #0b1220;
+        }
+
+        .login-label {
+            color: #0b1220;
+        }
+
+        .login-subtitle,
+        .login-footer,
+        .login-remember {
+            color: #64748b;
+        }
+
+        .login-input {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #0f172a;
+        }
+
+        .login-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .login-input:focus {
+            border-color: #0b1220;
+            box-shadow: 0 0 0 1px #0b1220;
+        }
+
+        .login-icon {
+            color: #0b1220;
+        }
+
+        .login-eye {
+            color: #0b1220;
+        }
+
+        .login-eye:hover {
+            color: #111c33;
+        }
+
+        .login-button {
+            background: #0b1220;
+        }
+
+        .login-button:hover {
+            background: #111c33;
+        }
+
+        .login-image-panel {
+            background: #0b1220;
+        }
+
+        .login-image-bg {
+            background: linear-gradient(to bottom right, #0b1220, #0f172a, #111c33);
+        }
+
+        .login-logo-light {
+            display: block;
+        }
+
+        .login-logo-dark {
+            display: none;
+        }
+
+        /* ================================
+           Login tema oscuro azul marino
+        ================================ */
+
+        html.login-dark .login-bg {
+            background:
+                radial-gradient(circle at top left, rgba(56, 189, 248, 0.14), transparent 32%),
+                radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.22), transparent 35%),
+                linear-gradient(135deg, #0b1220 0%, #0f172a 48%, #111827 100%);
+        }
+
+        html.login-dark .login-wrapper {
+            background: rgba(15, 23, 42, 0.96);
+            border-color: rgba(148, 163, 184, 0.18);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+        }
+
+        html.login-dark .login-form-panel {
+            background: #0f172a;
+        }
+
+        html.login-dark .login-logo-box {
+            background: #111827;
+            border-color: rgba(255, 255, 255, 0.10);
+        }
+
+        html.login-dark .login-title {
+            color: #ffffff;
+        }
+
+        html.login-dark .login-label {
+            color: #e5e7eb;
+        }
+
+        html.login-dark .login-subtitle,
+        html.login-dark .login-footer,
+        html.login-dark .login-remember {
+            color: #94a3b8;
+        }
+
+        html.login-dark .login-input {
+            background: #0b1220;
+            border-color: #334155;
+            color: #e5e7eb;
+        }
+
+        html.login-dark .login-input::placeholder {
+            color: #64748b;
+        }
+
+        html.login-dark .login-input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 1px #2563eb;
+        }
+
+        html.login-dark .login-icon {
+            color: #38bdf8;
+        }
+
+        html.login-dark .login-eye {
+            color: #38bdf8;
+        }
+
+        html.login-dark .login-eye:hover {
+            color: #7dd3fc;
+        }
+
+        html.login-dark .login-button {
+            background: #38bdf8;
+               color: #0b1220 !important;
+        }
+
+        html.login-dark .login-button:hover {
+            background: #7dd3fc;
+                color: #0b1220 !important;
+        }
+
+        html.login-dark .login-image-panel {
+            background: #111827;
+        }
+
+        html.login-dark .login-image-bg {
+            background: linear-gradient(to bottom right, #111827, #0f172a, #020617);
+        }
+
+        html.login-dark .login-logo-light {
+            display: none !important;
+        }
+
+        html.login-dark .login-logo-dark {
+            display: block !important;
+        }
+
+        /* ================================
+           Animación login claro / oscuro
+        ================================ */
+
+        .intro-overlay {
+            background:
+                radial-gradient(circle at top left, rgba(56, 189, 248, 0.10), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(15, 23, 42, 0.24), transparent 36%),
+                linear-gradient(135deg, #0b1220 0%, #0f172a 52%, #111c33 100%);
+        }
+
+        .intro-logo-box {
+            background: #ffffff;
+            border: 1px solid rgba(226, 232, 240, 0.90);
+        }
+
+        .intro-title {
+            color: #ffffff;
+        }
+
+        .intro-subtitle {
+            color: rgba(255, 255, 255, 0.70);
+        }
+
+        .intro-logo-light {
+            display: block;
+        }
+
+        .intro-logo-dark {
+            display: none;
+        }
+
+        html.login-dark .intro-overlay {
+            background:
+                radial-gradient(circle at top left, rgba(56, 189, 248, 0.14), transparent 32%),
+                radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.22), transparent 35%),
+                linear-gradient(135deg, #0b1220 0%, #0f172a 48%, #111827 100%);
+        }
+
+        html.login-dark .intro-logo-box {
+            background: #111827;
+            border-color: rgba(255, 255, 255, 0.10);
+        }
+
+        html.login-dark .intro-logo-light {
+            display: none !important;
+        }
+
+        html.login-dark .intro-logo-dark {
+            display: block !important;
+        }
+
+        html.login-dark .intro-title {
+            color: #ffffff;
+        }
+
+        html.login-dark .intro-subtitle {
+            color: #94a3b8;
+        }
+
+        /* Animación de humo */
         .smoke {
             position: absolute;
             bottom: -130px;
@@ -78,7 +323,7 @@
 
     {{-- Animación al iniciar sesión --}}
     <div id="introSistema"
-         class="fixed inset-0 z-[9999] bg-[#3b2818] hidden items-center justify-center transition-opacity duration-700 overflow-hidden">
+         class="intro-overlay fixed inset-0 z-[9999] hidden items-center justify-center transition-opacity duration-700 overflow-hidden">
 
         <div class="smoke smoke-1"></div>
         <div class="smoke smoke-2"></div>
@@ -86,17 +331,21 @@
         <div class="smoke smoke-4"></div>
 
         <div class="relative z-10 text-center">
-            <div class="mx-auto w-32 h-32 rounded-3xl bg-white flex items-center justify-center shadow-2xl mb-5 intro-logo">
+            <div class="intro-logo-box mx-auto w-32 h-32 rounded-3xl flex items-center justify-center shadow-2xl mb-5 intro-logo">
                 <img src="{{ asset('img/plasencia-logocafe.png') }}"
                      alt="Plasencia Logo"
-                     class="h-24 w-auto object-contain">
+                     class="intro-logo-light h-24 w-auto object-contain">
+
+                <img src="{{ asset('img/plasencia-logo.png') }}"
+                     alt="Plasencia Logo"
+                     class="intro-logo-dark h-24 w-auto object-contain">
             </div>
 
-            <h1 class="text-white text-2xl font-bold tracking-wide">
+            <h1 class="intro-title text-2xl font-bold tracking-wide">
                 Sistema de Empaque
             </h1>
 
-            <p class="text-white/60 text-sm mt-1">
+            <p class="intro-subtitle text-sm mt-1">
                 Verificando acceso...
             </p>
         </div>
@@ -104,23 +353,29 @@
 
     {{-- Decoración fondo --}}
     <div class="absolute top-10 left-10 w-40 h-40 rounded-full bg-white/5 blur-2xl"></div>
-    <div class="absolute bottom-10 right-10 w-56 h-56 rounded-full bg-[#c9a66b]/20 blur-3xl"></div>
+    <div class="absolute bottom-10 right-10 w-56 h-56 rounded-full bg-sky-400/10 blur-3xl"></div>
 
-<div class="relative w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 gap-0 items-stretch rounded-[1.75rem] overflow-hidden shadow-2xl border border-white/20">
+    <div class="login-wrapper relative w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 gap-0 items-stretch rounded-[1.75rem] overflow-hidden">
+
         {{-- FORMULARIO --}}
-     <div class="w-full glass-card p-5 lg:p-6 flex flex-col justify-center min-h-[440px]">
+        <div class="login-form-panel w-full p-5 lg:p-6 flex flex-col justify-center min-h-[440px]">
+
             <div class="text-center mb-5">
-                <div class="mx-auto mb-4 w-20 h-20 rounded-3xl bg-[#f3efe7] border border-[#e5d8c7] flex items-center justify-center shadow-sm">
+                <div class="login-logo-box mx-auto mb-4 w-20 h-20 rounded-3xl border flex items-center justify-center shadow-sm">
                     <img src="{{ asset('img/plasencia-logocafe.png') }}"
                          alt="Plasencia Logo"
-                         class="h-14 w-auto object-contain">
+                         class="login-logo-light h-14 w-auto object-contain">
+
+                    <img src="{{ asset('img/plasencia-logo.png') }}"
+                         alt="Plasencia Logo"
+                         class="login-logo-dark h-14 w-auto object-contain">
                 </div>
 
-                <h1 class="text-2xl font-extrabold text-[#24160d]">
+                <h1 class="login-title text-2xl font-extrabold">
                     Bienvenido
                 </h1>
 
-                <p class="text-sm text-gray-500 mt-1">
+                <p class="login-subtitle text-sm mt-1">
                     Inicia sesión para continuar
                 </p>
             </div>
@@ -131,12 +386,12 @@
                 @csrf
 
                 <div class="mb-4">
-                    <label for="email" class="block text-sm font-bold text-[#24160d] mb-2">
+                    <label for="email" class="login-label block text-sm font-bold mb-2">
                         Correo electrónico
                     </label>
 
                     <div class="relative">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#8a5a2b]">
+                        <span class="login-icon absolute left-4 top-1/2 -translate-y-1/2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
                                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -151,17 +406,17 @@
                                required
                                autofocus
                                placeholder="correo@ejemplo.com"
-                               class="w-full rounded-2xl border-[#d8c6a3] pl-12 pr-4 py-2.5 text-sm focus:border-[#5b3a1e] focus:ring-[#5b3a1e] bg-white">
+                               class="login-input w-full rounded-2xl pl-12 pr-4 py-2.5 text-sm outline-none transition">
                     </div>
                 </div>
 
                 <div class="mb-4" x-data="{ showPassword: false }">
-                    <label for="password" class="block text-sm font-bold text-[#24160d] mb-2">
+                    <label for="password" class="login-label block text-sm font-bold mb-2">
                         Contraseña
                     </label>
 
                     <div class="relative">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#8a5a2b]">
+                        <span class="login-icon absolute left-4 top-1/2 -translate-y-1/2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
                                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -176,11 +431,11 @@
                                name="password"
                                required
                                placeholder="Ingresa tu contraseña"
-                               class="w-full rounded-2xl border-[#d8c6a3] pl-12 pr-12 py-2.5 text-sm focus:border-[#5b3a1e] focus:ring-[#5b3a1e] bg-white">
+                               class="login-input w-full rounded-2xl pl-12 pr-12 py-2.5 text-sm outline-none transition">
 
                         <button type="button"
                                 @click="showPassword = !showPassword"
-                                class="absolute right-4 top-1/2 -translate-y-1/2 text-[#8a5a2b] hover:text-[#3b2818] transition">
+                                class="login-eye absolute right-4 top-1/2 -translate-y-1/2 transition">
                             <svg x-show="!showPassword" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
                                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -199,51 +454,46 @@
                 </div>
 
                 <div class="flex items-center justify-between mb-4">
-                    <label class="flex items-center text-sm text-gray-600">
-                        <input type="checkbox"
-                               name="remember"
-                               class="rounded border-gray-300 text-[#5b3a1e] focus:ring-[#5b3a1e]">
-                        
-                    </label>
-
-                
+                  
                 </div>
 
                 <button type="submit"
-                        class="w-full bg-[#24160d] hover:bg-[#3b2818] text-white font-bold py-2.5 rounded-2xl transition shadow-sm">
+                        class="login-button w-full text-white font-bold py-2.5 rounded-2xl transition shadow-lg shadow-slate-900/20">
                     Iniciar sesión
                 </button>
             </form>
 
-            <p class="text-center text-xs text-gray-400 mt-5">
+            <p class="login-footer text-center text-xs mt-5">
                 Plasencia · Área de Empaque
             </p>
         </div>
 
         {{-- IMAGEN DERECHA --}}
-     <div class="hidden lg:flex bg-[#f7f4ef] min-h-[440px] items-center justify-center relative overflow-hidden">
-            <div class="absolute inset-0 bg-gradient-to-br from-white via-[#f7f4ef] to-[#eadfd5]"></div>
+        <div class="login-image-panel hidden lg:flex min-h-[440px] items-center justify-center relative overflow-hidden">
+            <div class="login-image-bg absolute inset-0"></div>
 
             <img src="{{ asset('img/login-tabaco.webp') }}"
                  alt="Imagen de tabaco"
-              class="relative z-10 w-full h-full object-cover object-center">
+                 class="relative z-10 w-full h-full object-cover object-center opacity-95">
 
-            <div class="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-white/10"></div>
+            <div class="absolute inset-0 bg-gradient-to-l from-transparent via-[#0f172a]/5 to-[#0f172a]/30"></div>
         </div>
- 
+
     </div>
 
     @if ($errors->any())
         <script>
             document.addEventListener('DOMContentLoaded', () => {
+                const isDark = localStorage.getItem('systemTheme') === 'dark-navy';
+
                 Swal.fire({
                     icon: 'error',
                     title: 'No se pudo iniciar sesión',
                     text: '{{ $errors->first() }}',
                     confirmButtonText: 'Intentar de nuevo',
-                    confirmButtonColor: '#5b3a1e',
-                    background: '#ffffff',
-                    color: '#3b2818'
+                    confirmButtonColor: isDark ? '#2563eb' : '#0b1220',
+                    background: isDark ? '#0f172a' : '#ffffff',
+                    color: isDark ? '#e5e7eb' : '#0b1220'
                 });
             });
         </script>

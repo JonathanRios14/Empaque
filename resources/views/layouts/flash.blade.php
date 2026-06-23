@@ -1,26 +1,23 @@
-@if (session('success'))
-    <script>
-        window.flashMessage = {
-            type: 'success',
-            message: @json(session('success'))
-        };
-    </script>
-@endif
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        @if (session('success'))
+            mostrarToast('success', @json(session('success')));
+        @endif
 
-@if (session('error'))
-    <script>
-        window.flashMessage = {
-            type: 'error',
-            message: @json(session('error'))
-        };
-    </script>
-@endif
+        @if (session('error'))
+            appSwal({
+                icon: 'error',
+                title: 'Error',
+                text: @json(session('error')),
+            });
+        @endif
 
-@if ($errors->any())
-    <script>
-        window.flashMessage = {
-            type: 'error',
-            message: 'Revisa los campos del formulario.'
-        };
-    </script>
-@endif
+        @if (session('warning'))
+            appSwal({
+                icon: 'warning',
+                title: 'Atención',
+                text: @json(session('warning')),
+            });
+        @endif
+    });
+</script>

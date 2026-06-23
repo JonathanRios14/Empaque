@@ -15,9 +15,10 @@
         });
     "
     :class="sidebarOpen ? 'w-72' : 'w-20'"
-    class="hidden md:block shrink-0 transition-[width] duration-300 ease-in-out overflow-hidden bg-[#3b2818] text-white">
-    <div class="h-20 flex items-center justify-between px-4 border-b border-white/10">
-<div x-show="sidebarOpen"
+    class="app-sidebar hidden md:block shrink-0 transition-[width] duration-300 ease-in-out overflow-hidden bg-[#3b2818] text-white">
+<div class="app-sidebar-header h-20 flex items-center border-b border-white/10"
+     :class="sidebarOpen ? 'justify-between px-4' : 'justify-center px-0'">
+    <div x-show="sidebarOpen"
      x-transition.opacity.duration.150ms
      class="flex items-center gap-3">
             <div class="w-12 h-12  flex items-center justify-center shadow-sm">
@@ -31,9 +32,9 @@
                 <p class="text-sm text-white/60 leading-tight">Empaque</p>
             </div>
         </div>
-
-  <button @click="sidebarOpen = !sidebarOpen"
-        class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white transition duration-200">
+<button @click="sidebarOpen = !sidebarOpen; localStorage.setItem('sidebarOpen', sidebarOpen)"
+        class="app-sidebar-toggle w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white transition duration-200"
+        :class="sidebarOpen ? '' : 'translate-x-[4px]'">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none"
                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"

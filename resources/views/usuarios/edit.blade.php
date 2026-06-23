@@ -4,32 +4,39 @@
     <meta charset="UTF-8">
     <title>Editar Usuario | Sistema de Empaque</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    @include('layouts.theme-script')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="bg-[#f5f2ec] text-gray-800">
+<body class="bg-[#f5f2ec] text-gray-800 transition-colors duration-300">
 
-<div x-data="{ sidebarOpen: true, catalogos: false, seguridad: false, produccion: false }" class="flex min-h-screen">
+<div x-data="{
+    sidebarOpen: localStorage.getItem('sidebarOpen') === null ? true : localStorage.getItem('sidebarOpen') === 'true',
+    catalogos: false,
+    seguridad: false,
+    produccion: false
+}" class="flex min-h-screen">
 
     @include('layouts.sidebar')
 
     <main class="flex-1">
-       
-    @include('layouts.topbar', [
-    'title' => 'Editar usuario',
-    'description' => 'Actualiza la información del usuario y su rol dentro del sistema.',
-    ])
 
+        @include('layouts.topbar', [
+            'title' => 'Editar usuario',
+            'description' => 'Actualiza la información del usuario y su rol dentro del sistema.',
+        ])
 
-        <section class="p-6">
-            <div class="max-w-5xl mx-auto">
+        <section class="p-4 lg:p-6">
+            <div class="w-full max-w-[1600px] mx-auto">
 
-                <div class="bg-white rounded-2xl border border-[#e5d8c7] shadow-sm overflow-hidden">
-                    <div class="px-6 py-5 border-b border-[#e5d8c7] bg-[#fbf8f3]">
-                        <h2 class="text-lg font-bold text-[#3b2818]">
+                <div class="theme-card theme-shadow bg-white rounded-2xl border border-[#e5d8c7] shadow-sm overflow-hidden">
+
+                    <div class="theme-soft px-6 py-5 border-b border-[#e5d8c7] theme-border bg-[#fbf8f3]">
+                        <h2 class="theme-title text-lg font-bold text-[#3b2818]">
                             Información del usuario
                         </h2>
-                        <p class="text-sm text-gray-500 mt-1">
+
+                        <p class="theme-text text-sm text-gray-500 mt-1">
                             Puedes cambiar nombre, correo, rol o contraseña.
                         </p>
                     </div>
@@ -43,7 +50,7 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
-                                <label class="block text-sm font-semibold text-[#3b2818] mb-2">
+                                <label class="theme-title block text-sm font-semibold text-[#3b2818] mb-2">
                                     Nombre
                                 </label>
 
@@ -51,7 +58,7 @@
                                        name="name"
                                        value="{{ old('name', $user->name) }}"
                                        required
-                                       class="w-full rounded-xl border-gray-300 text-sm focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
+                                       class="theme-input w-full rounded-xl border-gray-300 text-sm focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
 
                                 @error('name')
                                     <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
@@ -59,7 +66,7 @@
                             </div>
 
                             <div>
-                                <label class="block text-sm font-semibold text-[#3b2818] mb-2">
+                                <label class="theme-title block text-sm font-semibold text-[#3b2818] mb-2">
                                     Correo electrónico
                                 </label>
 
@@ -67,7 +74,7 @@
                                        name="email"
                                        value="{{ old('email', $user->email) }}"
                                        required
-                                       class="w-full rounded-xl border-gray-300 text-sm focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
+                                       class="theme-input w-full rounded-xl border-gray-300 text-sm focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
 
                                 @error('email')
                                     <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
@@ -75,41 +82,62 @@
                             </div>
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-semibold text-[#3b2818] mb-2">
-                                Rol del usuario
-                            </label>
+                     <div>
+    <label class="theme-title block text-sm font-semibold text-[#3b2818] mb-2">
+        Rol del usuario
+    </label>
 
-                            <select name="role"
-                                    required
-                                    class="w-full rounded-xl border-gray-300 text-sm focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
-                                <option value="">Seleccione un rol</option>
+    @if ($user->hasRole('SuperAdmin'))
+        <div class="theme-soft w-full rounded-xl border border-[#e5d8c7] theme-border px-4 py-3">
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <p class="theme-title text-sm font-bold">
+                        SuperAdmin
+                    </p>
 
-                                @foreach ($roles as $role)
-                                    <option value="{{ $role->name }}"
-                                        @selected(old('role', $user->roles->first()?->name) === $role->name)>
-                                        {{ $role->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                    <p class="theme-text text-xs text-gray-500 mt-1">
+                        Este rol principal del sistema no puede modificarse.
+                    </p>
+                </div>
 
-                            @error('role')
-                                <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
+                <span class="theme-badge px-3 py-1 rounded-full text-xs font-semibold border">
+                    Protegido
+                </span>
+            </div>
+        </div>
+    @else
+        <select name="role"
+                required
+                class="theme-input w-full rounded-xl border-gray-300 text-sm focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
+            <option value="">Seleccione un rol</option>
 
-                        <div class="rounded-xl bg-[#f9f5ee] border border-[#e5d8c7] p-4">
-                            <p class="text-sm font-semibold text-[#3b2818]">
+            @foreach ($roles as $role)
+                <option value="{{ $role->name }}"
+                    @selected(old('role', $user->roles->first()?->name) === $role->name)>
+                    {{ $role->name }}
+                </option>
+            @endforeach
+        </select>
+
+        @error('role')
+            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+        @enderror
+    @endif
+</div>
+
+                        <div class="theme-soft rounded-xl bg-[#f9f5ee] border border-[#e5d8c7] theme-border p-4">
+                            <p class="theme-title text-sm font-semibold text-[#3b2818]">
                                 Cambiar contraseña
                             </p>
-                            <p class="text-xs text-gray-500 mt-1">
+
+                            <p class="theme-text text-xs text-gray-500 mt-1">
                                 Deja estos campos vacíos si no deseas cambiar la contraseña.
                             </p>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
-                                <label class="block text-sm font-semibold text-[#3b2818] mb-2">
+                                <label class="theme-title block text-sm font-semibold text-[#3b2818] mb-2">
                                     Nueva contraseña
                                 </label>
 
@@ -117,7 +145,7 @@
                                     <input :type="showPassword ? 'text' : 'password'"
                                            name="password"
                                            placeholder="Opcional"
-                                           class="w-full rounded-xl border-gray-300 text-sm pr-20 focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
+                                           class="theme-input w-full rounded-xl border-gray-300 text-sm pr-20 focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
 
                                     <button type="button"
                                             @click="showPassword = !showPassword"
@@ -132,7 +160,7 @@
                             </div>
 
                             <div>
-                                <label class="block text-sm font-semibold text-[#3b2818] mb-2">
+                                <label class="theme-title block text-sm font-semibold text-[#3b2818] mb-2">
                                     Confirmar contraseña
                                 </label>
 
@@ -140,7 +168,7 @@
                                     <input :type="showConfirmPassword ? 'text' : 'password'"
                                            name="password_confirmation"
                                            placeholder="Opcional"
-                                           class="w-full rounded-xl border-gray-300 text-sm pr-20 focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
+                                           class="theme-input w-full rounded-xl border-gray-300 text-sm pr-20 focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
 
                                     <button type="button"
                                             @click="showConfirmPassword = !showConfirmPassword"
@@ -151,9 +179,9 @@
                             </div>
                         </div>
 
-                        <div class="flex items-center justify-end gap-3 pt-3 border-t border-[#eee3d5]">
+                        <div class="flex items-center justify-end gap-3 pt-3 border-t border-[#eee3d5] theme-border">
                             <a href="{{ route('usuarios.index') }}"
-                               class="px-5 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm hover:bg-gray-200 transition">
+                               class="theme-button-secondary px-5 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm border border-gray-200 hover:bg-gray-200 transition">
                                 Cancelar
                             </a>
 
@@ -169,6 +197,7 @@
         </section>
     </main>
 </div>
+
 @include('layouts.flash')
 
 </body>

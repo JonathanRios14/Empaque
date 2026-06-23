@@ -30,7 +30,7 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    // Dashboard
+    
 // Dashboard
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware('permission:dashboard.ver')
@@ -146,6 +146,18 @@ Route::get('/catalogos/presentaciones', [CatalogoController::class, 'presentacio
 Route::get('/catalogos/tipos-empaque', [CatalogoController::class, 'tipoEmpaques'])
     ->middleware('permission:catalogos.ver')
     ->name('catalogos.tipo-empaques.index');
+});
+
+Route::fallback(function () {
+    if (auth()->check()) {
+        return response()->view('errors.404', [
+            'forceLayout' => true,
+        ], 404);
+    }
+
+    return response()->view('errors.404', [
+        'forceLayout' => false,
+    ], 404);
 });
 
 
