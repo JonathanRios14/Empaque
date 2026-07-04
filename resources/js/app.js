@@ -103,18 +103,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('DOMContentLoaded', () => {
     const themeToggle = document.getElementById('themeToggle');
-    const iconMoon = document.getElementById('themeIconMoon');
-    const iconSun = document.getElementById('themeIconSun');
+    let themeTransitionTimer;
 
-    const applyTheme = (theme) => {
+    const refreshAutofillFields = () => {
+        const refresh = () => {
+            document.querySelectorAll('input, textarea').forEach((field) => {
+                if (! field.value) {
+                    return;
+                }
+
+                field.classList.add('autofill-repaint');
+
+                requestAnimationFrame(() => {
+                    field.classList.remove('autofill-repaint');
+                });
+            });
+        };
+
+        if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(refresh, { timeout: 300 });
+            return;
+        }
+
+        setTimeout(refresh, 80);
+    };
+
+    const startThemeTransition = () => {
+        document.documentElement.classList.add('theme-transitioning');
+        window.clearTimeout(themeTransitionTimer);
+
+        themeTransitionTimer = window.setTimeout(() => {
+            document.documentElement.classList.remove('theme-transitioning');
+        }, 320);
+    };
+
+    const applyTheme = (theme, animate = false) => {
+        if (animate) {
+            startThemeTransition();
+        }
+
         if (theme === 'dark-navy') {
             document.documentElement.classList.add('dark-navy');
-            iconMoon?.classList.add('hidden');
-            iconSun?.classList.remove('hidden');
         } else {
             document.documentElement.classList.remove('dark-navy');
-            iconMoon?.classList.remove('hidden');
-            iconSun?.classList.add('hidden');
+        }
+
+        if (animate) {
+            refreshAutofillFields();
+        }
+
+        if (themeToggle) {
+            themeToggle.checked = theme === 'dark-navy';
         }
     };
 
@@ -122,11 +161,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     applyTheme(savedTheme);
 
-    themeToggle?.addEventListener('click', () => {
-        const isDark = document.documentElement.classList.contains('dark-navy');
-        const newTheme = isDark ? 'light' : 'dark-navy';
+    themeToggle?.addEventListener('change', () => {
+        const newTheme = themeToggle.checked ? 'dark-navy' : 'light';
 
         localStorage.setItem('systemTheme', newTheme);
-        applyTheme(newTheme);
+        applyTheme(newTheme, true);
     });
+});
+
+document.addEventListener('pointermove', (event) => {
+    const target = event.target.closest('.gooey-action');
+
+    if (! target) {
+        return;
+    }
+
+    const rect = target.getBoundingClientRect();
+
+    target.style.setProperty('--x', ((event.clientX - rect.left) / rect.width) * 100);
+    target.style.setProperty('--y', ((event.clientY - rect.top) / rect.height) * 100);
 });

@@ -25,7 +25,7 @@
             'description' => 'Catálogo de vitolas sincronizadas desde la API.'
         ])
 
-        <section class="p-4 lg:p-6">
+    <section class="app-content-compact">
             <div class="w-full max-w-[1600px] mx-auto">
 
                 <div class="theme-card theme-shadow bg-white rounded-2xl border border-[#e5d8c7] shadow-sm overflow-hidden">
@@ -60,7 +60,7 @@
                                 </div>
 
                                 <button type="submit"
-                                        class="px-4 py-2 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
+                                        class="gooey-action px-4 py-2 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
                                     Buscar
                                 </button>
                             </form>
@@ -112,11 +112,15 @@
                                     </th>
 
                                     <th class="px-6 py-4 text-left font-semibold">
-                                        <a href="{{ $sortLink('productos_count') }}" class="inline-flex items-center gap-2 hover:text-[#5b3a1e]">
-                                            Productos
-                                            <span class="text-xs">{{ $sortIcon('productos_count') }}</span>
-                                        </a>
-                                    </th>
+    <a href="{{ $sortLink('productos_count') }}" class="inline-flex items-center gap-2 hover:text-[#5b3a1e]">
+        Productos
+        <span class="text-xs">{{ $sortIcon('productos_count') }}</span>
+    </a>
+</th>
+
+<th class="px-6 py-4 text-right font-semibold">
+    Acciones
+</th>
                                 </tr>
                             </thead>
 
@@ -140,10 +144,17 @@
                                                 {{ $vitola->productos_count }} producto(s)
                                             </span>
                                         </td>
+                                        <td class="px-6 py-4 text-right">
+    <a href="{{ route('catalogos.productos.index', ['vitola_id' => $vitola->id]) }}"
+       class="theme-button-secondary inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#f3efe7] text-[#5b3a1e] text-xs font-semibold border border-[#e5d8c7] hover:bg-[#e5d8c7] transition">
+        Ver productos
+        <span>→</span>
+    </a>
+</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="3" class="theme-text px-6 py-10 text-center text-gray-500">
+                                        <td colspan="4" class="theme-text px-6 py-10 text-center text-gray-500">
                                             No hay vitolas registradas.
                                         </td>
                                     </tr>

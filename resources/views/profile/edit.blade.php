@@ -26,7 +26,7 @@
             'description' => 'Actualiza tu información personal, foto de perfil y contraseña.'
         ])
 
-        <section class="p-4 lg:p-6">
+      <section class="app-content-compact">
             <div class="w-full max-w-[1600px] mx-auto space-y-6">
 
                 {{-- TARJETA PRINCIPAL DEL PERFIL --}}

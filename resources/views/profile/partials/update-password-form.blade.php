@@ -86,7 +86,7 @@
 
         <div class="flex items-center justify-end gap-4 pt-4 border-t border-[#eee3d5] theme-border">
             <button type="submit"
-                    class="px-5 py-2.5 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
+                    class="gooey-action px-5 py-2.5 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
                 Guardar contraseña
             </button>
 

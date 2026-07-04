@@ -1,0 +1,206 @@
+@php
+    $sortLink = function ($campo) {
+        $ordenActual = request('orden', 'created_at');
+        $direccionActual = request('direccion', 'desc');
+
+        $nuevaDireccion = ($ordenActual === $campo && $direccionActual === 'asc') ? 'desc' : 'asc';
+
+        return url()->current() . '?' . http_build_query(array_merge(request()->query(), [
+            'orden' => $campo,
+            'direccion' => $nuevaDireccion,
+            'page' => null,
+        ]));
+    };
+
+    $sortIcon = function ($campo) {
+        $ordenActual = request('orden', 'created_at');
+        $direccionActual = request('direccion', 'desc');
+
+        if ($ordenActual !== $campo) {
+            return '↕';
+        }
+
+        return $direccionActual === 'asc' ? '↑' : '↓';
+    };
+@endphp
+
+<div id="productosTableInner" class="productos-table-inner relative">    
+<div class="productos-table-scroll">
+    <table class="w-full text-sm">
+     <thead class="theme-table-head productos-sticky-head bg-[#eff6ff] text-[#0f172a]">
+                <tr>
+                    <th class="px-6 py-4 text-left font-semibold">
+                        <a href="{{ $sortLink('nombre') }}"
+                           class="ajax-table-link inline-flex items-center gap-2 hover:text-[#5b3a1e]">
+                            Producto
+                            <span class="text-xs">{{ $sortIcon('nombre') }}</span>
+                        </a>
+                    </th>
+
+                    <th class="px-6 py-4 text-left font-semibold">
+                        <a href="{{ $sortLink('marca') }}"
+                           class="ajax-table-link inline-flex items-center gap-2 hover:text-[#5b3a1e]">
+                            Marca
+                            <span class="text-xs">{{ $sortIcon('marca') }}</span>
+                        </a>
+                    </th>
+
+                    <th class="px-6 py-4 text-left font-semibold">
+                        <a href="{{ $sortLink('vitola') }}"
+                           class="ajax-table-link inline-flex items-center gap-2 hover:text-[#5b3a1e]">
+                            Vitola
+                            <span class="text-xs">{{ $sortIcon('vitola') }}</span>
+                        </a>
+                    </th>
+
+                    <th class="px-6 py-4 text-left font-semibold">
+                        <a href="{{ $sortLink('capa') }}"
+                           class="ajax-table-link inline-flex items-center gap-2 hover:text-[#5b3a1e]">
+                            Capa
+                            <span class="text-xs">{{ $sortIcon('capa') }}</span>
+                        </a>
+                    </th>
+
+                    <th class="px-6 py-4 text-left font-semibold">
+                        <a href="{{ $sortLink('tipo_empaque') }}"
+                           class="ajax-table-link inline-flex items-center gap-2 hover:text-[#5b3a1e]">
+                            Tipo empaque
+                            <span class="text-xs">{{ $sortIcon('tipo_empaque') }}</span>
+                        </a>
+                    </th>
+
+                    <th class="px-6 py-4 text-left font-semibold">
+                        <a href="{{ $sortLink('precio') }}"
+                           class="ajax-table-link inline-flex items-center gap-2 hover:text-[#5b3a1e]">
+                            Precio
+                            <span class="text-xs">{{ $sortIcon('precio') }}</span>
+                        </a>
+                    </th>
+
+                    <th class="px-6 py-4 text-right font-semibold">
+                        Acciones
+                    </th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @forelse ($productos as $producto)
+                    <tr class="theme-row border-b border-gray-100 theme-border hover:bg-[#faf7f2] transition">
+                        <td class="px-6 py-4">
+                            <a href="{{ route('catalogos.productos.show', array_merge(['producto' => $producto->id], request()->query())) }}"
+                               class="theme-title font-semibold text-[#3b2818] hover:text-[#5b3a1e] hover:underline transition">
+                                {{ $producto->nombre ?? 'Sin nombre' }}
+                            </a>
+
+                            <p class="theme-text text-xs text-gray-500">
+                                Item: {{ $producto->item ?? 'N/A' }}
+                            </p>
+
+                            <p class="theme-text text-[11px] text-gray-400">
+                                Código: {{ $producto->codigo_producto ?? 'N/A' }}
+                            </p>
+
+                            <p class="theme-text text-[11px] text-gray-400">
+                                API ID: {{ $producto->api_id_producto }}
+                            </p>
+                        </td>
+
+                        <td class="px-6 py-4">
+                            <span class="theme-badge inline-flex items-center px-3 py-1 rounded-full bg-[#f3efe7] text-[#5b3a1e] text-xs font-semibold border border-[#e5d8c7]">
+                                {{ $producto->marca?->nombre ?? 'N/A' }}
+                            </span>
+
+                            <p class="theme-text text-[11px] text-gray-400 mt-1">
+                                {{ $producto->empresa?->nombre ?? '' }}
+                            </p>
+                        </td>
+
+                        <td class="px-6 py-4">
+                            <span class="theme-text text-gray-700">
+                                {{ $producto->vitola?->nombre ?? 'N/A' }}
+                            </span>
+                        </td>
+
+                        <td class="px-6 py-4">
+                            <span class="theme-text text-gray-700">
+                                {{ $producto->capa?->nombre ?? 'N/A' }}
+                            </span>
+                        </td>
+
+                        <td class="px-6 py-4">
+                            <span class="theme-text text-gray-700">
+                                {{ $producto->tipoEmpaque?->nombre ?? 'N/A' }}
+                            </span>
+                        </td>
+
+                        <td class="px-6 py-4">
+                            <span class="theme-title font-semibold text-[#3b2818]">
+                                {{ number_format($producto->precio ?? 0, 2) }}
+                            </span>
+                        </td>
+
+                        <td class="px-6 py-4 text-right">
+                            <a href="{{ route('catalogos.productos.show', array_merge(['producto' => $producto->id], request()->query())) }}"
+                               class="theme-button-secondary inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#f3efe7] text-[#5b3a1e] text-xs font-semibold border border-[#e5d8c7] hover:bg-[#e5d8c7] transition">
+                                Ver
+                                <span>→</span>
+                            </a>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="7" class="theme-text px-6 py-10 text-center text-gray-500">
+                            No hay productos registrados.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    <div class="theme-soft px-6 py-3 border-t border-[#e5d8c7] theme-border bg-[#fbf8f3] flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+       <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+    <p class="theme-text text-sm text-gray-500">
+        Mostrando
+        <span class="theme-title font-semibold text-[#3b2818]">{{ $productos->firstItem() ?? 0 }}</span>
+        a
+        <span class="theme-title font-semibold text-[#3b2818]">{{ $productos->lastItem() ?? 0 }}</span>
+        de
+        <span class="theme-title font-semibold text-[#3b2818]">{{ $productos->total() }}</span>
+        producto(s)
+    </p>
+
+  <form method="GET"
+      action="{{ route('catalogos.productos.index') }}"
+      class="per-page-control ajax-per-page-form">
+        @foreach(request()->except('per_page', 'page') as $key => $value)
+            @if(is_array($value))
+                @foreach($value as $item)
+                    <input type="hidden" name="{{ $key }}[]" value="{{ $item }}">
+                @endforeach
+            @else
+                <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+            @endif
+        @endforeach
+
+<label class="per-page-label">
+            Mostrar:
+        </label>
+
+       <select name="per_page"
+        onchange="this.form.requestSubmit()"
+        class="per-page-select">
+    <option value="10" @selected(request('per_page', 10) == 10)>10</option>
+    <option value="25" @selected(request('per_page') == 25)>25</option>
+    <option value="50" @selected(request('per_page') == 50)>50</option>
+    <option value="100" @selected(request('per_page') == 100)>100</option>
+    <option value="all" @selected(request('per_page') === 'all')>Todos</option>
+</select>
+    </form>
+</div>
+
+        <div class="pagination-cafe ajax-pagination">
+            {{ $productos->onEachSide(1)->links('pagination.cafe') }}
+        </div>
+    </div>
+</div>

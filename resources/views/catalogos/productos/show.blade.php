@@ -26,7 +26,7 @@
             'description' => 'Información completa del producto y actividades relacionadas.'
         ])
 
-        <section class="p-4 lg:p-6">
+        <section class="app-content-compact">
             <div class="w-full max-w-[1600px] mx-auto space-y-6">
 
                 {{-- RESUMEN PRINCIPAL --}}
@@ -44,7 +44,7 @@
                         </div>
 
                         <a href="{{ route('catalogos.productos.index', request()->query()) }}"
-                           class="px-4 py-2 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition text-center">
+                           class="gooey-action px-4 py-2 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition text-center">
                             Volver
                         </a>
                     </div>

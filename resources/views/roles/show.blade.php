@@ -24,7 +24,7 @@
             'description' => 'Detalle de permisos asignados al rol ' . $role->name,
         ])
 
-        <section class="p-4 lg:p-6">
+        <section class="app-content-compact">
             <div class="w-full max-w-[1600px] mx-auto space-y-6">
 
                 <div class="theme-card theme-shadow bg-white rounded-2xl border border-[#e5d8c7] shadow-sm p-6">
@@ -51,7 +51,7 @@
                             </span>
                         @else
                             <a href="{{ route('roles.permissions.edit', $role) }}"
-                               class="px-4 py-2 rounded-xl bg-[#5b3a1e] text-white text-sm hover:bg-[#3b2818] transition w-fit">
+                               class="gooey-action px-4 py-2 rounded-xl bg-[#5b3a1e] text-white text-sm hover:bg-[#3b2818] transition w-fit">
                                 Editar permisos
                             </a>
                         @endif

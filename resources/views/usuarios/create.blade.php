@@ -26,7 +26,7 @@
             'description' => 'Registra un usuario y asigna su rol dentro del sistema.'
         ])
 
-        <section class="p-4 lg:p-6">
+       <section class="app-content-compact">
             <div class="w-full max-w-[1600px] mx-auto">
 
                 <div class="theme-card theme-shadow bg-white rounded-2xl border border-[#e5d8c7] shadow-sm overflow-hidden">
@@ -158,7 +158,7 @@
                             </a>
 
                             <button type="submit"
-                                    class="px-5 py-2.5 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
+                                    class="gooey-action px-5 py-2.5 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
                                 Guardar usuario
                             </button>
                         </div>

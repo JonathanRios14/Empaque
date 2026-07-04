@@ -24,7 +24,7 @@
             'description' => 'Permisos del sistema agrupados por módulo.',
         ])
 
-        <section class="p-4 lg:p-6">
+      <section class="app-content-compact">
             <div class="w-full max-w-[1600px] mx-auto">
 
                 {{-- CONTADORES --}}

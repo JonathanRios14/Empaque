@@ -15,8 +15,8 @@
         });
     "
     :class="sidebarOpen ? 'w-72' : 'w-20'"
-    class="app-sidebar hidden md:block shrink-0 transition-[width] duration-300 ease-in-out overflow-hidden bg-[#3b2818] text-white">
-<div class="app-sidebar-header h-20 flex items-center border-b border-white/10"
+    class="app-sidebar hidden md:block shrink-0 transition-[width] duration-300 ease-in-out bg-[#3b2818] text-white">
+    <div class="app-sidebar-header h-20 flex items-center border-b border-white/10"
      :class="sidebarOpen ? 'justify-between px-4' : 'justify-center px-0'">
     <div x-show="sidebarOpen"
      x-transition.opacity.duration.150ms

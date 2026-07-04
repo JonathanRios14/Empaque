@@ -12,6 +12,7 @@ use App\Models\Vitola;
 use App\Models\Empresa;
 use App\Models\Presentacion;
 use App\Models\TipoEmpaque;
+use Illuminate\Support\Facades\DB;
 class CatalogoController extends Controller
 {
   public function productos(Request $request)
@@ -83,6 +84,9 @@ class CatalogoController extends Controller
     if ($request->filled('marca_id')) {
         $query->where('productos.marca_id', $request->marca_id);
     }
+    if ($request->filled('empresa_id')) {
+    $query->where('productos.empresa_id', $request->empresa_id);
+}
 
     if ($request->filled('vitola_id')) {
         $query->where('productos.vitola_id', $request->vitola_id);
@@ -122,9 +126,21 @@ class CatalogoController extends Controller
         $query->orderBy('productos.' . $orden, $direccion);
     }
 
-    $productos = $query
-        ->paginate(10)
-        ->appends($request->query());
+$perPageInput = $request->get('per_page', 10);
+
+if ($perPageInput === 'all') {
+    $perPage = max((clone $query)->count(), 1);
+} else {
+    $perPage = (int) $perPageInput;
+
+    if (! in_array($perPage, [10, 25, 50, 100])) {
+        $perPage = 10;
+    }
+}
+
+$productos = $query
+    ->paginate($perPage)
+    ->appends($request->query());
 
     $marcas = Marca::orderBy('nombre')->get();
     $vitolas = Vitola::orderBy('nombre')->get();
@@ -133,7 +149,8 @@ class CatalogoController extends Controller
     $presentaciones = Presentacion::orderBy('nombre')->get();
     $actividades = Actividad::orderBy('nombre')->get();
 
-    return view('catalogos.productos.index', compact(
+    if ($request->ajax()) {
+    return view('catalogos.productos.partials.tabla', compact(
         'productos',
         'orden',
         'direccion',
@@ -143,7 +160,20 @@ class CatalogoController extends Controller
         'tipoEmpaques',
         'presentaciones',
         'actividades'
-    ));
+    ))->render();
+}
+
+return view('catalogos.productos.index', compact(
+    'productos',
+    'orden',
+    'direccion',
+    'marcas',
+    'vitolas',
+    'capas',
+    'tipoEmpaques',
+    'presentaciones',
+    'actividades'
+));
 }
 
 public function showProducto(Producto $producto)
@@ -271,7 +301,12 @@ public function actividades(Request $request)
         $direccion = 'asc';
     }
 
-    $query = Actividad::withCount('productos');
+    $query = Actividad::query()
+        ->withCount([
+            'productos as productos_count' => function ($query) {
+                $query->select(DB::raw('COUNT(DISTINCT productos.id)'));
+            }
+        ]);
 
     if ($request->filled('buscar')) {
         $buscar = $request->buscar;

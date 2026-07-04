@@ -26,7 +26,7 @@
             'description' => 'Gestión de usuarios del sistema'
         ])
 
-        <section class="p-4 lg:p-6">
+       <section class="app-content-compact">
 
             <div class="theme-card theme-shadow w-full max-w-[1600px] mx-auto bg-white rounded-2xl border border-[#e5d8c7] shadow-sm overflow-hidden">
 
@@ -61,14 +61,14 @@
                                 </div>
 
                                 <button type="submit"
-                                        class="px-4 py-2 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
+                                        class="gooey-action px-4 py-2 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
                                     Buscar
                                 </button>
                             </form>
 
                             @can('usuarios.crear')
                                 <a href="{{ route('usuarios.create') }}"
-                                   class="px-4 py-2 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition text-center">
+                                   class="gooey-action px-4 py-2 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition text-center">
                                     Nuevo usuario
                                 </a>
                             @endcan

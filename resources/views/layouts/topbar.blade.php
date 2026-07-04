@@ -10,23 +10,25 @@
     </div>
 
     <div class="flex items-center gap-3">
-        <button type="button"
-                id="themeToggle"
-                class="app-theme-button w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition"
-                title="Cambiar tema">
+        <label class="theme-switch" title="Cambiar tema">
+            <input id="themeToggle" class="theme-switch__input" type="checkbox" role="switch" aria-label="Dark Mode">
 
-            <svg id="themeIconMoon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
-                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-            </svg>
+            <span class="theme-switch__icon" aria-hidden="true">
+                <span class="theme-switch__icon-part theme-switch__icon-part--1"></span>
+                <span class="theme-switch__icon-part theme-switch__icon-part--2"></span>
+                <span class="theme-switch__icon-part theme-switch__icon-part--3"></span>
+                <span class="theme-switch__icon-part theme-switch__icon-part--4"></span>
+                <span class="theme-switch__icon-part theme-switch__icon-part--5"></span>
+                <span class="theme-switch__icon-part theme-switch__icon-part--6"></span>
+                <span class="theme-switch__icon-part theme-switch__icon-part--7"></span>
+                <span class="theme-switch__icon-part theme-switch__icon-part--8"></span>
+                <span class="theme-switch__icon-part theme-switch__icon-part--9"></span>
+                <span class="theme-switch__icon-part theme-switch__icon-part--10"></span>
+                <span class="theme-switch__icon-part theme-switch__icon-part--11"></span>
+            </span>
 
-            <svg id="themeIconSun" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 hidden" fill="none"
-                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M12 3v1m0 16v1m8.66-12.66-.7.7M4.04 19.96l-.7.7M21 12h-1M4 12H3m16.96 7.96-.7-.7M4.04 4.04l-.7-.7M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />
-            </svg>
-        </button>
+            <span class="theme-switch__sr">Dark Mode</span>
+        </label>
 
         <div x-data="{ profileOpen: false }" class="relative">
 
@@ -104,3 +106,15 @@
         </div>
     </div>
 </header>
+
+<svg class="absolute w-0 h-0 overflow-hidden" aria-hidden="true" focusable="false">
+    <filter id="gooey-action-filter" x="-50%" y="-50%" width="200%" height="200%">
+        <feComponentTransfer>
+            <feFuncA type="discrete" tableValues="0 1"></feFuncA>
+        </feComponentTransfer>
+        <feGaussianBlur stdDeviation="5"></feGaussianBlur>
+        <feComponentTransfer>
+            <feFuncA type="table" tableValues="-5 11"></feFuncA>
+        </feComponentTransfer>
+    </filter>
+</svg>

@@ -89,7 +89,7 @@
             'description' => 'Panel general del sistema de empaque.'
         ])
 
-        <section class="p-4 lg:p-6">
+       <section class="app-content-compact">
             <div class="w-full max-w-[1600px] mx-auto space-y-6">
 
                 {{-- HERO --}}
@@ -122,13 +122,13 @@
 
                         <div class="flex flex-wrap gap-3">
                             <a href="{{ route('catalogos.productos.index') }}"
-                               class="px-5 py-3 rounded-2xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
+                               class="gooey-action px-5 py-3 rounded-2xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
                                 Ver catálogo
                             </a>
 
                             @can('usuarios.ver')
                                 <a href="{{ route('usuarios.index') }}"
-                                   class="theme-button-secondary px-5 py-3 rounded-2xl bg-white text-[#0b1220] text-sm font-semibold border theme-border hover:bg-[#f1f5f9] transition">
+                                   class="gooey-action theme-button-secondary px-5 py-3 rounded-2xl bg-white text-[#0b1220] text-sm font-semibold border theme-border hover:bg-[#f1f5f9] transition">
                                     Ver usuarios
                                 </a>
                             @endcan
@@ -256,7 +256,7 @@
                             </div>
 
                             <a href="{{ route('catalogos.marcas.index') }}"
-                               class="px-4 py-2 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
+                               class="gooey-action px-4 py-2 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
                                 Ver marcas
                             </a>
                         </div>
