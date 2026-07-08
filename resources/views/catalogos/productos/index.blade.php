@@ -131,14 +131,25 @@
                                 {{-- INFO --}}
                                 <div class="min-w-0">
                                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-                                        <div>
-                                            <h2 class="theme-title text-2xl font-extrabold text-[#0b1220] leading-tight">
-                                                Listado de productos
-                                            </h2>
+                                        <div class="flex items-start gap-3">
+                                            <div class="section-title-icon w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
+                                                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.5 5.5 11 18 11.8c1.5.1 2.7 1.4 2.7 2.9 0 1.6-1.3 2.9-2.9 2.9H5.5L3 15.1v-1.6Z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 11.1v6.5M9.7 11.2v6.4" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.2 11.9c.5.7.5 1.9 0 2.7-.6.8-1.7 1.1-2.6.7" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14 7.5c.8-.8.8-1.8 0-2.7M17 7.5c1.1-1.1 1.1-2.5 0-3.6" />
+                                                </svg>
+                                            </div>
 
-                                            <p class="theme-text text-sm text-gray-500 mt-1">
-                                                Productos sincronizados desde la API.
-                                            </p>
+                                            <div>
+                                                <h2 class="theme-title text-2xl font-extrabold text-[#0b1220] leading-tight">
+                                                    Listado de productos
+                                                </h2>
+
+                                                <p class="theme-text text-sm text-gray-500 mt-1">
+                                                    Productos sincronizados desde la API.
+                                                </p>
+                                            </div>
                                         </div>
 
                                         <span class="theme-badge w-fit px-3 py-1 rounded-full text-xs font-semibold border border-[#dbe3f0] bg-white theme-border theme-title">
@@ -261,58 +272,57 @@
                              x-transition:leave-start="opacity-100 translate-y-0 scale-100"
                              x-transition:leave-end="opacity-0 -translate-y-2 scale-[0.98]"
                              style="display: none;"
-                             class="px-5 lg:px-6 pb-5 lg:pb-6">
+                             class="px-5 lg:px-6 pb-4">
 
-                            <div class="filters-panel rounded-3xl border theme-border p-5">
-                          <form method="GET"
-      action="{{ route('catalogos.productos.index') }}"
-      class="space-y-4 ajax-filter-form">
+                            <div class="filters-panel rounded-2xl border theme-border p-3 lg:p-4">
+                                <form method="GET"
+                                      action="{{ route('catalogos.productos.index') }}"
+                                      class="ajax-filter-form">
 
-                                    {{-- BUSCADOR --}}
-                                    <div>
-                                        <label class="theme-title block text-xs font-bold mb-2 uppercase tracking-wide text-gray-500">
-                                            Buscar
-                                        </label>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8 gap-2 items-end">
+                                        {{-- BUSCADOR --}}
+                                        <div class="sm:col-span-2 xl:col-span-2 2xl:col-span-2">
+                                            <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
+                                                Buscar
+                                            </label>
 
-                                        <div class="relative">
-                                            <input type="text"
-                                                   name="buscar"
-                                                   value="{{ request('buscar') }}"
-                                                   placeholder="Producto, marca, vitola, código o actividad"
-                                                   class="theme-input w-full h-12 rounded-2xl border border-gray-300 text-sm pl-12 pr-10 focus:border-[#0f172a] focus:ring-[#0f172a]">
+                                            <div class="relative">
+                                                <input type="text"
+                                                       name="buscar"
+                                                       value="{{ request('buscar') }}"
+                                                       placeholder="Producto, marca, vitola, código o actividad"
+                                                       class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm pl-10 pr-9 focus:border-[#0f172a] focus:ring-[#0f172a]">
 
-                                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                     class="w-5 h-5"
-                                                     fill="none"
-                                                     viewBox="0 0 24 24"
-                                                     stroke="currentColor"
-                                                     stroke-width="2">
-                                                    <path stroke-linecap="round"
-                                                          stroke-linejoin="round"
-                                                          d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z" />
-                                                </svg>
-                                            </span>
+                                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                         class="w-4 h-4"
+                                                         fill="none"
+                                                         viewBox="0 0 24 24"
+                                                         stroke="currentColor"
+                                                         stroke-width="2">
+                                                        <path stroke-linecap="round"
+                                                              stroke-linejoin="round"
+                                                              d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z" />
+                                                    </svg>
+                                                </span>
 
-                                            @if(request('buscar'))
-                                             <a href="{{ route('catalogos.productos.index', request()->except('buscar', 'page')) }}"
-   class="ajax-filter-link absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition"
-   title="Quitar búsqueda">
-    ×
-</a>
-                                            @endif
+                                                @if(request('buscar'))
+                                                    <a href="{{ route('catalogos.productos.index', request()->except('buscar', 'page')) }}"
+                                                       class="ajax-filter-link absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition"
+                                                       title="Quitar búsqueda">
+                                                        ×
+                                                    </a>
+                                                @endif
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    {{-- SELECTS --}}
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4">
-
+                                        {{-- SELECTS --}}
                                         <div>
-                                            <label class="theme-title block text-xs font-bold mb-2 uppercase tracking-wide text-gray-500">
+                                            <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
                                                 Marca
                                             </label>
                                             <select name="marca_id"
-                                                    class="theme-input w-full h-12 rounded-2xl border border-gray-300 text-sm focus:border-[#0f172a] focus:ring-[#0f172a]">
+                                                    class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm focus:border-[#0f172a] focus:ring-[#0f172a]">
                                                 <option value="">Todas</option>
                                                 @foreach ($marcas as $marca)
                                                     <option value="{{ $marca->id }}" @selected(request('marca_id') == $marca->id)>
@@ -323,11 +333,11 @@
                                         </div>
 
                                         <div>
-                                            <label class="theme-title block text-xs font-bold mb-2 uppercase tracking-wide text-gray-500">
+                                            <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
                                                 Actividad
                                             </label>
                                             <select name="actividad_id"
-                                                    class="theme-input w-full h-12 rounded-2xl border border-gray-300 text-sm focus:border-[#0f172a] focus:ring-[#0f172a]">
+                                                    class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm focus:border-[#0f172a] focus:ring-[#0f172a]">
                                                 <option value="">Todas</option>
                                                 @foreach ($actividades as $actividad)
                                                     <option value="{{ $actividad->id }}" @selected(request('actividad_id') == $actividad->id)>
@@ -338,11 +348,11 @@
                                         </div>
 
                                         <div>
-                                            <label class="theme-title block text-xs font-bold mb-2 uppercase tracking-wide text-gray-500">
+                                            <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
                                                 Vitola
                                             </label>
                                             <select name="vitola_id"
-                                                    class="theme-input w-full h-12 rounded-2xl border border-gray-300 text-sm focus:border-[#0f172a] focus:ring-[#0f172a]">
+                                                    class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm focus:border-[#0f172a] focus:ring-[#0f172a]">
                                                 <option value="">Todas</option>
                                                 @foreach ($vitolas as $vitola)
                                                     <option value="{{ $vitola->id }}" @selected(request('vitola_id') == $vitola->id)>
@@ -353,11 +363,11 @@
                                         </div>
 
                                         <div>
-                                            <label class="theme-title block text-xs font-bold mb-2 uppercase tracking-wide text-gray-500">
+                                            <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
                                                 Capa
                                             </label>
                                             <select name="capa_id"
-                                                    class="theme-input w-full h-12 rounded-2xl border border-gray-300 text-sm focus:border-[#0f172a] focus:ring-[#0f172a]">
+                                                    class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm focus:border-[#0f172a] focus:ring-[#0f172a]">
                                                 <option value="">Todas</option>
                                                 @foreach ($capas as $capa)
                                                     <option value="{{ $capa->id }}" @selected(request('capa_id') == $capa->id)>
@@ -368,11 +378,11 @@
                                         </div>
 
                                         <div>
-                                            <label class="theme-title block text-xs font-bold mb-2 uppercase tracking-wide text-gray-500">
+                                            <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
                                                 Tipo empaque
                                             </label>
                                             <select name="tipo_empaque_id"
-                                                    class="theme-input w-full h-12 rounded-2xl border border-gray-300 text-sm focus:border-[#0f172a] focus:ring-[#0f172a]">
+                                                    class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm focus:border-[#0f172a] focus:ring-[#0f172a]">
                                                 <option value="">Todos</option>
                                                 @foreach ($tipoEmpaques as $tipoEmpaque)
                                                     <option value="{{ $tipoEmpaque->id }}" @selected(request('tipo_empaque_id') == $tipoEmpaque->id)>
@@ -383,11 +393,11 @@
                                         </div>
 
                                         <div>
-                                            <label class="theme-title block text-xs font-bold mb-2 uppercase tracking-wide text-gray-500">
+                                            <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
                                                 Presentación
                                             </label>
                                             <select name="presentacion_id"
-                                                    class="theme-input w-full h-12 rounded-2xl border border-gray-300 text-sm focus:border-[#0f172a] focus:ring-[#0f172a]">
+                                                    class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm focus:border-[#0f172a] focus:ring-[#0f172a]">
                                                 <option value="">Todas</option>
                                                 @foreach ($presentaciones as $presentacion)
                                                     <option value="{{ $presentacion->id }}" @selected(request('presentacion_id') == $presentacion->id)>
@@ -396,13 +406,29 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                    </div>
 
-                                    {{-- ACCIONES --}}
-                                    <div class="flex flex-col sm:flex-row justify-end gap-3 pt-1">
-                                        @if($hayFiltros)
-                                            <a href="{{ route('catalogos.productos.index') }}"
-   class="ajax-filter-link filter-clear-btn inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl border border-[#d9e1ec] bg-white text-[#0f172a] text-sm font-semibold hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition">                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                        {{-- ACCIONES --}}
+                                        <div class="sm:col-span-2 xl:col-span-4 2xl:col-span-2 flex flex-col sm:flex-row justify-end gap-2">
+                                            @if($hayFiltros)
+                                                <a href="{{ route('catalogos.productos.index') }}"
+                                                   class="ajax-filter-link filter-clear-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#d9e1ec] bg-white text-[#0f172a] text-sm font-semibold hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition">
+                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                         class="w-4 h-4"
+                                                         fill="none"
+                                                         viewBox="0 0 24 24"
+                                                         stroke="currentColor"
+                                                         stroke-width="2">
+                                                        <path stroke-linecap="round"
+                                                              stroke-linejoin="round"
+                                                              d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                    Quitar filtros
+                                                </a>
+                                            @endif
+
+                                            <button type="submit"
+                                                    class="gooey-action filter-submit-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0f172a] text-white text-sm font-semibold hover:bg-[#1e293b] transition shadow-sm">
+                                                <svg xmlns="http://www.w3.org/2000/svg"
                                                      class="w-4 h-4"
                                                      fill="none"
                                                      viewBox="0 0 24 24"
@@ -410,26 +436,11 @@
                                                      stroke-width="2">
                                                     <path stroke-linecap="round"
                                                           stroke-linejoin="round"
-                                                          d="M6 18L18 6M6 6l12 12" />
+                                                          d="M3 4a1 1 0 0 1 1-1h16a1 1 0 0 1 .8 1.6L14 13.5V19a1 1 0 0 1-1.447.894l-2-1A1 1 0 0 1 10 18v-4.5L3.2 4.6A1 1 0 0 1 3 4z" />
                                                 </svg>
-                                                Quitar filtros
-                                            </a>
-                                        @endif
-
-                                        <button type="submit"
-                                                class="gooey-action filter-submit-btn inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-[#0f172a] text-white text-sm font-semibold hover:bg-[#1e293b] transition shadow-sm">
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 class="w-4 h-4"
-                                                 fill="none"
-                                                 viewBox="0 0 24 24"
-                                                 stroke="currentColor"
-                                                 stroke-width="2">
-                                                <path stroke-linecap="round"
-                                                      stroke-linejoin="round"
-                                                      d="M3 4a1 1 0 0 1 1-1h16a1 1 0 0 1 .8 1.6L14 13.5V19a1 1 0 0 1-1.447.894l-2-1A1 1 0 0 1 10 18v-4.5L3.2 4.6A1 1 0 0 1 3 4z" />
-                                            </svg>
-                                            Aplicar filtros
-                                        </button>
+                                                Aplicar filtros
+                                            </button>
+                                        </div>
                                     </div>
                                 </form>
                             </div>

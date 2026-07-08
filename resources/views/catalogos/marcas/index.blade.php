@@ -28,7 +28,7 @@
        <section class="app-content-compact">
             <div class="w-full max-w-[1600px] mx-auto">
 
-                <div class="theme-card theme-shadow bg-white rounded-2xl border border-[#e5d8c7] shadow-sm overflow-hidden">
+                <div class="theme-card theme-shadow bg-white rounded-2xl border border-[#e5d8c7] shadow-sm overflow-visible">
 
                     <div class="p-6 border-b border-[#e5d8c7] theme-border">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -42,7 +42,7 @@
                                 </p>
                             </div>
 
-                            <form method="GET" action="{{ route('catalogos.marcas.index') }}" class="flex gap-2">
+                            <form method="GET" action="{{ route('catalogos.marcas.index') }}" class="catalogo-ajax-filter-form flex gap-2">
                                 <div class="relative">
                                     <input type="text"
                                            name="buscar"
@@ -50,13 +50,11 @@
                                            placeholder="Buscar marca o empresa"
                                            class="theme-input w-72 rounded-xl border-gray-300 text-sm pr-10 focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
 
-                                    @if(request('buscar'))
-                                        <a href="{{ route('catalogos.marcas.index') }}"
-                                           class="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-gray-400 hover:text-[#5b3a1e] hover:bg-[#f3efe7] transition"
-                                           title="Limpiar búsqueda">
-                                            ×
-                                        </a>
-                                    @endif
+                                    <a href="{{ route('catalogos.marcas.index') }}"
+                                       class="catalogo-ajax-clear {{ request('buscar') ? '' : 'hidden' }} absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-gray-400 hover:text-[#5b3a1e] hover:bg-[#f3efe7] transition"
+                                       title="Limpiar búsqueda">
+                                        ×
+                                    </a>
                                 </div>
 
                                 <button type="submit"
@@ -67,6 +65,7 @@
                         </div>
                     </div>
 
+                    <div id="catalogoTableContainer">
                     @php
                         $sortLink = function ($campo) {
                             $ordenActual = request('orden', 'nombre');
@@ -93,9 +92,9 @@
                         };
                     @endphp
 
-                    <div class="overflow-x-auto">
+                    <div class="productos-table-scroll catalogo-table-scroll">
                         <table class="w-full text-sm">
-                            <thead class="theme-table-head bg-[#f3efe7] text-[#3b2818]">
+                            <thead class="theme-table-head productos-sticky-head bg-[#eff6ff] text-[#0f172a]">
                                 <tr>
                                     <th class="px-6 py-4 text-left font-semibold">
                                         <a href="{{ $sortLink('id') }}" class="inline-flex items-center gap-2 hover:text-[#5b3a1e]">
@@ -188,6 +187,8 @@
                         <div>
                             {{ $marcas->onEachSide(1)->links('pagination.cafe') }}
                         </div>
+                    </div>
+
                     </div>
 
                 </div>

@@ -13,14 +13,15 @@
         $watch('sidebarOpen', value => {
             localStorage.setItem('sidebarOpen', value);
         });
+
+        requestAnimationFrame(() => {
+            document.documentElement.classList.remove('sidebar-preload', 'sidebar-preload-collapsed', 'sidebar-preload-expanded');
+        });
     "
-    :class="sidebarOpen ? 'w-72' : 'w-20'"
-    class="app-sidebar hidden md:block shrink-0 transition-[width] duration-300 ease-in-out bg-[#3b2818] text-white">
-    <div class="app-sidebar-header h-20 flex items-center border-b border-white/10"
-     :class="sidebarOpen ? 'justify-between px-4' : 'justify-center px-0'">
-    <div x-show="sidebarOpen"
-     x-transition.opacity.duration.150ms
-     class="flex items-center gap-3">
+    :class="sidebarOpen ? 'w-72 sidebar-expanded' : 'w-20 sidebar-collapsed'"
+    class="app-sidebar hidden md:block shrink-0 bg-[#3b2818] text-white">
+    <div class="app-sidebar-header h-20 flex items-center border-b border-white/10">
+        <div class="sidebar-brand flex items-center gap-3">
             <div class="w-12 h-12  flex items-center justify-center shadow-sm">
                 <img src="{{ asset('img/plasencia-logo.png') }}"
                      class="h-12 w-auto object-contain"
@@ -32,22 +33,23 @@
                 <p class="text-sm text-white/60 leading-tight">Empaque</p>
             </div>
         </div>
-<button @click="sidebarOpen = !sidebarOpen; localStorage.setItem('sidebarOpen', sidebarOpen)"
-        class="app-sidebar-toggle w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white transition duration-200"
-        :class="sidebarOpen ? '' : 'translate-x-[4px]'">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none"
-                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+        <button @click="sidebarOpen = !sidebarOpen; localStorage.setItem('sidebarOpen', sidebarOpen)"
+                class="app-sidebar-toggle sidebar-menu-toggle w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white transition duration-200"
+                :class="sidebarOpen ? 'is-open' : 'is-closed'"
+                aria-label="Alternar menú">
+            <span class="sidebar-menu-toggle__line"></span>
+            <span class="sidebar-menu-toggle__line"></span>
+            <span class="sidebar-menu-toggle__line"></span>
         </button>
     </div>
 
-    <nav class="py-5 pl-4 pr-0 space-y-2">
+    <nav class="py-5 pl-4 pr-0">
+        <div class="sidebar-hover-highlight" aria-hidden="true"></div>
 
         {{-- Dashboard --}}
         <a href="{{ route('dashboard') }}"
-           class="w-full flex items-center gap-3 px-4 py-3 rounded-l-2xl transition
+           data-sidebar-tooltip="Dashboard"
+           class="sidebar-nav-item w-full flex items-center gap-3 px-4 py-3 rounded-l-2xl transition
            {{ request()->routeIs('dashboard') && !request('tab') ? 'sidebar-active' : 'sidebar-link' }}">
 
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 min-w-5" fill="none"
@@ -56,13 +58,14 @@
                       d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
             </svg>
 
-            <span x-show="sidebarOpen" x-transition.opacity.duration.150ms>Dashboard</span>
+             <span class="sidebar-label">Dashboard</span>
         </a>
 
         {{-- Usuarios --}}
         @can('usuarios.ver')
             <a href="{{ route('usuarios.index') }}"
-               class="w-full flex items-center gap-3 px-4 py-3 rounded-l-2xl transition
+               data-sidebar-tooltip="Usuarios"
+               class="sidebar-nav-item w-full flex items-center gap-3 px-4 py-3 rounded-l-2xl transition
                {{ request()->routeIs('usuarios.*') ? 'sidebar-active' : 'sidebar-link' }}">
 
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 min-w-5" fill="none"
@@ -71,14 +74,15 @@
                           d="M17 20h5v-2a4 4 0 0 0-4-4h-1M9 20H4v-2a4 4 0 0 1 4-4h1m8-5a4 4 0 1 0-8 0 4 4 0 0 0 8 0zm-8 0a4 4 0 1 0-8 0 4 4 0 0 0 8 0z" />
                 </svg>
 
-                <span x-show="sidebarOpen" x-transition.opacity.duration.150ms>Usuarios</span>
+                 <span class="sidebar-label">Usuarios</span>
             </a>
         @endcan
 
         {{-- Roles --}}
         @can('roles.ver')
             <a href="{{ route('roles.index') }}"
-               class="w-full flex items-center gap-3 px-4 py-3 rounded-l-2xl transition
+               data-sidebar-tooltip="Roles"
+               class="sidebar-nav-item w-full flex items-center gap-3 px-4 py-3 rounded-l-2xl transition
                {{ request()->routeIs('roles.*') ? 'sidebar-active' : 'sidebar-link' }}">
 
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 min-w-5" fill="none"
@@ -89,14 +93,15 @@
                           d="M6 21v-2a6 6 0 0 1 12 0v2M19 8l1.5 1.5L23 7" />
                 </svg>
 
-                <span x-show="sidebarOpen" x-transition.opacity.duration.150ms>Roles</span>
+                 <span class="sidebar-label">Roles</span>
             </a>
         @endcan
 
         {{-- Permisos --}}
         @can('roles.ver')
             <a href="{{ route('permisos.index') }}"
-               class="w-full flex items-center gap-3 px-4 py-3 rounded-l-2xl transition
+               data-sidebar-tooltip="Permisos"
+               class="sidebar-nav-item w-full flex items-center gap-3 px-4 py-3 rounded-l-2xl transition
                {{ request()->routeIs('permisos.*') ? 'sidebar-active' : 'sidebar-link' }}">
 
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 min-w-5" fill="none"
@@ -107,13 +112,14 @@
                           d="M9 12l2 2 4-4" />
                 </svg>
 
-                <span x-show="sidebarOpen" x-transition.opacity.duration.150ms>Permisos</span>
+                 <span class="sidebar-label">Permisos</span>
             </a>
         @endcan
 
         {{-- Catálogos --}}
         @can('catalogos.ver')
    <button type="button"
+        data-sidebar-tooltip="Catálogos"
         @click="
             if (!sidebarOpen) {
                 sidebarOpen = true;
@@ -122,7 +128,7 @@
                 catalogos = !catalogos;
             }
         "
-        class="w-full flex items-center justify-between px-4 py-3 rounded-l-2xl transition
+        class="sidebar-nav-item w-full flex items-center justify-between px-4 py-3 rounded-l-2xl transition
         {{ $catalogosActivo ? 'sidebar-active' : 'sidebar-link' }}">
 
                 <div class="flex items-center gap-3">
@@ -134,12 +140,11 @@
                               d="M8 6v12" />
                     </svg>
 
-                    <span x-show="sidebarOpen" x-transition.opacity.duration.150ms>Catálogos</span>
+                     <span class="sidebar-label">Catálogos</span>
                 </div>
 
-                <svg x-show="sidebarOpen"
-                     :class="catalogos ? 'rotate-180' : ''"
-                     class="w-4 h-4 transition-transform"
+                <svg :class="catalogos ? 'rotate-180' : ''"
+                     class="sidebar-disclosure-icon w-4 h-4 transition-transform"
                      xmlns="http://www.w3.org/2000/svg" fill="none"
                      viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -147,10 +152,8 @@
                 </svg>
             </button>
 
-            <div x-show="catalogos && sidebarOpen"
-     x-transition.opacity.duration.200ms
-     class="ml-8 mr-4 mt-2 space-y-1 text-sm"
-     style="display: none;">
+            <div :class="catalogos && sidebarOpen ? 'max-h-[26rem] opacity-100 mt-2' : 'max-h-0 opacity-0 mt-0 pointer-events-none'"
+                 class="sidebar-submenu ml-8 mr-4 space-y-1 text-sm overflow-hidden max-h-0 opacity-0">
 
                 @can('productos.ver')
                     <a href="{{ route('catalogos.productos.index') }}"
@@ -203,11 +206,42 @@
                 </a>
             </div>
         @endcan
+        {{-- Empleados --}}
+        <a href="{{ route('empleados.index') }}"
+           data-sidebar-tooltip="Empleados"
+           class="sidebar-nav-item w-full flex items-center gap-3 px-4 py-3 rounded-l-2xl transition
+           {{ request()->routeIs('empleados.*') ? 'sidebar-active' : 'sidebar-link' }}">
+
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 min-w-5" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M17 20h5v-2a4 4 0 0 0-4-4h-1M9 20H4v-2a4 4 0 0 1 4-4h1m6-5a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm6 1a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+            </svg>
+
+            <span class="sidebar-label">Empleados</span>
+        </a>
+
+        {{-- Viñetas --}}
+        <a href="{{ route('vinetas.index') }}"
+           data-sidebar-tooltip="Viñetas"
+           class="sidebar-nav-item w-full flex items-center gap-3 px-4 py-3 rounded-l-2xl transition
+           {{ request()->routeIs('vinetas.*') ? 'sidebar-active' : 'sidebar-link' }}">
+
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 min-w-5" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M4 4h6v6H4V4Zm10 0h6v6h-6V4ZM4 14h6v6H4v-6Zm10 0h2m4 0h-2m-4 4h6" />
+            </svg>
+
+            <span class="sidebar-label">Viñetas</span>
+        </a>
 
         {{-- Mi perfil --}}
         <a href="{{ route('profile.edit') }}"
-           class="w-full flex items-center gap-3 px-4 py-3 rounded-l-2xl transition
-           {{ request()->routeIs('profile.edit') ? 'sidebar-active' : 'sidebar-link' }}">
+           data-sidebar-tooltip="Mi perfil"
+           class="sidebar-nav-item sidebar-profile-link w-full flex items-center gap-3 px-4 py-3 rounded-l-2xl transition
+           {{ request()->routeIs('profile.*') ? 'sidebar-active' : 'sidebar-link' }}">
 
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 min-w-5" fill="none"
                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -217,8 +251,12 @@
                       d="M4 21a8 8 0 0 1 16 0" />
             </svg>
 
-            <span x-show="sidebarOpen" x-transition.opacity.duration.150ms>Mi perfil</span>
+            <span class="sidebar-label">Mi perfil</span>
         </a>
 
     </nav>
 </aside>
+
+<div aria-hidden="true"
+     :class="sidebarOpen ? 'w-72' : 'w-20'"
+     class="app-sidebar-spacer hidden md:block shrink-0"></div>

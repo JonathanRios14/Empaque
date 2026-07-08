@@ -7,6 +7,8 @@ use App\Http\Controllers\PermissionController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CatalogoController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmpleadoController;
+use App\Http\Controllers\VinetaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -148,6 +150,20 @@ Route::get('/catalogos/tipos-empaque', [CatalogoController::class, 'tipoEmpaques
     ->name('catalogos.tipo-empaques.index');
 });
 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/empleados', [EmpleadoController::class, 'index'])
+        ->name('empleados.index');
+
+    Route::post('/empleados/sincronizar', [EmpleadoController::class, 'sincronizar'])
+        ->name('empleados.sincronizar');
+
+    Route::get('/vinetas', [VinetaController::class, 'index'])
+        ->name('vinetas.index');
+
+    Route::post('/vinetas/sincronizar', [VinetaController::class, 'sincronizar'])
+        ->name('vinetas.sincronizar');
+});
+
 Route::fallback(function () {
     if (auth()->check()) {
         return response()->view('errors.404', [
@@ -159,6 +175,8 @@ Route::fallback(function () {
         'forceLayout' => false,
     ], 404);
 });
+
+
 
 
 require __DIR__.'/auth.php';

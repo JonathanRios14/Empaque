@@ -32,14 +32,22 @@
 
                 <div class="p-6 border-b border-[#e5d8c7] theme-border">
                     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                        <div>
-                            <h2 class="theme-title text-lg font-bold text-[#3b2818]">
-                                Listado de usuarios
-                            </h2>
+                        <div class="flex items-start gap-3">
+                            <div class="section-title-icon w-9 h-9 rounded-xl flex items-center justify-center shrink-0">
+                                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 0 0-4-4h-1M9 20H4v-2a4 4 0 0 1 4-4h1m8-5a4 4 0 1 0-8 0 4 4 0 0 0 8 0zm-8 0a4 4 0 1 0-8 0 4 4 0 0 0 8 0z" />
+                                </svg>
+                            </div>
 
-                            <p class="theme-text text-sm text-gray-500">
-                                Aquí puedes ver los usuarios registrados.
-                            </p>
+                            <div>
+                                <h2 class="theme-title text-lg font-bold text-[#3b2818]">
+                                    Listado de usuarios
+                                </h2>
+
+                                <p class="theme-text text-sm text-gray-500">
+                                    Aquí puedes ver los usuarios registrados.
+                                </p>
+                            </div>
                         </div>
 
                         <div class="flex flex-col sm:flex-row gap-3">
@@ -185,13 +193,13 @@
 
                                     <td class="px-6 py-4">
                                         @if ($usuario->is_active)
-                                            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-50 text-green-700 text-xs font-semibold border border-green-200">
-                                                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                                            <span class="estado-badge is-active inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border">
+                                                <span class="estado-badge-dot"></span>
                                                 Activo
                                             </span>
                                         @else
-                                            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 text-red-700 text-xs font-semibold border border-red-200">
-                                                <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                                            <span class="estado-badge is-inactive inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border">
+                                                <span class="estado-badge-dot"></span>
                                                 Inactivo
                                             </span>
                                         @endif

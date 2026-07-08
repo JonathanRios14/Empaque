@@ -32,14 +32,23 @@
                 <div class="theme-card theme-shadow bg-white rounded-2xl border border-[#e5d8c7] shadow-sm overflow-hidden">
 
                     <div class="p-6 border-b border-[#e5d8c7] theme-border flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                        <div>
-                            <h2 class="theme-title text-lg font-bold text-[#3b2818]">
-                                Listado de roles
-                            </h2>
+                        <div class="flex items-start gap-3">
+                            <div class="section-title-icon w-9 h-9 rounded-xl flex items-center justify-center shrink-0">
+                                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 21v-2a6 6 0 0 1 12 0v2M19 8l1.5 1.5L23 7" />
+                                </svg>
+                            </div>
 
-                            <p class="theme-text text-sm text-gray-500">
-                                Roles ordenados del que tiene más permisos al que tiene menos.
-                            </p>
+                            <div>
+                                <h2 class="theme-title text-lg font-bold text-[#3b2818]">
+                                    Listado de roles
+                                </h2>
+
+                                <p class="theme-text text-sm text-gray-500">
+                                    Roles ordenados del que tiene más permisos al que tiene menos.
+                                </p>
+                            </div>
                         </div>
 
                         @can('roles.crear')
