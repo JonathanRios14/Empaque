@@ -147,23 +147,23 @@
                     </div>
 
                     <div class="px-6 pb-6 flex flex-wrap gap-2">
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold border {{ $producto->anillo ? 'bg-green-50 text-green-700 border-green-200' : 'theme-button-secondary bg-gray-100 text-gray-500 border-gray-200' }}">
+                        <span class="product-flag-badge {{ $producto->anillo ? 'is-yes' : 'is-no' }} px-3 py-1 rounded-full text-xs font-semibold border">
                             Anillo: {{ $producto->anillo ? 'Sí' : 'No' }}
                         </span>
 
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold border {{ $producto->cello ? 'bg-green-50 text-green-700 border-green-200' : 'theme-button-secondary bg-gray-100 text-gray-500 border-gray-200' }}">
+                        <span class="product-flag-badge {{ $producto->cello ? 'is-yes' : 'is-no' }} px-3 py-1 rounded-full text-xs font-semibold border">
                             Cello: {{ $producto->cello ? 'Sí' : 'No' }}
                         </span>
 
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold border {{ $producto->upc ? 'bg-green-50 text-green-700 border-green-200' : 'theme-button-secondary bg-gray-100 text-gray-500 border-gray-200' }}">
+                        <span class="product-flag-badge {{ $producto->upc ? 'is-yes' : 'is-no' }} px-3 py-1 rounded-full text-xs font-semibold border">
                             UPC: {{ $producto->upc ? 'Sí' : 'No' }}
                         </span>
 
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold border {{ $producto->sampler ? 'bg-green-50 text-green-700 border-green-200' : 'theme-button-secondary bg-gray-100 text-gray-500 border-gray-200' }}">
+                        <span class="product-flag-badge {{ $producto->sampler ? 'is-yes' : 'is-no' }} px-3 py-1 rounded-full text-xs font-semibold border">
                             Sampler: {{ $producto->sampler ? 'Sí' : 'No' }}
                         </span>
 
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold border {{ $producto->caja_local ? 'bg-green-50 text-green-700 border-green-200' : 'theme-button-secondary bg-gray-100 text-gray-500 border-gray-200' }}">
+                        <span class="product-flag-badge {{ $producto->caja_local ? 'is-yes' : 'is-no' }} px-3 py-1 rounded-full text-xs font-semibold border">
                             Caja local: {{ $producto->caja_local ? 'Sí' : 'No' }}
                         </span>
                     </div>

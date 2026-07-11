@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | Sistema de Empaque</title>
-
+<link rel="stylesheet" href="{{ asset('build/assets/app.css') }}">
     {{-- Cargar tema antes del CSS para evitar parpadeo --}}
     <script>
         (function () {
@@ -16,7 +16,7 @@
         })();
     </script>
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <!-- @vite(['resources/css/app.css', 'resources/js/app.js']) -->
 
     <style>
         /* ================================

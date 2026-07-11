@@ -43,6 +43,7 @@ class VinetaApiService
 
         $procesados = 0;
         $omitidos = 0;
+        $vinetas=[];
 
         foreach ($data as $item) {
             if (! is_array($item) || empty($item['id'])) {
@@ -50,28 +51,7 @@ class VinetaApiService
                 continue;
             }
 
-            DB::transaction(function () use ($item) {
-                $this->guardarVineta($item);
-            });
-
-            $procesados++;
-        }
-
-        return [
-            'ok' => true,
-            'mensaje' => 'Viñetas sincronizadas correctamente.',
-            'total' => $procesados,
-            'omitidos' => $omitidos,
-        ];
-    }
-
-    private function guardarVineta(array $item): void
-    {
-        Vineta::updateOrCreate(
-            [
-                'api_id' => (int) $item['id'],
-            ],
-            [
+           $vinetas[]= [ 'api_id' => (int) $item['id'],
                 'id_pendiente_empaque' => $this->nullableString($item['id_pendiente_empaque'] ?? null),
                 'id_detalle_programacion' => $this->nullableString($item['id_detalle_programacion'] ?? $item['id_detalle_programaciom'] ?? null),
                 'fecha' => $this->date($item['fecha'] ?? null),
@@ -90,10 +70,32 @@ class VinetaApiService
                 'vitola' => $this->nullableString($item['vitola'] ?? null),
                 'tipo_empaque' => $this->nullableString($item['tipo_empaque'] ?? null),
                 'codigo_producto' => $this->nullableString($item['codigo_producto'] ?? null),
-                'raw_payload' => $item,
-            ]
-        );
+                'raw_payload' => json_encode($item)
+            ];
+          
+            $procesados++;
+           
+
+        }
+
+    
+
+        $lotes = array_chunk($vinetas, 1000);
+            foreach ($lotes as $lote) {
+               Vineta::insertOrIgnore($lote);
+            }
+            
+
+        return [
+            'ok' => true,
+            'mensaje' =>  'Viñetas guardadas correctamente',
+            'total' => $procesados,
+            'omitidos' => $omitidos,
+        ];
     }
+
+
+    
 
     private function nullableString($value): ?string
     {

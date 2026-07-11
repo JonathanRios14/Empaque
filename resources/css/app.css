@@ -451,6 +451,10 @@ html.dark-navy .app-topbar-description {
     font-size: 16px;
 }
 
+.app-topbar .theme-switch {
+    font-size: 14px;
+}
+
 .theme-switch__input,
 .theme-switch__input::before {
     background-color: var(--theme-switch-track);
@@ -2928,39 +2932,31 @@ html.dark-navy {
     color-scheme: dark;
 }
 
-html.theme-transitioning body,
-html.theme-transitioning main,
-html.theme-transitioning .theme-card,
-html.theme-transitioning .theme-soft,
-html.theme-transitioning .app-topbar,
-html.theme-transitioning .app-topbar-title,
-html.theme-transitioning .app-topbar-description,
-html.theme-transitioning .app-sidebar,
-html.theme-transitioning .app-profile-dropdown,
-html.theme-transitioning .app-profile-header,
-html.theme-transitioning .app-profile-link,
-html.theme-transitioning .sidebar-link,
-html.theme-transitioning .sidebar-sub-link,
-html.theme-transitioning .sidebar-active,
-html.theme-transitioning .sidebar-sub-active {
-    transition:
-        background-color 0.2s ease,
-        border-color 0.2s ease,
-        box-shadow 0.2s ease,
-        color 0.2s ease,
-        fill 0.2s ease,
-        stroke 0.2s ease !important;
+html.theme-transitioning .theme-switch {
+    --theme-switch-duration: 140ms;
 }
 
-html.theme-transitioning table,
-html.theme-transitioning table *,
-html.theme-transitioning #productosFiltersContainer,
-html.theme-transitioning #productosFiltersContainer *,
-html.theme-transitioning .filters-panel,
-html.theme-transitioning .filters-panel *,
-html.theme-transitioning .pagination-cafe,
-html.theme-transitioning .pagination-cafe * {
-    transition: none !important;
+.theme-transition-cover {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    pointer-events: none;
+    background: var(--theme-cover-bg, #f8fafc);
+    opacity: .96;
+    contain: strict;
+    transform: translateZ(0);
+    will-change: opacity;
+    transition: opacity 140ms cubic-bezier(.2, 0, .2, 1);
+}
+
+.theme-transition-cover.is-leaving {
+    opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .theme-transition-cover {
+        display: none;
+    }
 }
 
 .autofill-repaint {
@@ -3375,6 +3371,30 @@ html.dark-navy .section-title-icon {
 
 .vinetas-table-row:hover {
     background: #f8fafc;
+}
+
+.product-flag-badge.is-yes {
+    background: #ecfdf5;
+    color: #047857;
+    border-color: #a7f3d0;
+}
+
+.product-flag-badge.is-no {
+    background: #f8fafc;
+    color: #475569;
+    border-color: #e2e8f0;
+}
+
+html.dark-navy .product-flag-badge.is-yes {
+    background: rgba(16, 185, 129, 0.12) !important;
+    color: #6ee7b7 !important;
+    border-color: rgba(16, 185, 129, 0.28) !important;
+}
+
+html.dark-navy .product-flag-badge.is-no {
+    background: rgba(148, 163, 184, 0.10) !important;
+    color: #cbd5e1 !important;
+    border-color: rgba(148, 163, 184, 0.22) !important;
 }
 
 .estado-badge.is-active {
