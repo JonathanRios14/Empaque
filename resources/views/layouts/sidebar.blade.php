@@ -237,6 +237,20 @@
             <span class="sidebar-label">Viñetas</span>
         </a>
 
+        <a href="{{ route('vineta-registros.index') }}"
+           data-sidebar-tooltip="Viñetas registradas"
+           class="sidebar-nav-item w-full flex items-center gap-3 px-4 py-3 rounded-l-2xl transition
+           {{ request()->routeIs('vineta-registros.*') ? 'sidebar-active' : 'sidebar-link' }}">
+
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 min-w-5" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M9 12h6m-6 4h6M7 4h10a2 2 0 0 1 2 2v14l-4-2-4 2-4-2-4 2V6a2 2 0 0 1 2-2Z" />
+            </svg>
+
+            <span class="sidebar-label">Viñetas registradas</span>
+        </a>
+
         {{-- Mi perfil --}}
         <a href="{{ route('profile.edit') }}"
            data-sidebar-tooltip="Mi perfil"

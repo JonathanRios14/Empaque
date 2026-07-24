@@ -1,7 +1,11 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ActividadController as ApiActividadController;
+use App\Http\Controllers\Api\EmpleadoController as ApiEmpleadoController;
+use App\Http\Controllers\Api\EmpleadoHoraOrdinariaController as ApiEmpleadoHoraOrdinariaController;
 use App\Http\Controllers\Api\VinetaController as ApiVinetaController;
+use App\Http\Controllers\Api\VinetaRegistroController as ApiVinetaRegistroController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,4 +26,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/vinetas/scan', [ApiVinetaController::class, 'scan']);
+    Route::get('/vinetas/seguimiento', [ApiVinetaRegistroController::class, 'seguimiento']);
+    Route::get('/vinetas/{vineta}/actividades', [ApiVinetaController::class, 'actividades']);
+    Route::post('/vinetas/{vineta}/registros', [ApiVinetaRegistroController::class, 'store']);
+    Route::get('/vineta-registros', [ApiVinetaRegistroController::class, 'index']);
+    Route::post('/vineta-registros', [ApiVinetaRegistroController::class, 'store']);
+    Route::patch('/vineta-registros/{vinetaRegistro}', [ApiVinetaRegistroController::class, 'update']);
+    Route::get('/actividades/search', [ApiActividadController::class, 'search']);
+    Route::get('/empleados/{empleado}/resumen-diario', [ApiVinetaRegistroController::class, 'resumenDiarioEmpleado']);
+    Route::get('/empleados/{empleado}/horas-ordinarias', [ApiEmpleadoHoraOrdinariaController::class, 'index']);
+    Route::post('/empleados/{empleado}/horas-ordinarias', [ApiEmpleadoHoraOrdinariaController::class, 'store']);
+    Route::patch('/empleados/{empleado}/horas-ordinarias/{horaOrdinaria}', [ApiEmpleadoHoraOrdinariaController::class, 'update']);
+    Route::delete('/empleados/{empleado}/horas-ordinarias/{horaOrdinaria}', [ApiEmpleadoHoraOrdinariaController::class, 'destroy']);
+    Route::post('/empleados/lookup', [ApiEmpleadoController::class, 'lookup']);
 });

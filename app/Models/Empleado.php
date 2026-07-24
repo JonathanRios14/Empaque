@@ -21,4 +21,9 @@ class Empleado extends Model
         'fecha_baja' => 'datetime',
         'activo' => 'boolean',
     ];
+
+    public function vinetaRegistros()
+    {
+        return $this->hasMany(VinetaRegistro::class);
+    }
 }

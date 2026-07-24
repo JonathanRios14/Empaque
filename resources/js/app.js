@@ -4,8 +4,6 @@ import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
 
-Alpine.start();
-
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 
@@ -56,6 +54,194 @@ window.mostrarToast = function (tipo, mensaje) {
         },
     });
 };
+
+const productImagePlaceholder = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+const productImageQueue = [];
+let productImageActiveLoads = 0;
+const productImageMaxLoads = 6;
+
+const processProductImageQueue = () => {
+    while (productImageActiveLoads < productImageMaxLoads && productImageQueue.length > 0) {
+        const img = productImageQueue.shift();
+
+        if (! img?.isConnected || img.dataset.productImageLoaded === 'true') {
+            continue;
+        }
+
+        const src = img.dataset.productImageSrc;
+
+        if (! src) {
+            continue;
+        }
+
+        productImageActiveLoads++;
+        img.classList.add('is-loading');
+
+        const preloader = new Image();
+        preloader.decoding = 'async';
+
+        const finish = () => {
+            productImageActiveLoads = Math.max(productImageActiveLoads - 1, 0);
+            img.classList.remove('is-loading');
+            processProductImageQueue();
+        };
+
+        preloader.onload = () => {
+            img.src = src;
+            img.dataset.productImageLoaded = 'true';
+            img.classList.add('is-loaded');
+            finish();
+        };
+
+        preloader.onerror = () => {
+            img.dataset.productImageLoaded = 'error';
+            finish();
+        };
+
+        preloader.src = src;
+    }
+};
+
+const queueProductImage = (img) => {
+    if (img.dataset.productImageQueued === 'true' || img.dataset.productImageLoaded === 'true') {
+        return;
+    }
+
+    img.dataset.productImageQueued = 'true';
+    productImageQueue.push(img);
+    processProductImageQueue();
+};
+
+window.initProductImages = function (root = document) {
+    const images = root.querySelectorAll('img[data-product-image-src]:not([data-product-image-observed])');
+
+    if (! images.length) {
+        return;
+    }
+
+    if (! ('IntersectionObserver' in window)) {
+        images.forEach(queueProductImage);
+        return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (! entry.isIntersecting) {
+                return;
+            }
+
+            observer.unobserve(entry.target);
+            queueProductImage(entry.target);
+        });
+    }, {
+        rootMargin: '420px 0px',
+        threshold: 0.01,
+    });
+
+    images.forEach((img) => {
+        img.dataset.productImageObserved = 'true';
+        img.src = img.getAttribute('src') || productImagePlaceholder;
+        observer.observe(img);
+    });
+};
+
+window.productImageCarousel = function (images = []) {
+    return {
+        images,
+        index: 0,
+        currentSrc: images[0]?.url || productImagePlaceholder,
+        loading: false,
+        requestId: 0,
+        preloaded: {},
+        init() {
+            this.preload(this.index);
+            this.preload(this.index + 1);
+            this.preload(this.index - 1);
+            window.setTimeout(() => this.preloadAll(), 160);
+        },
+        currentImage() {
+            return this.images[this.index] || { url: '#', tipo: '' };
+        },
+        previous() {
+            this.goTo(this.index - 1);
+        },
+        next() {
+            this.goTo(this.index + 1);
+        },
+        async goTo(index) {
+            if (! this.images.length) return;
+
+            const nextIndex = (index + this.images.length) % this.images.length;
+
+            if (nextIndex === this.index) {
+                return;
+            }
+
+            const requestId = ++this.requestId;
+            const image = this.images[nextIndex];
+
+            if (! image?.url) {
+                return;
+            }
+
+            this.loading = true;
+
+            await this.preload(nextIndex);
+
+            if (requestId !== this.requestId) {
+                return;
+            }
+
+            this.index = nextIndex;
+            this.currentSrc = this.currentImage().url;
+            this.loading = false;
+            this.preloadAround();
+        },
+        preload(index) {
+            const image = this.images[(index + this.images.length) % this.images.length];
+
+            if (! image?.url || this.preloaded[image.url]) {
+                return this.preloaded[image?.url] || Promise.resolve(false);
+            }
+
+            this.preloaded[image.url] = new Promise((resolve) => {
+                const preloader = new Image();
+                preloader.decoding = 'async';
+
+                preloader.onload = async () => {
+                    try {
+                        if (preloader.decode) {
+                            await preloader.decode();
+                        }
+                    } catch (error) {
+                        // The image is already loaded; decode failures should not block navigation.
+                    }
+
+                    resolve(true);
+                };
+
+                preloader.onerror = () => resolve(false);
+                preloader.src = image.url;
+            });
+
+            return this.preloaded[image.url];
+        },
+        preloadAround() {
+            this.preload(this.index);
+            this.preload(this.index + 1);
+            this.preload(this.index - 1);
+        },
+        preloadAll() {
+            this.images.forEach((_, index) => this.preload(index));
+        },
+    };
+};
+
+Alpine.start();
+
+document.addEventListener('DOMContentLoaded', () => {
+    window.initProductImages(document);
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     if (window.flashMessage) {
@@ -317,6 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             container.innerHTML = nextContainer.innerHTML;
+            window.initProductImages(container);
             window.history.pushState({}, '', url);
         } catch (error) {
             console.error(error);

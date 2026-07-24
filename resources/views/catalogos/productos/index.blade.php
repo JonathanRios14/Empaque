@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Productos | Sistema de Empaque</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="{{ rtrim(config('services.product_images.base_url'), '/') }}" crossorigin>
 
     @include('layouts.theme-script')
     @vite(['resources/css/app.css', 'resources/js/app.js'])

@@ -31,4 +31,8 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'product_images' => [
+        'base_url' => env('PRODUCT_IMAGES_BASE_URL', 'http://192.168.2.7:8099'),
+    ],
+
 ];

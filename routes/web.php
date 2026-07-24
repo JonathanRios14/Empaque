@@ -9,6 +9,7 @@ use App\Http\Controllers\CatalogoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmpleadoController;
 use App\Http\Controllers\VinetaController;
+use App\Http\Controllers\VinetaRegistroController;
 
 /*
 |--------------------------------------------------------------------------
@@ -159,6 +160,33 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/vinetas', [VinetaController::class, 'index'])
         ->name('vinetas.index');
+
+    Route::get('/vinetas-registradas', [VinetaRegistroController::class, 'index'])
+        ->name('vineta-registros.index');
+
+    Route::get('/vinetas-registradas/exportar', [VinetaRegistroController::class, 'export'])
+        ->name('vineta-registros.export');
+
+    Route::get('/vinetas-registradas/empleado', [VinetaRegistroController::class, 'empleado'])
+        ->name('vineta-registros.empleado');
+
+    Route::post('/vinetas-registradas/horas-ordinarias', [VinetaRegistroController::class, 'storeHoraOrdinaria'])
+        ->name('vineta-registros.horas-ordinarias.store');
+
+    Route::patch('/vinetas-registradas/horas-ordinarias/{horaOrdinaria}', [VinetaRegistroController::class, 'updateHoraOrdinaria'])
+        ->name('vineta-registros.horas-ordinarias.update');
+
+    Route::delete('/vinetas-registradas/horas-ordinarias/{horaOrdinaria}', [VinetaRegistroController::class, 'destroyHoraOrdinaria'])
+        ->name('vineta-registros.horas-ordinarias.destroy');
+
+    Route::patch('/vinetas-registradas/{vinetaRegistro}', [VinetaRegistroController::class, 'update'])
+        ->name('vineta-registros.update');
+
+    Route::delete('/vinetas-registradas/{vinetaRegistro}', [VinetaRegistroController::class, 'destroy'])
+        ->name('vineta-registros.destroy');
+
+    Route::get('/vinetas/notificaciones', [VinetaController::class, 'notificaciones'])
+        ->name('vinetas.notificaciones');
 
     Route::post('/vinetas/sincronizar', [VinetaController::class, 'sincronizar'])
         ->name('vinetas.sincronizar');

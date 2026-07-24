@@ -242,10 +242,10 @@
                                                         @method('PATCH')
 
                                                         <button type="submit"
-                                                                class="px-3 py-1.5 rounded-lg text-xs font-semibold transition
+                                                                class="usuario-status-button px-3 py-1.5 rounded-lg text-xs font-semibold border transition
                                                                 {{ $usuario->is_active
-                                                                    ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                                                                    : 'bg-green-50 text-green-700 hover:bg-green-100' }}">
+                                                                    ? 'is-deactivate'
+                                                                    : 'is-activate' }}">
                                                             {{ $usuario->is_active ? 'Desactivar' : 'Activar' }}
                                                         </button>
                                                     </form>

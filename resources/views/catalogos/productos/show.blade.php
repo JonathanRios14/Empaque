@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Detalle Producto | Sistema de Empaque</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="{{ rtrim(config('services.product_images.base_url'), '/') }}" crossorigin>
     @include('layouts.theme-script')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -49,7 +50,26 @@
                         </a>
                     </div>
 
-                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                    @php
+                        $imagenesProductoCarrusel = collect($producto->imagenesEmpaqueUrls())
+                            ->map(fn ($url, $index) => [
+                                'url' => $url,
+                                'tipo' => 'Empaque / caja',
+                            ])
+                            ->merge(
+                                collect($producto->imagenesAnilladoUrls())
+                                    ->map(fn ($url, $index) => [
+                                        'url' => $url,
+                                        'tipo' => 'Anillado',
+                                    ])
+                            )
+                            ->unique('url')
+                            ->values()
+                            ->all();
+                    @endphp
+
+                    <div class="p-6 grid grid-cols-1 xl:grid-cols-3 gap-5">
+                        <div class="xl:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
 
                         <div class="theme-soft rounded-2xl bg-[#fbf8f3] border border-[#e5d8c7] theme-border p-4">
                             <p class="theme-text text-xs text-gray-500">Marca</p>
@@ -105,6 +125,76 @@
                             <p class="theme-title font-bold text-[#3b2818] mt-1">
                                 {{ $producto->cantidad_bulto }}
                             </p>
+                        </div>
+
+                        </div>
+
+                        <div class="product-image-card theme-soft rounded-2xl border theme-border overflow-hidden min-h-[320px]"
+                             x-data="productImageCarousel(@js($imagenesProductoCarrusel))">
+                            <div class="p-4 border-b theme-border flex items-center justify-between gap-3">
+                                <div>
+                                    <p class="theme-title text-sm font-bold">
+                                        Imagenes del producto
+                                    </p>
+                                    <p class="theme-text mt-1 text-xs">
+                                        Empaque y anillado
+                                    </p>
+                                </div>
+
+                                <span class="theme-badge px-3 py-1 rounded-full bg-[#f3efe7] text-[#5b3a1e] text-xs font-semibold border border-[#e5d8c7] whitespace-nowrap">
+                                    {{ count($imagenesProductoCarrusel) ?: 'Sin' }} {{ count($imagenesProductoCarrusel) === 1 ? 'imagen' : 'imagenes' }}
+                                </span>
+                            </div>
+
+                            @if ($imagenesProductoCarrusel)
+                                <div class="relative p-3">
+                                    <a :href="images[index].url" target="_blank" rel="noopener noreferrer" class="block rounded-xl overflow-hidden border theme-border bg-white">
+                                        <img :src="currentSrc"
+                                             src="{{ $imagenesProductoCarrusel[0]['url'] }}"
+                                             class="product-image-preview h-72 w-full object-contain transition-opacity duration-150"
+                                             :class="loading ? 'opacity-70' : 'opacity-100'"
+                                             alt="Imagen de {{ $producto->nombre ?? 'producto' }}"
+                                             loading="eager"
+                                             decoding="async"
+                                             fetchpriority="high">
+                                    </a>
+
+                                    <div x-show="loading"
+                                         class="absolute inset-3 rounded-xl bg-white/70 backdrop-blur-[1px] flex items-center justify-center text-xs font-bold text-[#0f172a]"
+                                         style="display: none;">
+                                        Cargando imagen...
+                                    </div>
+
+                                    @if (count($imagenesProductoCarrusel) > 1)
+                                        <button type="button"
+                                                class="absolute left-5 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-[#0f172a]/80 text-white text-2xl leading-none flex items-center justify-center hover:bg-[#0f172a] transition"
+                                                @click="previous()"
+                                                aria-label="Imagen anterior">
+                                            ‹
+                                        </button>
+
+                                        <button type="button"
+                                                class="absolute right-5 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-[#0f172a]/80 text-white text-2xl leading-none flex items-center justify-center hover:bg-[#0f172a] transition"
+                                                @click="next()"
+                                                aria-label="Imagen siguiente">
+                                            ›
+                                        </button>
+
+                                        <span class="absolute right-5 bottom-5 rounded-full bg-[#0f172a]/80 px-3 py-1 text-xs font-semibold text-white">
+                                            <span x-text="index + 1">1</span>/{{ count($imagenesProductoCarrusel) }}
+                                        </span>
+                                    @endif
+
+                                    <span class="absolute left-5 bottom-5 rounded-full bg-[#0f172a]/80 px-3 py-1 text-xs font-semibold text-white"
+                                          x-text="images[index].tipo">
+                                        {{ $imagenesProductoCarrusel[0]['tipo'] }}
+                                    </span>
+                                </div>
+                            @else
+                                <div class="product-image-empty h-72 flex items-center justify-center text-sm font-semibold">
+                                    Sin imagen
+                                </div>
+                            @endif
                         </div>
 
                     </div>

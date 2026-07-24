@@ -10,9 +10,10 @@ class VinetaController extends Controller
 {
     public function index(Request $request)
     {
-        $buscar = $request->get('buscar');
-        $estado = $request->get('estado');
-        $impreso = $request->get('impreso');
+        $buscar = trim((string) $request->get('buscar', ''));
+        $codigoProducto = trim((string) $request->get('codigo_producto', ''));
+        $item = trim((string) $request->get('item', ''));
+        $ordenDelSistema = trim((string) $request->get('orden_del_sistema', ''));
         $orden = $request->get('orden', 'api_id');
         $direccion = $request->get('direccion', 'desc');
 
@@ -43,27 +44,17 @@ class VinetaController extends Controller
         }
 
         $query = Vineta::query()
-            ->when($buscar, function ($query) use ($buscar) {
-                $query->where(function ($q) use ($buscar) {
-                    $q->where('api_id', $buscar)
-                        ->orWhere('id_pendiente_empaque', 'like', "%{$buscar}%")
-                        ->orWhere('item', 'like', "%{$buscar}%")
-                        ->orWhere('orden_del_sistema', 'like', "%{$buscar}%")
-                        ->orWhere('mes', 'like', "%{$buscar}%")
-                        ->orWhere('orden', 'like', "%{$buscar}%")
-                        ->orWhere('marca', 'like', "%{$buscar}%")
-                        ->orWhere('nombre', 'like', "%{$buscar}%")
-                        ->orWhere('capa', 'like', "%{$buscar}%")
-                        ->orWhere('vitola', 'like', "%{$buscar}%")
-                        ->orWhere('tipo_empaque', 'like', "%{$buscar}%")
-                        ->orWhere('codigo_producto', 'like', "%{$buscar}%");
-                });
+            ->when($buscar !== '', function ($query) use ($buscar) {
+                $query->where('api_id', ltrim($buscar, '#'));
             })
-            ->when($estado, function ($query) use ($estado) {
-                $query->where('estado', $estado);
+            ->when($codigoProducto !== '', function ($query) use ($codigoProducto) {
+                $query->where('codigo_producto', 'like', "%{$codigoProducto}%");
             })
-            ->when($impreso !== null && $impreso !== '', function ($query) use ($impreso) {
-                $query->where('impreso', (bool) $impreso);
+            ->when($item !== '', function ($query) use ($item) {
+                $query->where('item', 'like', "%{$item}%");
+            })
+            ->when($ordenDelSistema !== '', function ($query) use ($ordenDelSistema) {
+                $query->where('orden_del_sistema', 'like', "%{$ordenDelSistema}%");
             })
             ->orderBy($orden, $direccion);
 
@@ -83,13 +74,6 @@ class VinetaController extends Controller
             ->paginate($perPage)
             ->appends($request->query());
 
-        $estados = Vineta::query()
-            ->whereNotNull('estado')
-            ->select('estado')
-            ->distinct()
-            ->orderBy('estado')
-            ->pluck('estado');
-
         if ($request->ajax()) {
             return view('vinetas.partials.tabla', compact(
                 'vinetas',
@@ -100,7 +84,6 @@ class VinetaController extends Controller
 
         return view('vinetas.index', compact(
             'vinetas',
-            'estados',
             'orden',
             'direccion'
         ));
@@ -119,5 +102,12 @@ class VinetaController extends Controller
         return redirect()
             ->back()
             ->with('success', $resultado['mensaje'] . " Procesadas: {$resultado['total']}. Omitidas: {$resultado['omitidos']}.");
+    }
+
+    public function notificaciones(Request $request, VinetaApiService $vinetaApiService)
+    {
+        return response()->json(
+            $vinetaApiService->resumenImpresasNuevas($request->boolean('force'))
+        );
     }
 }

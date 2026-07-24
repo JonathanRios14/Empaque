@@ -117,10 +117,17 @@
                                         </a>
                                     </th>
 
-                                  <th class="px-6 py-4 text-left font-semibold">
+                                   <th class="px-6 py-4 text-left font-semibold">
     <a href="{{ $sortLink('productos_count') }}" class="inline-flex items-center gap-2 hover:text-[#5b3a1e]">
         Productos
         <span class="text-xs">{{ $sortIcon('productos_count') }}</span>
+    </a>
+</th>
+
+<th class="px-6 py-4 text-left font-semibold">
+    <a href="{{ $sortLink('precio_mo') }}" class="inline-flex items-center gap-2 hover:text-[#5b3a1e]">
+        Precio MO
+        <span class="text-xs">{{ $sortIcon('precio_mo') }}</span>
     </a>
 </th>
 
@@ -155,12 +162,29 @@
                                             </p>
                                         </td>
 
-                                        <td class="px-6 py-4">
-                                            <span class="theme-badge px-3 py-1 rounded-full bg-[#f3efe7] text-[#5b3a1e] text-xs font-semibold border border-[#e5d8c7]">
-                                                {{ $actividad->productos_count }} producto(s)
-                                            </span>
+                                         <td class="px-6 py-4">
+                                             <span class="theme-badge px-3 py-1 rounded-full bg-[#f3efe7] text-[#5b3a1e] text-xs font-semibold border border-[#e5d8c7]">
+                                                 {{ $actividad->productos_count }} producto(s)
+                                             </span>
+                                         </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            @if ($actividad->precio_min === null)
+                                                <span class="theme-text text-gray-400 text-sm">Sin precio</span>
+                                            @elseif ((float) $actividad->precio_min === (float) $actividad->precio_max)
+                                                <span class="theme-title font-semibold text-[#3b2818]">
+                                                    {{ number_format((float) $actividad->precio_min, 7) }}
+                                                </span>
+                                            @else
+                                                <span class="theme-title font-semibold text-[#3b2818]">
+                                                    {{ number_format((float) $actividad->precio_min, 7) }} - {{ number_format((float) $actividad->precio_max, 7) }}
+                                                </span>
+
+                                                <p class="theme-text text-[11px] text-gray-400 mt-0.5">
+                                                    {{ $actividad->precios_count }} precios
+                                                </p>
+                                            @endif
                                         </td>
-                                        <td class="px-6 py-4 text-right">
+                                         <td class="px-6 py-4 text-right">
     <a href="{{ route('catalogos.productos.index', ['actividad_id' => $actividad->id]) }}"
        class="theme-button-secondary inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#f3efe7] text-[#5b3a1e] text-xs font-semibold border border-[#e5d8c7] hover:bg-[#e5d8c7] transition">
         Ver productos
@@ -168,12 +192,12 @@
     </a>
 </td>
                                     </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="5" class="theme-text px-6 py-10 text-center text-gray-500">
-                                            No hay actividades registradas.
-                                        </td>
-                                    </tr>
+                                 @empty
+                                     <tr>
+                                        <td colspan="6" class="theme-text px-6 py-10 text-center text-gray-500">
+                                             No hay actividades registradas.
+                                         </td>
+                                     </tr>
                                 @endforelse
                             </tbody>
                         </table>

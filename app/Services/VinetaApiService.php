@@ -4,12 +4,17 @@ namespace App\Services;
 
 use App\Models\Vineta;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class VinetaApiService
 {
     private string $url = 'http://192.168.2.7:8080/api/empaque/vinetas';
+
+    private const NOTIFICACION_CACHE_KEY = 'vinetas:impresas-nuevas:v1';
+
+    private const NOTIFICACION_CACHE_SECONDS = 120;
 
     public function sincronizar(): array
     {
@@ -84,7 +89,9 @@ class VinetaApiService
             foreach ($lotes as $lote) {
                Vineta::insertOrIgnore($lote);
             }
-            
+
+        Cache::forget(self::NOTIFICACION_CACHE_KEY);
+             
 
         return [
             'ok' => true,
@@ -92,6 +99,104 @@ class VinetaApiService
             'total' => $procesados,
             'omitidos' => $omitidos,
         ];
+    }
+
+    public function resumenImpresasNuevas(bool $forzar = false): array
+    {
+        if (! $forzar && Cache::has(self::NOTIFICACION_CACHE_KEY)) {
+            return Cache::get(self::NOTIFICACION_CACHE_KEY);
+        }
+
+        if ($forzar) {
+            Cache::forget(self::NOTIFICACION_CACHE_KEY);
+        }
+
+        $resultado = $this->calcularImpresasNuevas();
+
+        if ($resultado['ok']) {
+            Cache::put(
+                self::NOTIFICACION_CACHE_KEY,
+                $resultado,
+                now()->addSeconds(self::NOTIFICACION_CACHE_SECONDS)
+            );
+        }
+
+        return $resultado;
+    }
+
+    private function calcularImpresasNuevas(): array
+    {
+        $response = Http::timeout(90)
+            ->connectTimeout(10)
+            ->get($this->url);
+
+        if ($response->failed()) {
+            return [
+                'ok' => false,
+                'pendientes' => 0,
+                'mensaje' => 'No se pudo revisar la API de viñetas.',
+                'ultima_revision' => $this->horaDanli(),
+                'cache_seconds' => self::NOTIFICACION_CACHE_SECONDS,
+            ];
+        }
+
+        $json = $response->json();
+        $data = $json['data'] ?? $json;
+
+        if (! is_array($data)) {
+            return [
+                'ok' => false,
+                'pendientes' => 0,
+                'mensaje' => 'La respuesta de viñetas no tiene un formato válido.',
+                'ultima_revision' => $this->horaDanli(),
+                'cache_seconds' => self::NOTIFICACION_CACHE_SECONDS,
+            ];
+        }
+
+        $idsImpresos = [];
+
+        foreach ($data as $item) {
+            if (! is_array($item) || empty($item['id']) || ! $this->boolean($item['impreso'] ?? null)) {
+                continue;
+            }
+
+            $idsImpresos[(int) $item['id']] = true;
+        }
+
+        $idsImpresos = array_keys($idsImpresos);
+        $idsLocales = [];
+
+        foreach (array_chunk($idsImpresos, 1000) as $lote) {
+            Vineta::query()
+                ->whereIn('api_id', $lote)
+                ->pluck('api_id')
+                ->each(function ($apiId) use (&$idsLocales) {
+                    $idsLocales[(int) $apiId] = true;
+                });
+        }
+
+        $pendientes = 0;
+
+        foreach ($idsImpresos as $apiId) {
+            if (! isset($idsLocales[(int) $apiId])) {
+                $pendientes++;
+            }
+        }
+
+        return [
+            'ok' => true,
+            'pendientes' => $pendientes,
+            'mensaje' => $pendientes > 0
+                ? "$pendientes viñetas impresas nuevas pendientes de sincronizar."
+                : 'No hay viñetas impresas nuevas.',
+            'ultima_revision' => $this->horaDanli(),
+            'cache_seconds' => self::NOTIFICACION_CACHE_SECONDS,
+        ];
+    }
+
+    private function horaDanli(): string
+    {
+        return now('America/Tegucigalpa')->format('h:i A');
     }
 
 

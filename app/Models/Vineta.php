@@ -38,4 +38,9 @@ class Vineta extends Model
         'api_updated_at' => 'datetime',
         'raw_payload' => 'array',
     ];
+
+    public function registros()
+    {
+        return $this->hasMany(VinetaRegistro::class);
+    }
 }

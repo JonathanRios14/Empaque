@@ -85,24 +85,59 @@
 
             <tbody>
                 @forelse ($productos as $producto)
+                    @php
+                        $imagenPrincipalUrl = $producto->imagenPrincipalUrl();
+                        $cargarImagenDirecta = $loop->iteration <= 8;
+                    @endphp
+
                     <tr class="theme-row border-b border-gray-100 theme-border hover:bg-[#faf7f2] transition">
                         <td class="px-6 py-4">
-                            <a href="{{ route('catalogos.productos.show', array_merge(['producto' => $producto->id], request()->query())) }}"
-                               class="theme-title font-semibold text-[#3b2818] hover:text-[#5b3a1e] hover:underline transition">
-                                {{ $producto->nombre ?? 'Sin nombre' }}
-                            </a>
+                            <div class="flex items-center gap-3">
+                                @if ($imagenPrincipalUrl)
+                                    @if ($cargarImagenDirecta)
+                                        <img src="{{ $imagenPrincipalUrl }}"
+                                             class="product-thumb h-14 w-14 rounded-xl object-cover border theme-border"
+                                             alt="Imagen de {{ $producto->nombre ?? 'producto' }}"
+                                             loading="eager"
+                                             decoding="async"
+                                             fetchpriority="{{ $loop->iteration <= 3 ? 'high' : 'auto' }}"
+                                             width="56"
+                                             height="56">
+                                    @else
+                                        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+                                             data-product-image-src="{{ $imagenPrincipalUrl }}"
+                                             class="product-thumb product-lazy-image h-14 w-14 rounded-xl object-cover border theme-border"
+                                             alt="Imagen de {{ $producto->nombre ?? 'producto' }}"
+                                             loading="lazy"
+                                             decoding="async"
+                                             width="56"
+                                             height="56">
+                                    @endif
+                                @else
+                                    <div class="product-thumb-placeholder h-14 w-14 rounded-xl border theme-border flex items-center justify-center text-xs font-bold">
+                                        IMG
+                                    </div>
+                                @endif
 
-                            <p class="theme-text text-xs text-gray-500">
-                                Item: {{ $producto->item ?? 'N/A' }}
-                            </p>
+                                <div class="min-w-0">
+                                    <a href="{{ route('catalogos.productos.show', array_merge(['producto' => $producto->id], request()->query())) }}"
+                                       class="theme-title font-semibold text-[#3b2818] hover:text-[#5b3a1e] hover:underline transition">
+                                        {{ $producto->nombre ?? 'Sin nombre' }}
+                                    </a>
 
-                            <p class="theme-text text-[11px] text-gray-400">
-                                Código: {{ $producto->codigo_producto ?? 'N/A' }}
-                            </p>
+                                    <p class="theme-text text-xs text-gray-500">
+                                        Item: {{ $producto->item ?? 'N/A' }}
+                                    </p>
 
-                            <p class="theme-text text-[11px] text-gray-400">
-                                API ID: {{ $producto->api_id_producto }}
-                            </p>
+                                    <p class="theme-text text-[11px] text-gray-400">
+                                        Código: {{ $producto->codigo_producto ?? 'N/A' }}
+                                    </p>
+
+                                    <p class="theme-text text-[11px] text-gray-400">
+                                        API ID: {{ $producto->api_id_producto }}
+                                    </p>
+                                </div>
+                            </div>
                         </td>
 
                         <td class="px-6 py-4">

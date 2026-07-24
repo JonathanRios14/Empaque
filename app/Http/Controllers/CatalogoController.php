@@ -291,7 +291,7 @@ public function actividades(Request $request)
     $orden = $request->get('orden', 'nombre');
     $direccion = $request->get('direccion', 'asc');
 
-    $permitidos = ['id', 'codigo_actividad', 'nombre', 'productos_count'];
+    $permitidos = ['id', 'codigo_actividad', 'nombre', 'productos_count', 'precio_mo'];
 
     if (! in_array($orden, $permitidos)) {
         $orden = 'nombre';
@@ -301,7 +301,25 @@ public function actividades(Request $request)
         $direccion = 'asc';
     }
 
+    $preciosSubquery = DB::table('actividad_producto')
+        ->select([
+            'actividad_id',
+            DB::raw('MIN(precio_mo) as precio_min'),
+            DB::raw('MAX(precio_mo) as precio_max'),
+            DB::raw('COUNT(DISTINCT precio_mo) as precios_count'),
+        ])
+        ->groupBy('actividad_id');
+
     $query = Actividad::query()
+        ->select([
+            'actividades.*',
+            'precios_actividades.precio_min',
+            'precios_actividades.precio_max',
+            'precios_actividades.precios_count',
+        ])
+        ->leftJoinSub($preciosSubquery, 'precios_actividades', function ($join) {
+            $join->on('actividades.id', '=', 'precios_actividades.actividad_id');
+        })
         ->withCount([
             'productos as productos_count' => function ($query) {
                 $query->select(DB::raw('COUNT(DISTINCT productos.id)'));
@@ -318,8 +336,10 @@ public function actividades(Request $request)
         });
     }
 
+    $ordenQuery = $orden === 'precio_mo' ? 'precio_min' : $orden;
+
     $actividades = $query
-        ->orderBy($orden, $direccion)
+        ->orderBy($ordenQuery, $direccion)
         ->paginate(10)
         ->appends($request->query());
 
@@ -425,7 +445,15 @@ public function tipoEmpaques(Request $request)
 
         return redirect()
             ->route('catalogos.productos.index')
-            ->with('success', $resultado['mensaje'] . ' Total: ' . $resultado['total']);
+            ->with('success', sprintf(
+                '%s Total: %s. Nuevos: %s. Actualizados: %s. Sin cambios: %s. Omitidos: %s.',
+                $resultado['mensaje'],
+                $resultado['total'] ?? 0,
+                $resultado['nuevos'] ?? 0,
+                $resultado['actualizados'] ?? 0,
+                $resultado['sin_cambios'] ?? 0,
+                $resultado['omitidos'] ?? 0,
+            ));
     }
 
     

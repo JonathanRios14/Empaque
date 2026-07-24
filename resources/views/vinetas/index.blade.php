@@ -55,25 +55,84 @@
                                         </span>
 
                                         <span class="theme-badge inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold">
-                                            Estados: <strong class="theme-title">{{ $estados->count() }}</strong>
+                                            Búsqueda principal: <strong class="theme-title">ID API</strong>
                                         </span>
                                     </div>
                                 </div>
 
-                                <form method="POST"
-                                      action="{{ route('vinetas.sincronizar') }}"
-                                      class="form-sincronizar-vinetas w-full sm:w-auto">
-                                    @csrf
+                                <div class="w-full sm:w-auto flex flex-col sm:flex-row gap-2">
+                                    <div class="relative">
+                                        <button type="button"
+                                                id="vinetasNotificationButton"
+                                                data-url="{{ route('vinetas.notificaciones') }}"
+                                                class="theme-button-secondary vinetas-notification-button inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold border theme-border transition shadow-sm"
+                                                title="Viñetas impresas nuevas"
+                                                aria-expanded="false">
+                                            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a3 3 0 0 1-5.714 0" />
+                                            </svg>
 
-                                    <button type="submit"
-                                            class="gooey-action btn-sincronizar-vinetas inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#0f172a] text-white text-sm font-semibold hover:bg-[#1e293b] transition disabled:opacity-70 disabled:cursor-not-allowed">
-                                        <div class="loader-sincronizar hidden"></div>
+                                            <span id="vinetasNotificationLabel">Notificaciones</span>
 
-                                        <span class="texto-sincronizar-vinetas">
-                                            Sincronizar viñetas
-                                        </span>
-                                    </button>
-                                </form>
+                                            <span id="vinetasNotificationBadge"
+                                                  class="hidden min-w-6 items-center justify-center rounded-full bg-[#f59e0b] px-2 py-0.5 text-xs font-bold text-white">
+                                                0
+                                            </span>
+                                        </button>
+
+                                        <div id="vinetasNotificationMenu"
+                                             class="theme-card hidden absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl border theme-border bg-white p-3 shadow-2xl">
+                                            <div class="flex items-start gap-3">
+                                                <div class="vinetas-notification-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
+                                                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a3 3 0 0 1-5.714 0" />
+                                                    </svg>
+                                                </div>
+
+                                                <div class="min-w-0 flex-1">
+                                                    <p class="theme-title text-sm font-bold">
+                                                        Viñetas impresas nuevas
+                                                    </p>
+
+                                                    <p id="vinetasNotificationMessage" class="theme-text mt-1 text-xs leading-5">
+                                                        Hay viñetas pendientes de sincronizar.
+                                                    </p>
+
+                                                    <p id="vinetasNotificationTime" class="theme-text mt-2 text-[11px] opacity-75">
+                                                        Última revisión: N/A
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-3 flex items-center justify-between gap-2 border-t theme-border pt-3">
+                                                <span class="theme-badge inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold">
+                                                    <span id="vinetasNotificationCount">0</span>&nbsp;pendientes
+                                                </span>
+
+                                                <button type="button"
+                                                        id="vinetasNotificationRefresh"
+                                                        class="theme-button-secondary rounded-xl border theme-border px-3 py-1.5 text-xs font-semibold transition">
+                                                    Revisar ahora
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <form method="POST"
+                                          action="{{ route('vinetas.sincronizar') }}"
+                                          class="form-sincronizar-vinetas w-full sm:w-auto">
+                                        @csrf
+
+                                        <button type="submit"
+                                                class="gooey-action btn-sincronizar-vinetas inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#0f172a] text-white text-sm font-semibold hover:bg-[#1e293b] transition disabled:opacity-70 disabled:cursor-not-allowed">
+                                            <div class="loader-sincronizar hidden"></div>
+
+                                            <span class="texto-sincronizar-vinetas">
+                                                Sincronizar viñetas
+                                            </span>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
 
@@ -82,45 +141,52 @@
                                   action="{{ route('vinetas.index') }}"
                                   class="vinetas-ajax-filter-form grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-2 items-end">
 
-                                <div class="xl:col-span-3">
+                                <div class="xl:col-span-2">
                                     <label class="theme-text block text-xs font-semibold mb-1">
-                                        Buscar
+                                        ID API
                                     </label>
 
                                     <input type="text"
                                            name="buscar"
                                            value="{{ request('buscar') }}"
-                                           placeholder="ID, item, orden, marca, producto o código..."
+                                           placeholder="Buscar por ID API..."
                                            class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
                                 </div>
 
                                 <div>
                                     <label class="theme-text block text-xs font-semibold mb-1">
-                                        Estado
+                                        Código producto
                                     </label>
 
-                                    <select name="estado"
-                                            class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
-                                        <option value="">Todos</option>
-                                        @foreach ($estados as $estado)
-                                            <option value="{{ $estado }}" @selected(request('estado') === $estado)>
-                                                {{ $estado }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <input type="text"
+                                           name="codigo_producto"
+                                           value="{{ request('codigo_producto') }}"
+                                           placeholder="Código..."
+                                           class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
                                 </div>
 
                                 <div>
                                     <label class="theme-text block text-xs font-semibold mb-1">
-                                        Impreso
+                                        Item
                                     </label>
 
-                                    <select name="impreso"
-                                            class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
-                                        <option value="">Todos</option>
-                                        <option value="1" @selected(request('impreso') === '1')>Sí</option>
-                                        <option value="0" @selected(request('impreso') === '0')>No</option>
-                                    </select>
+                                    <input type="text"
+                                           name="item"
+                                           value="{{ request('item') }}"
+                                           placeholder="Item..."
+                                           class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
+                                </div>
+
+                                <div>
+                                    <label class="theme-text block text-xs font-semibold mb-1">
+                                        Orden sistema
+                                    </label>
+
+                                    <input type="text"
+                                           name="orden_del_sistema"
+                                           value="{{ request('orden_del_sistema') }}"
+                                           placeholder="Orden..."
+                                           class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
                                 </div>
 
                                 <div class="sm:col-span-2 xl:col-span-1 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 pt-1">
@@ -533,6 +599,129 @@
 
             initStickyHeaderClone();
             initFloatingScroll();
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const button = document.getElementById('vinetasNotificationButton');
+            const badge = document.getElementById('vinetasNotificationBadge');
+            const label = document.getElementById('vinetasNotificationLabel');
+            const menu = document.getElementById('vinetasNotificationMenu');
+            const message = document.getElementById('vinetasNotificationMessage');
+            const time = document.getElementById('vinetasNotificationTime');
+            const count = document.getElementById('vinetasNotificationCount');
+            const refresh = document.getElementById('vinetasNotificationRefresh');
+
+            if (!button || !badge || !label || !menu || !message || !time || !count || !refresh) {
+                return;
+            }
+
+            const pollMs = 120000;
+            let loading = false;
+            let pendingCount = 0;
+
+            const closeMenu = () => {
+                menu.classList.add('hidden');
+                button.setAttribute('aria-expanded', 'false');
+            };
+
+            const toggleMenu = () => {
+                const isOpen = !menu.classList.contains('hidden');
+                menu.classList.toggle('hidden', isOpen);
+                button.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+            };
+
+            const setButtonState = (pending) => {
+                label.textContent = pending > 0 ? 'Novedades' : 'Notificaciones';
+                badge.textContent = pending;
+                badge.classList.toggle('hidden', pending <= 0);
+                badge.classList.toggle('inline-flex', pending > 0);
+                button.classList.toggle('has-pending', pending > 0);
+            };
+
+            const updateNotification = (data) => {
+                const pending = Number(data.pendientes || 0);
+                pendingCount = pending;
+                setButtonState(pending);
+
+                if (!data.ok) {
+                    message.textContent = data.mensaje || 'No se pudo revisar viñetas impresas nuevas.';
+                } else if (pending > 0) {
+                    message.textContent = data.mensaje || `${pending} viñetas impresas nuevas pendientes de sincronizar.`;
+                } else {
+                    message.textContent = data.mensaje || 'No hay viñetas impresas nuevas.';
+                }
+
+                count.textContent = pending;
+                time.textContent = `Última revisión: ${data.ultima_revision || 'N/A'}`;
+                button.title = `${data.mensaje || 'Revisión de viñetas impresas'} Última revisión: ${data.ultima_revision || 'N/A'}`;
+            };
+
+            const loadNotification = async (force = false) => {
+                if (loading) {
+                    return;
+                }
+
+                loading = true;
+                refresh.disabled = true;
+                refresh.classList.add('opacity-70', 'pointer-events-none');
+
+                try {
+                    const url = new URL(button.dataset.url, window.location.origin);
+
+                    if (force) {
+                        url.searchParams.set('force', '1');
+                    }
+
+                    const response = await fetch(url, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('No se pudo revisar viñetas impresas');
+                    }
+
+                    updateNotification(await response.json());
+                } catch (error) {
+                    console.error(error);
+                    pendingCount = 0;
+                    setButtonState(0);
+                    message.textContent = 'No se pudo revisar viñetas impresas nuevas.';
+                    count.textContent = '0';
+                    time.textContent = 'Última revisión: N/A';
+                    button.title = 'No se pudo revisar viñetas impresas nuevas.';
+                } finally {
+                    loading = false;
+                    refresh.disabled = false;
+                    refresh.classList.remove('opacity-70', 'pointer-events-none');
+                }
+            };
+
+            button.addEventListener('click', (event) => {
+                event.stopPropagation();
+                toggleMenu();
+            });
+
+            menu.addEventListener('click', (event) => {
+                event.stopPropagation();
+            });
+
+            refresh.addEventListener('click', () => loadNotification(true));
+
+            document.addEventListener('click', closeMenu);
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    closeMenu();
+                }
+            });
+
+            loadNotification();
+            window.setInterval(() => loadNotification(), pollMs);
         });
     </script>
 

@@ -4,21 +4,21 @@
             Actualizar contraseña
         </h2>
 
-        <p class="theme-text mt-1 text-sm text-gray-600">
+        <p class="theme-text mt-1 text-xs text-gray-600">
             Usa una contraseña segura para proteger tu cuenta.
         </p>
     </header>
 
     <form method="post"
           action="{{ route('password.update') }}"
-          class="mt-6 space-y-6"
+          class="mt-4 space-y-4"
           x-data="{ showCurrent: false, showNew: false, showConfirm: false }">
         @csrf
         @method('put')
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3 gap-4">
             <div>
-                <label for="current_password" class="theme-title block text-sm font-semibold text-[#3b2818] mb-2">
+                <label for="current_password" class="theme-title block text-sm font-semibold text-[#3b2818] mb-1.5">
                     Contraseña actual
                 </label>
 
@@ -40,7 +40,7 @@
             </div>
 
             <div>
-                <label for="password" class="theme-title block text-sm font-semibold text-[#3b2818] mb-2">
+                <label for="password" class="theme-title block text-sm font-semibold text-[#3b2818] mb-1.5">
                     Nueva contraseña
                 </label>
 
@@ -62,7 +62,7 @@
             </div>
 
             <div>
-                <label for="password_confirmation" class="theme-title block text-sm font-semibold text-[#3b2818] mb-2">
+                <label for="password_confirmation" class="theme-title block text-sm font-semibold text-[#3b2818] mb-1.5">
                     Confirmar contraseña
                 </label>
 
@@ -84,7 +84,7 @@
             </div>
         </div>
 
-        <div class="flex items-center justify-end gap-4 pt-4 border-t border-[#eee3d5] theme-border">
+        <div class="flex items-center justify-end gap-4 pt-3 border-t border-[#eee3d5] theme-border">
             <button type="submit"
                     class="gooey-action px-5 py-2.5 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
                 Guardar contraseña

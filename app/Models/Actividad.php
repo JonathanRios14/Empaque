@@ -20,4 +20,9 @@ class Actividad extends Model
             ->withPivot('tipo_empaque_id', 'precio_mo')
             ->withTimestamps();
     }
+
+    public function vinetaRegistros()
+    {
+        return $this->hasMany(VinetaRegistro::class);
+    }
 }
