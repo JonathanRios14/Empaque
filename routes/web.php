@@ -167,6 +167,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/vinetas-registradas/exportar', [VinetaRegistroController::class, 'export'])
         ->name('vineta-registros.export');
 
+    Route::get('/vinetas-registradas/reporte-semanal', [VinetaRegistroController::class, 'exportReporteSemanal'])
+        ->name('vineta-registros.reporte-semanal');
+
     Route::get('/vinetas-registradas/empleado', [VinetaRegistroController::class, 'empleado'])
         ->name('vineta-registros.empleado');
 

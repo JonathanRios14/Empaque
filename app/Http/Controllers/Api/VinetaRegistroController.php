@@ -261,19 +261,24 @@ class VinetaRegistroController extends Controller
 
     public function update(Request $request, VinetaRegistro $vinetaRegistro): JsonResponse
     {
-        $porHora = $vinetaRegistro->esPorHoraOrdinario();
         $rules = [
             'fecha_registro' => ['required', 'date_format:Y-m-d'],
             'hora_registro' => ['required', 'regex:/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/'],
             'cantidad_puros' => ['required', 'integer', 'min:1', 'max:1000000'],
             'empleado_codigo' => ['required', 'string', 'max:120'],
+            'modo_registro' => ['nullable', 'in:por_tarea,por_hora'],
         ];
+
+        $modoRegistro = $request->input('modo_registro', $vinetaRegistro->modoRegistro());
+        $porHora = $modoRegistro === 'por_hora';
 
         if (Schema::hasColumn('vineta_registros', 'minutos_trabajados') && ! $porHora) {
             $rules['minutos_trabajados'] = ['required', 'integer', 'min:1', 'max:' . $this->metaDiariaMinutos];
         }
 
         $data = $request->validate($rules);
+        $modoRegistro = $data['modo_registro'] ?? $vinetaRegistro->modoRegistro();
+        $porHora = $modoRegistro === 'por_hora';
         $empleado = Empleado::where('codigo', trim($data['empleado_codigo']))->first();
 
         if (! $empleado) {
@@ -320,6 +325,16 @@ class VinetaRegistroController extends Controller
             'hora_registro' => $registradoEn->format('H:i:s'),
             'registrado_en' => $registradoEn,
         ];
+
+        $rawPayload = is_array($vinetaRegistro->raw_payload) ? $vinetaRegistro->raw_payload : [];
+        $rawPayload['modo_registro'] = $modoRegistro;
+        $payload['raw_payload'] = $rawPayload;
+
+        if ($porHora) {
+            $payload['precio_mo'] = 0;
+        } elseif ((float) ($vinetaRegistro->precio_mo ?? 0) <= 0) {
+            $payload['precio_mo'] = $this->precioMoRegistro($vinetaRegistro) ?? 0;
+        }
 
         if (Schema::hasColumn('vineta_registros', 'minutos_trabajados')) {
             $payload['minutos_trabajados'] = $porHora
@@ -536,6 +551,20 @@ class VinetaRegistroController extends Controller
         return substr_count($time, ':') === 1 ? $time . ':00' : $time;
     }
 
+    private function precioMoRegistro(VinetaRegistro $registro): ?float
+    {
+        if (! $registro->producto_id || ! $registro->actividad_id) {
+            return null;
+        }
+
+        $precio = DB::table('actividad_producto')
+            ->where('producto_id', $registro->producto_id)
+            ->where('actividad_id', $registro->actividad_id)
+            ->value('precio_mo');
+
+        return $precio === null ? null : (float) $precio;
+    }
+
     private function codigoVineta(Vineta $vineta): ?string
     {
         foreach ([$vineta->id_pendiente_empaque, $vineta->orden_del_sistema, $vineta->orden, $vineta->api_id] as $value) {
@@ -560,6 +589,9 @@ class VinetaRegistroController extends Controller
             'vineta_api_id' => $registro->vineta_api_id,
             'id_pendiente_empaque' => $registro->id_pendiente_empaque,
             'id_detalle_programacion' => $registro->id_detalle_programacion,
+            'vineta_fecha' => $registro->vineta_fecha?->format('Y-m-d'),
+            'orden' => $registro->orden,
+            'orden_del_sistema' => $registro->orden_del_sistema,
             'producto' => [
                 'id' => $registro->producto_id,
                 'codigo_producto' => $registro->producto_codigo,

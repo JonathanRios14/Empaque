@@ -91,8 +91,11 @@ class VinetaRegistro extends Model
     {
         $payload = $this->raw_payload;
 
-        if (is_array($payload) && ($payload['modo_registro'] ?? null) === 'por_hora') {
-            return 'por_hora';
+        if (
+            is_array($payload)
+            && in_array(($payload['modo_registro'] ?? null), ['por_tarea', 'por_hora'], true)
+        ) {
+            return $payload['modo_registro'];
         }
 
         if (strtolower((string) $this->actividad_nombre) === 'control por hora') {

@@ -196,6 +196,11 @@
                                         Exportar Excel
                                     </a>
 
+                                    <a href="{{ route('vineta-registros.reporte-semanal', request()->except('page')) }}"
+                                       class="theme-button-secondary inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white text-[#0f766e] text-sm font-black border theme-border hover:bg-[#ecfdf5] transition">
+                                        Reporte semanal
+                                    </a>
+
                                     <button type="submit"
                                             class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-[#0f172a] text-white text-sm font-black hover:bg-[#1e293b] transition">
                                         Filtrar
