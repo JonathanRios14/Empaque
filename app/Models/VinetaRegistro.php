@@ -81,7 +81,11 @@ class VinetaRegistro extends Model
     public function cantidadActividadesValor(): int
     {
         if (array_key_exists('cantidad_actividades', $this->attributes) && $this->attributes['cantidad_actividades'] !== null) {
-            return max((int) $this->attributes['cantidad_actividades'], 0);
+            $cantidad = (int) $this->attributes['cantidad_actividades'];
+
+            if ($cantidad > 0) {
+                return $cantidad;
+            }
         }
 
         return self::cantidadActividadesDesdeNombre($this->actividad_nombre);

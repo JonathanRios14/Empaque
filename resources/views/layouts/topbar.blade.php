@@ -1,12 +1,24 @@
 <header class="app-topbar h-16 bg-[#3b2818] border-b border-[#2b1b12] flex items-center justify-between px-4 shadow-sm transition-colors duration-300">
-    <div class="min-w-0">
-        <h1 class="app-topbar-title text-xl font-bold leading-tight text-white truncate">
-            {{ $title ?? 'Dashboard' }}
-        </h1>
+    <div class="flex min-w-0 items-center gap-3">
+        <button type="button"
+                class="mobile-sidebar-trigger md:hidden inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/35"
+                aria-label="Abrir menú"
+                aria-controls="appSidebar"
+                onclick="window.dispatchEvent(new CustomEvent('open-mobile-sidebar'))">
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
 
-        <p class="app-topbar-description text-xs leading-tight text-white/60 truncate">
-            {{ $description ?? 'Sistema de empaque' }}
-        </p>
+        <div class="min-w-0">
+            <h1 class="app-topbar-title text-xl font-bold leading-tight text-white truncate">
+                {{ $title ?? 'Dashboard' }}
+            </h1>
+
+            <p class="app-topbar-description text-xs leading-tight text-white/60 truncate">
+                {{ $description ?? 'Sistema de empaque' }}
+            </p>
+        </div>
     </div>
 
     <div class="flex items-center gap-2">

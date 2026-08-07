@@ -16,6 +16,7 @@ class ActividadController extends Controller
             'capa' => ['nullable', 'string', 'max:120'],
             'vitola' => ['nullable', 'string', 'max:120'],
             'tipo_empaque' => ['nullable', 'string', 'max:120'],
+            'producto_nombre' => ['nullable', 'string', 'max:255'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:80'],
         ]);
 
@@ -23,28 +24,28 @@ class ActividadController extends Controller
         $capa = mb_strtolower(trim((string) ($data['capa'] ?? '')));
         $vitola = mb_strtolower(trim((string) ($data['vitola'] ?? '')));
         $tipoEmpaque = mb_strtolower(trim((string) ($data['tipo_empaque'] ?? '')));
+        $productoNombre = mb_strtolower(trim((string) ($data['producto_nombre'] ?? '')));
         $hasCaracteristicas = $capa !== '' && $vitola !== '' && $tipoEmpaque !== '';
         $limit = (int) ($data['limit'] ?? 30);
+        $searchTerms = $this->searchTerms($term);
 
-        $query = DB::table('actividad_producto')
-            ->join('actividades', 'actividades.id', '=', 'actividad_producto.actividad_id')
-            ->leftJoin('tipo_empaques', 'tipo_empaques.id', '=', 'actividad_producto.tipo_empaque_id')
-            ->leftJoin('productos', 'productos.id', '=', 'actividad_producto.producto_id')
-            ->leftJoin('tipo_empaques as producto_tipo_empaques', 'producto_tipo_empaques.id', '=', 'productos.tipo_empaque_id')
-            ->leftJoin('capas', 'capas.id', '=', 'productos.capa_id')
-            ->leftJoin('vitolas', 'vitolas.id', '=', 'productos.vitola_id')
-            ->select([
-                'actividades.id',
-                'actividades.api_id_actividad',
-                'actividades.codigo_actividad',
-                'actividades.nombre',
-                'actividad_producto.precio_mo',
-                'tipo_empaques.nombre as tipo_empaque',
-                'productos.id as producto_id',
-                'productos.codigo_producto',
-                'productos.item',
-                'productos.nombre as producto_nombre',
-            ]);
+        if ($term !== '' && $productoNombre !== '') {
+            $contextActivities = $this->contextActivities(
+                $searchTerms,
+                $productoNombre,
+                $tipoEmpaque,
+                $limit
+            );
+
+            if ($contextActivities->isNotEmpty()) {
+                return response()->json([
+                    'message' => 'Actividades encontradas por producto similar.',
+                    'activities' => $contextActivities,
+                ]);
+            }
+        }
+
+        $query = $this->baseQuery();
 
         if ($tipoEmpaque !== '') {
             $query->whereRaw('LOWER(TRIM(tipo_empaques.nombre)) = ?', [$tipoEmpaque]);
@@ -72,20 +73,11 @@ class ActividadController extends Controller
         }
 
         if (! $restrictedToExactProduct && ($term !== '' || $hasCaracteristicas)) {
-            $like = '%' . $term . '%';
-
-            $query->where(function ($q) use ($term, $like, $hasCaracteristicas, $capa, $vitola, $tipoEmpaque) {
+            $query->where(function ($q) use ($term, $searchTerms, $hasCaracteristicas, $capa, $vitola, $tipoEmpaque) {
                 $hasTextFilter = false;
 
                 if ($term !== '') {
-                    $q->where(function ($q) use ($like) {
-                        $q->where('actividades.nombre', 'like', $like)
-                            ->orWhere('actividades.codigo_actividad', 'like', $like)
-                            ->orWhere('tipo_empaques.nombre', 'like', $like)
-                            ->orWhere('productos.nombre', 'like', $like)
-                            ->orWhere('productos.codigo_producto', 'like', $like)
-                            ->orWhere('productos.item', 'like', $like);
-                    });
+                    $this->applySearchTerms($q, $searchTerms);
 
                     $hasTextFilter = true;
                 }
@@ -106,9 +98,113 @@ class ActividadController extends Controller
             });
         }
 
-        $activities = $query
+        $activities = $this->activitiesFromQuery($query, $limit);
+
+        return response()->json([
+            'message' => 'Actividades encontradas.',
+            'activities' => $activities,
+        ]);
+    }
+
+    private function baseQuery()
+    {
+        return DB::table('actividad_producto')
+            ->join('actividades', 'actividades.id', '=', 'actividad_producto.actividad_id')
+            ->leftJoin('tipo_empaques', 'tipo_empaques.id', '=', 'actividad_producto.tipo_empaque_id')
+            ->leftJoin('productos', 'productos.id', '=', 'actividad_producto.producto_id')
+            ->leftJoin('tipo_empaques as producto_tipo_empaques', 'producto_tipo_empaques.id', '=', 'productos.tipo_empaque_id')
+            ->leftJoin('capas', 'capas.id', '=', 'productos.capa_id')
+            ->leftJoin('vitolas', 'vitolas.id', '=', 'productos.vitola_id')
+            ->select([
+                'actividades.id',
+                'actividades.api_id_actividad',
+                'actividades.codigo_actividad',
+                'actividades.nombre',
+                'actividad_producto.precio_mo',
+                'tipo_empaques.nombre as tipo_empaque',
+                'productos.id as producto_id',
+                'productos.codigo_producto',
+                'productos.item',
+                'productos.nombre as producto_nombre',
+            ]);
+    }
+
+    private function contextActivities(array $searchTerms, string $productoNombre, string $tipoEmpaque, int $limit)
+    {
+        if ($searchTerms === []) {
+            return collect();
+        }
+
+        $tipoFamilia = $this->tipoEmpaqueFamily($tipoEmpaque);
+        $attempts = [
+            ['producto' => 'exact', 'empaque' => 'exact'],
+            ['producto' => 'like', 'empaque' => 'exact'],
+            ['producto' => 'exact', 'empaque' => 'familia'],
+            ['producto' => 'like', 'empaque' => 'familia'],
+            ['producto' => 'exact', 'empaque' => null],
+            ['producto' => 'like', 'empaque' => null],
+        ];
+
+        foreach ($attempts as $attempt) {
+            if ($attempt['empaque'] === 'exact' && $tipoEmpaque === '') {
+                continue;
+            }
+
+            if ($attempt['empaque'] === 'familia' && $tipoFamilia === '') {
+                continue;
+            }
+
+            $query = $this->baseQuery();
+            $this->applySearchTerms($query, $searchTerms);
+
+            if ($attempt['producto'] === 'exact') {
+                $query->whereRaw('LOWER(TRIM(productos.nombre)) = ?', [$productoNombre]);
+            } else {
+                $query->whereRaw('LOWER(productos.nombre) like ?', ['%' . $productoNombre . '%']);
+            }
+
+            if ($attempt['empaque'] === 'exact') {
+                $query->whereRaw('LOWER(TRIM(tipo_empaques.nombre)) = ?', [$tipoEmpaque]);
+            } elseif ($attempt['empaque'] === 'familia') {
+                $query->whereRaw('LOWER(TRIM(tipo_empaques.nombre)) like ?', [$tipoFamilia . '%']);
+            }
+
+            $activities = $this->activitiesFromQuery($query, $limit);
+
+            if ($activities->isNotEmpty()) {
+                return $activities;
+            }
+        }
+
+        return collect();
+    }
+
+    private function applySearchTerms($query, array $searchTerms): void
+    {
+        $query->where(function ($q) use ($searchTerms) {
+            foreach ($searchTerms as $index => $searchTerm) {
+                $like = '%' . $searchTerm . '%';
+                $method = $index === 0 ? 'where' : 'orWhere';
+
+                $q->{$method}(function ($q) use ($like) {
+                    $q->where('actividades.nombre', 'like', $like)
+                        ->orWhere('actividades.codigo_actividad', 'like', $like)
+                        ->orWhere('tipo_empaques.nombre', 'like', $like)
+                        ->orWhere('productos.nombre', 'like', $like)
+                        ->orWhere('productos.codigo_producto', 'like', $like)
+                        ->orWhere('productos.item', 'like', $like);
+                });
+            }
+        });
+    }
+
+    private function activitiesFromQuery($query, int $limit)
+    {
+        return $query
             ->orderBy('actividades.nombre')
             ->orderBy('productos.nombre')
+            ->orderBy('tipo_empaques.nombre')
+            ->orderBy('productos.codigo_producto')
             ->limit($limit)
             ->get()
             ->map(fn ($activity) => [
@@ -123,10 +219,30 @@ class ActividadController extends Controller
                 'item' => $activity->item,
                 'producto_nombre' => $activity->producto_nombre,
             ]);
+    }
 
-        return response()->json([
-            'message' => 'Actividades encontradas.',
-            'activities' => $activities,
-        ]);
+    private function tipoEmpaqueFamily(string $tipoEmpaque): string
+    {
+        $parts = preg_split('/\s+/', $tipoEmpaque);
+
+        return $parts[0] ?? '';
+    }
+
+    private function searchTerms(string $term): array
+    {
+        $term = trim($term);
+
+        if ($term === '') {
+            return [];
+        }
+
+        $terms = [$term];
+        $normalized = mb_strtolower($term);
+
+        if (str_contains($normalized, 'rezag') || str_contains($normalized, 'resag') || str_contains($normalized, 'rezad')) {
+            $terms[] = 'rezag';
+        }
+
+        return array_values(array_unique($terms));
     }
 }

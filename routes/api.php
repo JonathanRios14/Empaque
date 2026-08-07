@@ -33,10 +33,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/vineta-registros', [ApiVinetaRegistroController::class, 'store']);
     Route::patch('/vineta-registros/{vinetaRegistro}', [ApiVinetaRegistroController::class, 'update']);
     Route::get('/actividades/search', [ApiActividadController::class, 'search']);
+    Route::get('/empleados/seguimiento', [ApiVinetaRegistroController::class, 'seguimientoEmpleado']);
     Route::get('/empleados/{empleado}/resumen-diario', [ApiVinetaRegistroController::class, 'resumenDiarioEmpleado']);
     Route::get('/empleados/{empleado}/horas-ordinarias', [ApiEmpleadoHoraOrdinariaController::class, 'index']);
     Route::post('/empleados/{empleado}/horas-ordinarias', [ApiEmpleadoHoraOrdinariaController::class, 'store']);
     Route::patch('/empleados/{empleado}/horas-ordinarias/{horaOrdinaria}', [ApiEmpleadoHoraOrdinariaController::class, 'update']);
     Route::delete('/empleados/{empleado}/horas-ordinarias/{horaOrdinaria}', [ApiEmpleadoHoraOrdinariaController::class, 'destroy']);
+    Route::post('/empleados/{empleado}/jornada-laboral', [ApiEmpleadoHoraOrdinariaController::class, 'distributeJornada']);
     Route::post('/empleados/lookup', [ApiEmpleadoController::class, 'lookup']);
 });

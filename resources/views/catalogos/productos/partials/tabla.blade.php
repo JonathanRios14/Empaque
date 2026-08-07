@@ -78,7 +78,11 @@
                     </th>
 
                     <th class="px-6 py-4 text-right font-semibold">
-                        Acciones
+                        <a href="{{ $sortLink('actividades_count') }}"
+                           class="ajax-table-link inline-flex items-center justify-end gap-2 hover:text-[#5b3a1e]">
+                            Acciones
+                            <span class="text-xs">{{ $sortIcon('actividades_count') }}</span>
+                        </a>
                     </th>
                 </tr>
             </thead>
@@ -88,6 +92,7 @@
                     @php
                         $imagenPrincipalUrl = $producto->imagenPrincipalUrl();
                         $cargarImagenDirecta = $loop->iteration <= 8;
+                        $actividadesCount = (int) ($producto->actividades_count ?? $producto->actividades->count());
                     @endphp
 
                     <tr class="theme-row border-b border-gray-100 theme-border hover:bg-[#faf7f2] transition">
@@ -176,9 +181,13 @@
 
                         <td class="px-6 py-4 text-right">
                             <a href="{{ route('catalogos.productos.show', array_merge(['producto' => $producto->id], request()->query())) }}"
-                               class="theme-button-secondary inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#f3efe7] text-[#5b3a1e] text-xs font-semibold border border-[#e5d8c7] hover:bg-[#e5d8c7] transition">
+                               title="{{ $actividadesCount === 0 ? 'Este producto no tiene actividades asociadas.' : 'Ver producto' }}"
+                               class="theme-button-secondary relative overflow-hidden inline-flex items-center gap-1 px-3 py-1.5 {{ $actividadesCount === 0 ? 'pb-2.5' : '' }} rounded-lg bg-[#f3efe7] text-[#5b3a1e] text-xs font-semibold border border-[#e5d8c7] hover:bg-[#e5d8c7] transition">
                                 Ver
                                 <span>→</span>
+                                @if($actividadesCount === 0)
+                                    <span class="absolute inset-x-0 bottom-0 h-1 bg-red-500"></span>
+                                @endif
                             </a>
                         </td>
                     </tr>

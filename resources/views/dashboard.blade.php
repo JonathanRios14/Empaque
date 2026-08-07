@@ -9,36 +9,53 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
-        .stat-card {
-            transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+        .metric-card {
+            transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
         }
 
-        .stat-card:hover {
+        .metric-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 16px 35px rgba(15, 23, 42, .10);
-            border-color: #cbd5e1;
+            border-color: rgba(11, 18, 32, .18);
+            box-shadow: 0 18px 38px rgba(15, 23, 42, .08);
         }
 
-        .soft-panel {
-            background:
-                radial-gradient(circle at top right, rgba(15, 23, 42, .08), transparent 35%),
-                linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        html.dark-navy .metric-card:hover {
+            border-color: rgba(56, 189, 248, .26);
+            box-shadow: none;
         }
 
-        html.dark-navy .soft-panel {
-            background:
-                radial-gradient(circle at top right, rgba(56, 189, 248, .10), transparent 35%),
-                linear-gradient(135deg, #0f172a 0%, #111c33 100%);
+        .production-hero {
+            background: #ffffff;
+        }
+
+        html.dark-navy .production-hero {
+            background: #0f172a;
+        }
+
+        .dashboard-primary-action {
+            background: #0b1220;
+            color: #ffffff !important;
+        }
+
+        .dashboard-primary-action:hover {
+            background: #111c33;
+            color: #ffffff !important;
+        }
+
+        html.dark-navy .dashboard-primary-action {
+            background: #38bdf8;
+            color: #0b1220 !important;
+        }
+
+        html.dark-navy .dashboard-primary-action:hover {
+            background: #7dd3fc;
+            color: #0b1220 !important;
         }
 
         .reveal-on-scroll {
             opacity: 0;
-            transform: translateY(28px);
-            transition:
-                opacity .7s ease,
-                transform .7s ease,
-                box-shadow .25s ease,
-                border-color .25s ease;
+            transform: translateY(24px);
+            transition: opacity .55s ease, transform .55s ease;
         }
 
         .reveal-on-scroll.is-visible {
@@ -46,67 +63,53 @@
             transform: translateY(0);
         }
 
-        .reveal-delay-1 {
-            transition-delay: .08s;
-        }
-
-        .reveal-delay-2 {
-            transition-delay: .16s;
-        }
-
-        .reveal-delay-3 {
-            transition-delay: .24s;
-        }
-
-        .reveal-delay-4 {
-            transition-delay: .32s;
-        }
+        .reveal-delay-1 { transition-delay: .06s; }
+        .reveal-delay-2 { transition-delay: .12s; }
+        .reveal-delay-3 { transition-delay: .18s; }
     </style>
 </head>
 
 <body class="bg-[#f8fafc] text-gray-800 transition-colors duration-300">
 
 @php
-    $topMarcaLabels = $topMarcas->pluck('nombre')->values();
-    $topMarcaData = $topMarcas->pluck('productos_count')->values();
-
-    $hayTopMarcas = $topMarcas->count() > 0;
+    $hayProduccion = ($produccionTotal['registros'] ?? 0) > 0 || ($produccionTotal['minutos_ordinarios'] ?? 0) > 0;
+    $hayTendenciaDiaria = array_sum($tendenciaDiaria['actividades'] ?? []) > 0 || array_sum($tendenciaDiaria['horas'] ?? []) > 0;
+    $hayTendenciaMensual = array_sum($tendenciaMensual['actividades'] ?? []) > 0 || array_sum($tendenciaMensual['horas'] ?? []) > 0;
+    $hayProcesos = array_sum($distribucionProcesos['data'] ?? []) > 0;
 @endphp
 
 <div x-data="{
     sidebarOpen: localStorage.getItem('sidebarOpen') === null ? true : localStorage.getItem('sidebarOpen') === 'true',
     catalogos: false,
     seguridad: false,
-    produccion: false
+    produccion: true
 }" class="flex min-h-screen">
 
     @include('layouts.sidebar')
 
     <main class="flex-1">
-
         @include('layouts.topbar', [
             'title' => 'Dashboard',
-            'description' => 'Panel general del sistema de empaque.'
+            'description' => 'Producción, rendimiento y seguimiento operativo.'
         ])
 
-       <section class="app-content-compact">
+        <section class="app-content-compact">
             <div class="w-full max-w-[1600px] mx-auto space-y-6">
 
-                {{-- HERO --}}
-                <div class="soft-panel reveal-on-scroll rounded-3xl border theme-border shadow-sm p-7 overflow-hidden">
+                <div class="production-hero reveal-on-scroll rounded-3xl border theme-border shadow-sm p-6 lg:p-7 overflow-hidden">
                     <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
                         <div>
-                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white text-[#0b1220] text-xs font-semibold border theme-border mb-4">
+                            <div class="theme-badge inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border mb-4">
                                 <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                                Sistema activo
+                                Producción en vivo
                             </div>
 
                             <h1 class="theme-title text-3xl font-extrabold">
                                 Buenos días, {{ Auth::user()->name }}
                             </h1>
 
-                            <p class="theme-text text-sm mt-2 max-w-2xl">
-                                Panel general para supervisar catálogos sincronizados, usuarios activos y datos principales del sistema.
+                            <p class="theme-text text-sm mt-2 max-w-3xl">
+                                Panel operativo para revisar producción diaria, avance mensual, rendimiento anual, empleados, actividades y procesos con datos reales de viñetas registradas.
                             </p>
 
                             <div class="mt-4 flex flex-wrap gap-2">
@@ -115,298 +118,278 @@
                                 </span>
 
                                 <span class="theme-badge px-3 py-1 rounded-full text-xs font-semibold border">
-                                    {{ now()->format('d/m/Y') }}
+                                    {{ $today->format('d/m/Y') }}
+                                </span>
+
+                                <span class="theme-badge px-3 py-1 rounded-full text-xs font-semibold border">
+                                    {{ number_format($produccionMes['empleados'] ?? 0) }} empleado(s) con producción este mes
                                 </span>
                             </div>
                         </div>
 
-                        <div class="flex flex-wrap gap-3">
-                            <a href="{{ route('catalogos.productos.index') }}"
-                               class="gooey-action px-5 py-3 rounded-2xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
-                                Ver catálogo
-                            </a>
-
-                            @can('usuarios.ver')
-                                <a href="{{ route('usuarios.index') }}"
-                                   class="gooey-action theme-button-secondary px-5 py-3 rounded-2xl bg-white text-[#0b1220] text-sm font-semibold border theme-border hover:bg-[#f1f5f9] transition">
-                                    Ver usuarios
+                        <div class="min-w-full xl:min-w-[420px] space-y-3">
+                            <div class="flex flex-wrap justify-end gap-3">
+                                <a href="{{ route('vineta-registros.index') }}"
+                                   class="dashboard-primary-action gooey-action inline-flex items-center justify-center px-5 py-3 rounded-2xl text-sm font-semibold transition">
+                                    Ver registros
                                 </a>
-                            @endcan
+
+                                <a href="{{ route('vineta-registros.reporte-semanal') }}"
+                                   class="theme-button-secondary gooey-action inline-flex items-center justify-center px-5 py-3 rounded-2xl bg-white text-[#0b1220] text-sm font-semibold border theme-border hover:bg-[#f1f5f9] transition">
+                                    Reporte semanal
+                                </a>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-3">
+                                <div class="theme-soft rounded-2xl border theme-border p-4">
+                                    <p class="theme-text text-xs font-semibold">Hoy</p>
+                                    <p class="theme-title text-2xl font-extrabold counter" data-count="{{ $produccionHoy['actividades'] ?? 0 }}">0</p>
+                                    <p class="theme-text text-xs">actividades</p>
+                                </div>
+
+                                <div class="theme-soft rounded-2xl border theme-border p-4">
+                                    <p class="theme-text text-xs font-semibold">Mes</p>
+                                    <p class="theme-title text-2xl font-extrabold counter" data-count="{{ $produccionMes['actividades'] ?? 0 }}">0</p>
+                                    <p class="theme-text text-xs">actividades</p>
+                                </div>
+
+                                <div class="theme-soft rounded-2xl border theme-border p-4">
+                                    <p class="theme-text text-xs font-semibold">Año</p>
+                                    <p class="theme-title text-2xl font-extrabold counter" data-count="{{ $produccionAnio['actividades'] ?? 0 }}">0</p>
+                                    <p class="theme-text text-xs">actividades</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {{-- CONTADORES --}}
+                @unless($hayProduccion)
+                    <div class="reveal-on-scroll reveal-delay-1 theme-soft rounded-3xl border theme-border p-6 text-center">
+                        <p class="theme-title text-lg font-bold">Aún no hay producción registrada.</p>
+                        <p class="theme-text text-sm mt-1">Cuando se registren viñetas u horas ordinarias, este dashboard mostrará los indicadores de producción.</p>
+                    </div>
+                @endunless
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 reveal-on-scroll reveal-delay-1">
-
-                    <a href="{{ route('catalogos.productos.index') }}"
-                      class="kpi-card stat-card bg-white rounded-3xl border border-[#e5d8c7] shadow-sm theme-card theme-shadow p-5">
-                        <div class="flex items-center justify-between">
+                    <div class="metric-card theme-card theme-shadow rounded-3xl border theme-border p-5">
+                        <div class="flex items-start justify-between gap-4">
                             <div>
-                                <p class="theme-title text-sm font-bold">Productos</p>
-                                <h2 class="theme-title text-4xl font-extrabold mt-1 counter"
-                                    data-count="{{ $totales['productos'] ?? 0 }}">0</h2>
+                                <p class="theme-text text-sm font-bold">Actividades de hoy</p>
+                                <h2 class="theme-title text-4xl font-extrabold mt-1 counter" data-count="{{ $produccionHoy['actividades'] ?? 0 }}">0</h2>
                             </div>
-
-                            <div class="w-14 h-14 rounded-2xl bg-[#5b3a1e] text-white flex items-center justify-center shadow-sm">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none"
-                                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                          d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                </svg>
+                            <div class="w-12 h-12 rounded-2xl bg-[#0b1220] text-white flex items-center justify-center">
+                                <span class="text-lg font-black">D</span>
                             </div>
                         </div>
+                        <p class="theme-text text-xs mt-4">{{ number_format($produccionHoy['registros'] ?? 0) }} registros activos hoy.</p>
+                    </div>
 
-                        <p class="theme-text text-xs mt-4">
-                            Registros sincronizados desde la API.
-                        </p>
-                    </a>
-
-                    <a href="{{ route('catalogos.marcas.index') }}"
-                      class="kpi-card stat-card bg-white rounded-3xl border border-[#e5d8c7] shadow-sm theme-card theme-shadow p-5">
-                        <div class="flex items-center justify-between">
+                    <div class="metric-card theme-card theme-shadow rounded-3xl border theme-border p-5">
+                        <div class="flex items-start justify-between gap-4">
                             <div>
-                                <p class="theme-title text-sm font-bold">Marcas</p>
-                                <h2 class="theme-title text-4xl font-extrabold mt-1 counter"
-                                    data-count="{{ $totales['marcas'] ?? 0 }}">0</h2>
+                                <p class="theme-text text-sm font-bold">Puros de hoy</p>
+                                <h2 class="theme-title text-4xl font-extrabold mt-1 counter" data-count="{{ $produccionHoy['puros'] ?? 0 }}">0</h2>
                             </div>
-
-                            <div class="w-14 h-14 rounded-2xl bg-[#8a5a2b] text-white flex items-center justify-center shadow-sm">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none"
-                                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                          d="M7 7h.01M3 11l8.5-8.5a2.121 2.121 0 013 0L21 9l-9 9-9-7z" />
-                                </svg>
+                            <div class="w-12 h-12 rounded-2xl bg-[#2563eb] text-white flex items-center justify-center">
+                                <span class="text-lg font-black">P</span>
                             </div>
                         </div>
+                        <p class="theme-text text-xs mt-4">{{ number_format($produccionHoy['cajones'] ?? 0) }} cajones registrados.</p>
+                    </div>
 
-                        <p class="theme-text text-xs mt-4">
-                            Marcas normalizadas del catálogo.
-                        </p>
-                    </a>
-
-                    @can('usuarios.ver')
-                        <a href="{{ route('usuarios.index') }}"
-                          class="stat-card user-card bg-white rounded-3xl border border-[#e5d8c7] shadow-sm theme-card theme-shadow p-5">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="theme-title text-sm font-bold">Usuarios</p>
-                                    <h2 class="theme-title text-4xl font-extrabold mt-1 counter"
-                                        data-count="{{ $totales['usuarios'] ?? 0 }}">0</h2>
-                                </div>
-
-                                <div class="w-14 h-14 rounded-2xl bg-[#24160d] text-white flex items-center justify-center shadow-sm">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none"
-                                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                              d="M17 20h5v-2a4 4 0 0 0-4-4h-1M9 20H4v-2a4 4 0 0 1 4-4h1m8-5a4 4 0 1 0-8 0 4 4 0 0 0 8 0zm-8 0a4 4 0 1 0-8 0 4 4 0 0 0 8 0z" />
-                                    </svg>
-                                </div>
+                    <div class="metric-card theme-card theme-shadow rounded-3xl border theme-border p-5">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <p class="theme-text text-sm font-bold">Cajones del mes</p>
+                                <h2 class="theme-title text-4xl font-extrabold mt-1 counter" data-count="{{ $produccionMes['cajones'] ?? 0 }}">0</h2>
                             </div>
-
-                            <p class="theme-text text-xs mt-4">
-                                Usuarios registrados en el sistema.
-                            </p>
-                        </a>
-                    @endcan
-
-                    @can('roles.ver')
-                        <a href="{{ route('roles.index') }}"
-                           class="kpi-card stat-card bg-white rounded-3xl border border-[#e5d8c7] shadow-sm theme-card theme-shadow p-5">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="theme-title text-sm font-bold">Roles</p>
-                                    <h2 class="theme-title text-4xl font-extrabold mt-1 counter"
-                                        data-count="{{ $totales['roles'] ?? 0 }}">0</h2>
-                                </div>
-
-                                <div class="w-14 h-14 rounded-2xl bg-[#c9a66b] text-white flex items-center justify-center shadow-sm">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none"
-                                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                              d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                              d="M6 21v-2a6 6 0 0 1 12 0v2M19 8l1.5 1.5L23 7" />
-                                    </svg>
-                                </div>
+                            <div class="w-12 h-12 rounded-2xl bg-[#0891b2] text-white flex items-center justify-center">
+                                <span class="text-lg font-black">C</span>
                             </div>
+                        </div>
+                        <p class="theme-text text-xs mt-4">{{ number_format($produccionMes['puros'] ?? 0) }} puros producidos este mes.</p>
+                    </div>
 
-                            <p class="theme-text text-xs mt-4">
-                                Roles y permisos configurados.
-                            </p>
-                        </a>
-                    @endcan
-
+                    <div class="metric-card theme-card theme-shadow rounded-3xl border theme-border p-5">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <p class="theme-text text-sm font-bold">Empleados con producción</p>
+                                <h2 class="theme-title text-4xl font-extrabold mt-1 counter" data-count="{{ $produccionMes['empleados'] ?? 0 }}">0</h2>
+                            </div>
+                            <div class="w-12 h-12 rounded-2xl bg-[#16a34a] text-white flex items-center justify-center">
+                                <span class="text-lg font-black">E</span>
+                            </div>
+                        </div>
+                        <p class="theme-text text-xs mt-4">{{ number_format($produccionMes['registros'] ?? 0) }} registros activos este mes.</p>
+                    </div>
                 </div>
 
-                {{-- GRÁFICOS PRINCIPALES --}}
                 <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 reveal-on-scroll reveal-delay-2">
-
-                    {{-- RANKING MARCAS --}}
-                    <div class="xl:col-span-2 bg-white rounded-3xl border border-[#e5d8c7] shadow-sm theme-card theme-shadow overflow-hidden">
-                        <div class="p-6 border-b border-[#e5d8c7] theme-border flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div class="xl:col-span-2 theme-card theme-shadow rounded-3xl border theme-border overflow-hidden">
+                        <div class="p-6 border-b theme-border flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                             <div>
-                                <h2 class="theme-title text-lg font-bold">
-                                    Ranking de marcas
-                                </h2>
-
-                                <p class="theme-text text-sm">
-                                    Top 5 marcas según la cantidad de productos relacionados.
-                                </p>
+                                <h2 class="theme-title text-lg font-bold">Producción diaria del mes</h2>
+                                <p class="theme-text text-sm">Actividades y horas trabajadas por día.</p>
                             </div>
-
-                            <a href="{{ route('catalogos.marcas.index') }}"
-                               class="gooey-action px-4 py-2 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
-                                Ver marcas
-                            </a>
+                            <span class="theme-badge px-3 py-1 rounded-full text-xs font-semibold border">{{ $today->format('F Y') }}</span>
                         </div>
 
                         <div class="p-6">
-                            @if ($hayTopMarcas)
-                                <div id="rankingMarcasChart" class="w-full h-[380px]"></div>
+                            @if($hayTendenciaDiaria)
+                                <div id="dailyProductionChart" class="w-full h-[360px]"></div>
                             @else
                                 <div class="theme-soft rounded-2xl border theme-border p-10 text-center">
-                                    <p class="theme-title font-bold">No hay marcas registradas.</p>
-                                    <p class="theme-text text-sm mt-1">
-                                        Cuando existan productos asociados, aquí aparecerá el ranking.
-                                    </p>
+                                    <p class="theme-title font-bold">Sin datos diarios este mes.</p>
+                                    <p class="theme-text text-sm mt-1">Aquí aparecerá el avance conforme se registren viñetas.</p>
                                 </div>
                             @endif
                         </div>
                     </div>
 
-                    {{-- GRÁFICO USUARIOS --}}
-                    <div class="bg-white rounded-3xl border border-[#e5d8c7] shadow-sm theme-card theme-shadow overflow-hidden">
-                        <div class="p-6 border-b border-[#e5d8c7] theme-border">
-                            <h2 class="theme-title text-lg font-bold">
-                                Estado de usuarios
-                            </h2>
-
-                            <p class="theme-text text-sm">
-                                Usuarios activos e inactivos.
-                            </p>
+                    <div class="theme-card theme-shadow rounded-3xl border theme-border overflow-hidden">
+                        <div class="p-6 border-b theme-border">
+                            <h2 class="theme-title text-lg font-bold">Procesos del mes</h2>
+                            <p class="theme-text text-sm">Distribución por rezago, anillado y llenado.</p>
                         </div>
 
                         <div class="p-6">
-                            <div id="usuariosDonutChart" class="w-full h-[260px]"></div>
-
-                            <div class="mt-4 space-y-3">
-                                <div class="theme-soft flex items-center justify-between rounded-2xl border theme-border p-4">
-                                    <span class="theme-text text-sm">Activos</span>
-                                    <span class="theme-title font-bold counter"
-                                          data-count="{{ $totales['usuarios_activos'] ?? 0 }}">0</span>
+                            @if($hayProcesos)
+                                <div id="processChart" class="w-full h-[260px]"></div>
+                                <div class="mt-4 space-y-3">
+                                    @foreach($distribucionProcesos['rows'] as $proceso)
+                                        <div class="theme-soft flex items-center justify-between rounded-2xl border theme-border p-3">
+                                            <span class="theme-text text-sm font-semibold">{{ $proceso['grupo'] }}</span>
+                                            <span class="theme-title text-sm font-extrabold">{{ number_format($proceso['actividades']) }}</span>
+                                        </div>
+                                    @endforeach
                                 </div>
-
-                                <div class="theme-soft flex items-center justify-between rounded-2xl border theme-border p-4">
-                                    <span class="theme-text text-sm">Inactivos</span>
-                                    <span class="theme-title font-bold counter"
-                                          data-count="{{ $totales['usuarios_inactivos'] ?? 0 }}">0</span>
+                            @else
+                                <div class="theme-soft rounded-2xl border theme-border p-8 text-center">
+                                    <p class="theme-title font-bold">Sin procesos este mes.</p>
                                 </div>
-
-                                <div class="theme-soft flex items-center justify-between rounded-2xl border theme-border p-4">
-                                    <span class="theme-text text-sm">Total</span>
-                                    <span class="theme-title font-bold counter"
-                                          data-count="{{ $totales['usuarios'] ?? 0 }}">0</span>
-                                </div>
-                            </div>
+                            @endif
                         </div>
                     </div>
-
                 </div>
 
-                {{-- RESUMEN DE CATÁLOGOS Y USUARIOS --}}
-                <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 reveal-on-scroll reveal-delay-3">
-
-                    <div class="xl:col-span-2 bg-white rounded-3xl border border-[#e5d8c7] shadow-sm theme-card theme-shadow overflow-hidden">
-                        <div class="p-6 border-b border-[#e5d8c7] theme-border">
-                            <h2 class="theme-title text-lg font-bold">
-                                Resumen de catálogos
-                            </h2>
-
-                            <p class="theme-text text-sm">
-                                Accesos rápidos a los catálogos principales.
-                            </p>
+                <div class="theme-card theme-shadow rounded-3xl border theme-border overflow-hidden reveal-on-scroll reveal-delay-2">
+                        <div class="p-6 border-b theme-border">
+                            <h2 class="theme-title text-lg font-bold">Producción mensual del año</h2>
+                            <p class="theme-text text-sm">Comparativo anual de actividades, puros y horas.</p>
                         </div>
 
-                        <div class="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="p-6">
+                            @if($hayTendenciaMensual)
+                                <div id="monthlyProductionChart" class="w-full h-[360px]"></div>
+                            @else
+                                <div class="theme-soft rounded-2xl border theme-border p-10 text-center">
+                                    <p class="theme-title font-bold">Sin datos anuales.</p>
+                                    <p class="theme-text text-sm mt-1">La gráfica se llenará con la producción acumulada del año.</p>
+                                </div>
+                            @endif
+                        </div>
+                </div>
 
-                            <a href="{{ route('catalogos.empresas.index') }}"
-                               class="theme-soft rounded-2xl border theme-border p-4 hover:bg-[#f3efe7] transition">
-                                <p class="theme-text text-sm">Empresas</p>
-                                <p class="theme-title text-2xl font-bold counter"
-                                   data-count="{{ $totales['empresas'] ?? 0 }}">0</p>
-                            </a>
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 reveal-on-scroll reveal-delay-3">
+                    <div class="theme-card theme-shadow rounded-3xl border theme-border overflow-hidden">
+                        <div class="p-6 border-b theme-border flex items-center justify-between gap-3">
+                            <div>
+                                <h2 class="theme-title text-lg font-bold">Ranking de empleados</h2>
+                                <p class="theme-text text-sm">Top mensual por actividades realizadas.</p>
+                            </div>
+                            <a href="{{ route('empleados.index') }}" class="theme-badge px-3 py-1 rounded-full text-xs font-semibold border">Ver empleados</a>
+                        </div>
 
-                            <a href="{{ route('catalogos.vitolas.index') }}"
-                               class="theme-soft rounded-2xl border theme-border p-4 hover:bg-[#f3efe7] transition">
-                                <p class="theme-text text-sm">Vitolas</p>
-                                <p class="theme-title text-2xl font-bold counter"
-                                   data-count="{{ $totales['vitolas'] ?? 0 }}">0</p>
-                            </a>
-
-                            <a href="{{ route('catalogos.capas.index') }}"
-                               class="theme-soft rounded-2xl border theme-border p-4 hover:bg-[#f3efe7] transition">
-                                <p class="theme-text text-sm">Capas</p>
-                                <p class="theme-title text-2xl font-bold counter"
-                                   data-count="{{ $totales['capas'] ?? 0 }}">0</p>
-                            </a>
-
-                            <a href="{{ route('catalogos.presentaciones.index') }}"
-                               class="theme-soft rounded-2xl border theme-border p-4 hover:bg-[#f3efe7] transition">
-                                <p class="theme-text text-sm">Presentaciones</p>
-                                <p class="theme-title text-2xl font-bold counter"
-                                   data-count="{{ $totales['presentaciones'] ?? 0 }}">0</p>
-                            </a>
-
-                            <a href="{{ route('catalogos.tipo-empaques.index') }}"
-                               class="theme-soft rounded-2xl border theme-border p-4 hover:bg-[#f3efe7] transition">
-                                <p class="theme-text text-sm">Tipos de empaque</p>
-                                <p class="theme-title text-2xl font-bold counter"
-                                   data-count="{{ $totales['tipo_empaques'] ?? 0 }}">0</p>
-                            </a>
-
-                            <a href="{{ route('catalogos.actividades.index') }}"
-                               class="theme-soft rounded-2xl border theme-border p-4 hover:bg-[#f3efe7] transition">
-                                <p class="theme-text text-sm">Actividades</p>
-                                <p class="theme-title text-2xl font-bold counter"
-                                   data-count="{{ $totales['actividades'] ?? 0 }}">0</p>
-                            </a>
-
+                        <div class="p-6 space-y-3">
+                            @forelse($rankingEmpleados as $index => $empleado)
+                                <div class="theme-soft rounded-2xl border theme-border p-4 flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-2xl bg-[#0b1220] text-white flex items-center justify-center text-sm font-extrabold">
+                                        {{ $index + 1 }}
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="theme-title font-bold truncate">{{ $empleado['nombre'] }}</p>
+                                        <p class="theme-text text-xs">COD {{ $empleado['codigo'] }} · {{ $empleado['tiempo'] }}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="theme-title font-extrabold">{{ number_format($empleado['actividades']) }}</p>
+                                        <p class="theme-text text-xs">actividades</p>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="theme-soft rounded-2xl border theme-border p-8 text-center">
+                                    <p class="theme-title font-bold">Sin empleados con producción este mes.</p>
+                                </div>
+                            @endforelse
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-3xl border border-[#e5d8c7] shadow-sm theme-card theme-shadow overflow-hidden">
-                        <div class="p-6 border-b border-[#e5d8c7] theme-border">
-                            <h2 class="theme-title text-lg font-bold">
-                                Usuarios del sistema
-                            </h2>
-
-                            <p class="theme-text text-sm">
-                                Resumen de acceso y seguridad.
-                            </p>
+                    <div class="theme-card theme-shadow rounded-3xl border theme-border overflow-hidden">
+                        <div class="p-6 border-b theme-border">
+                            <h2 class="theme-title text-lg font-bold">Actividades más registradas</h2>
+                            <p class="theme-text text-sm">Prioriza lo que más mueve la producción del mes.</p>
                         </div>
 
-                        <div class="p-6 space-y-4">
-                            <div class="flex items-center justify-between">
-                                <span class="theme-text text-sm">Activos</span>
-                                <span class="px-3 py-1 rounded-full bg-green-50 text-green-700 text-xs font-semibold border border-green-200 counter"
-                                      data-count="{{ $totales['usuarios_activos'] ?? 0 }}">0</span>
-                            </div>
-
-                            <div class="flex items-center justify-between">
-                                <span class="theme-text text-sm">Inactivos</span>
-                                <span class="px-3 py-1 rounded-full bg-red-50 text-red-700 text-xs font-semibold border border-red-200 counter"
-                                      data-count="{{ $totales['usuarios_inactivos'] ?? 0 }}">0</span>
-                            </div>
-
-                            <div class="flex items-center justify-between">
-                                <span class="theme-text text-sm">Roles</span>
-                                <span class="theme-badge px-3 py-1 rounded-full text-xs font-semibold border counter"
-                                      data-count="{{ $totales['roles'] ?? 0 }}">0</span>
-                            </div>
+                        <div class="p-6 space-y-3">
+                            @forelse($rankingActividades as $actividad)
+                                <div class="theme-soft rounded-2xl border theme-border p-4">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <p class="theme-title font-bold truncate">{{ $actividad['nombre'] }}</p>
+                                        <span class="theme-badge px-3 py-1 rounded-full text-xs font-semibold border">{{ number_format($actividad['actividades']) }}</span>
+                                    </div>
+                                    <div class="mt-2 flex flex-wrap gap-2 text-xs theme-text">
+                                        <span>{{ number_format($actividad['registros']) }} registros</span>
+                                        <span>·</span>
+                                        <span>{{ number_format($actividad['puros']) }} puros</span>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="theme-soft rounded-2xl border theme-border p-8 text-center">
+                                    <p class="theme-title font-bold">Sin actividades este mes.</p>
+                                </div>
+                            @endforelse
                         </div>
                     </div>
+                </div>
 
+                <div class="theme-card theme-shadow rounded-3xl border theme-border overflow-hidden reveal-on-scroll reveal-delay-3">
+                    <div class="p-6 border-b theme-border flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <div>
+                            <h2 class="theme-title text-lg font-bold">Últimos movimientos de producción</h2>
+                            <p class="theme-text text-sm">Registros activos más recientes.</p>
+                        </div>
+                        <a href="{{ route('vineta-registros.index') }}" class="gooey-action px-4 py-2 rounded-xl bg-[#0b1220] text-white text-sm font-semibold hover:bg-[#111c33] transition">Ver todos</a>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead class="theme-soft border-b theme-border">
+                                <tr>
+                                    <th class="text-left theme-text font-bold px-6 py-4">Viñeta</th>
+                                    <th class="text-left theme-text font-bold px-6 py-4">Fecha</th>
+                                    <th class="text-left theme-text font-bold px-6 py-4">Empleado</th>
+                                    <th class="text-left theme-text font-bold px-6 py-4">Actividad</th>
+                                    <th class="text-left theme-text font-bold px-6 py-4">Marca</th>
+                                    <th class="text-right theme-text font-bold px-6 py-4">Puros</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y theme-border">
+                                @forelse($ultimosRegistros as $registro)
+                                    <tr>
+                                        <td class="px-6 py-4 theme-title font-bold whitespace-nowrap">{{ $registro['vineta'] }}</td>
+                                        <td class="px-6 py-4 theme-text whitespace-nowrap">{{ $registro['fecha'] }} {{ $registro['hora'] }}</td>
+                                        <td class="px-6 py-4 theme-text whitespace-nowrap">{{ $registro['empleado'] }}</td>
+                                        <td class="px-6 py-4 theme-text min-w-[220px]">{{ $registro['actividad'] }}</td>
+                                        <td class="px-6 py-4 theme-text whitespace-nowrap">{{ $registro['marca'] }}</td>
+                                        <td class="px-6 py-4 theme-title font-bold text-right">{{ number_format($registro['puros']) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="px-6 py-10 text-center theme-text">No hay movimientos registrados.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
             </div>
@@ -421,10 +404,12 @@
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         let countersStarted = false;
-        let rankingChart = null;
-        let usuariosChart = null;
         let chartsRendered = false;
+        const charts = [];
 
+        const dailyTrend = @json($tendenciaDiaria);
+        const monthlyTrend = @json($tendenciaMensual);
+        const processBreakdown = @json($distribucionProcesos);
         function animateCounters() {
             if (countersStarted) {
                 return;
@@ -432,17 +417,16 @@
 
             countersStarted = true;
 
-            const counters = document.querySelectorAll('.counter');
-
-            counters.forEach(counter => {
+            document.querySelectorAll('.counter').forEach(counter => {
                 const target = parseInt(counter.dataset.count || '0', 10);
-                const duration = 900;
+                const duration = 850;
                 const startTime = performance.now();
 
-                const animate = (currentTime) => {
+                const animate = currentTime => {
                     const elapsed = currentTime - startTime;
                     const progress = Math.min(elapsed / duration, 1);
-                    const value = Math.floor(progress * target);
+                    const eased = 1 - Math.pow(1 - progress, 3);
+                    const value = Math.floor(eased * target);
 
                     counter.textContent = value.toLocaleString('es-HN');
 
@@ -462,13 +446,29 @@
 
             return {
                 isDark,
-                text: isDark ? '#cbd5e1' : '#475569',
+                text: isDark ? '#cbd5e1' : '#334155',
                 muted: isDark ? '#94a3b8' : '#64748b',
                 grid: isDark ? 'rgba(148, 163, 184, 0.14)' : '#e2e8f0',
-                main: isDark ? '#38bdf8' : '#0b1220',
-                soft: isDark ? '#334155' : '#cbd5e1',
-                tooltip: isDark ? 'dark' : 'light',
-                dataLabel: isDark ? '#0f172a' : '#ffffff'
+                primary: isDark ? '#38bdf8' : '#0b1220',
+                blue: '#2563eb',
+                cyan: '#0891b2',
+                green: '#16a34a',
+                amber: '#d97706',
+                tooltip: isDark ? 'dark' : 'light'
+            };
+        }
+
+        function baseChartOptions(t) {
+            return {
+                fontFamily: 'inherit',
+                foreColor: t.text,
+                toolbar: { show: false },
+                animations: {
+                    enabled: true,
+                    easing: 'easeinout',
+                    speed: 650,
+                    dynamicAnimation: { enabled: true, speed: 320 }
+                }
             };
         }
 
@@ -478,311 +478,137 @@
             }
 
             chartsRendered = true;
-
             const t = chartTheme();
 
-            const rankingElement = document.querySelector('#rankingMarcasChart');
-
-            if (rankingElement) {
-                rankingChart = new ApexCharts(rankingElement, {
-                    chart: {
-                        type: 'bar',
-                        height: 380,
-                        toolbar: { show: false },
-                        fontFamily: 'inherit',
-                        foreColor: t.text,
-                        animations: {
-                            enabled: true,
-                            easing: 'easeinout',
-                            speed: 900,
-                            animateGradually: {
-                                enabled: true,
-                                delay: 160
-                            },
-                            dynamicAnimation: {
-                                enabled: true,
-                                speed: 450
-                            }
-                        }
-                    },
-
-                    series: [{
-                        name: 'Productos',
-                        data: @json($topMarcaData)
-                    }],
-
-                    plotOptions: {
-                        bar: {
-                            horizontal: true,
-                            borderRadius: 8,
-                            barHeight: '58%',
-                            distributed: false
-                        }
-                    },
-
-                    xaxis: {
-                        categories: @json($topMarcaLabels),
-                        labels: {
-                            style: {
-                                colors: t.muted,
-                                fontSize: '12px'
-                            }
-                        },
-                        axisBorder: { show: false },
-                        axisTicks: { show: false }
-                    },
-
-                    yaxis: {
-                        labels: {
-                            style: {
-                                colors: t.muted,
-                                fontSize: '13px',
-                                fontWeight: 600
-                            }
-                        }
-                    },
-
-                    colors: [t.main],
-
-                    grid: {
-                        borderColor: t.grid,
-                        strokeDashArray: 4,
-                        xaxis: {
-                            lines: { show: true }
-                        },
-                        yaxis: {
-                            lines: { show: false }
-                        }
-                    },
-
-                    dataLabels: {
-                        enabled: true,
-                        formatter: function (value) {
-                            return value + ' producto(s)';
-                        },
-                        style: {
-                            colors: [t.dataLabel],
-                            fontWeight: 700
-                        }
-                    },
-
-                    tooltip: {
-                        theme: t.tooltip,
-                        y: {
-                            formatter: function (value) {
-                                return value.toLocaleString('es-HN') + ' producto(s)';
-                            }
-                        }
-                    },
-
-                    legend: {
-                        show: false
-                    }
+            const dailyElement = document.querySelector('#dailyProductionChart');
+            if (dailyElement) {
+                const chart = new ApexCharts(dailyElement, {
+                    chart: { ...baseChartOptions(t), height: 360, type: 'line' },
+                    series: [
+                        { name: 'Actividades', type: 'column', data: dailyTrend.actividades },
+                        { name: 'Horas', type: 'line', data: dailyTrend.horas }
+                    ],
+                    colors: [t.primary, t.cyan],
+                    stroke: { width: [0, 3], curve: 'smooth' },
+                    plotOptions: { bar: { borderRadius: 7, columnWidth: '55%' } },
+                    dataLabels: { enabled: false },
+                    labels: dailyTrend.labels,
+                    xaxis: { labels: { style: { colors: t.muted } }, axisBorder: { show: false }, axisTicks: { show: false } },
+                    yaxis: [
+                        { title: { text: 'Actividades', style: { color: t.muted } }, labels: { style: { colors: t.muted }, formatter: value => Math.round(value).toLocaleString('es-HN') } },
+                        { opposite: true, title: { text: 'Horas', style: { color: t.muted } }, labels: { style: { colors: t.muted }, formatter: value => value.toLocaleString('es-HN') + ' h' } }
+                    ],
+                    grid: { borderColor: t.grid, strokeDashArray: 4 },
+                    tooltip: { theme: t.tooltip, shared: true }
                 });
 
-                rankingChart.render();
+                charts.push(chart);
+                chart.render();
             }
 
-            const usuariosElement = document.querySelector('#usuariosDonutChart');
-
-            if (usuariosElement) {
-                usuariosChart = new ApexCharts(usuariosElement, {
-                    chart: {
-                        type: 'donut',
-                        height: 260,
-                        fontFamily: 'inherit',
-                        animations: {
-                            enabled: true,
-                            easing: 'easeinout',
-                            speed: 900
-                        }
-                    },
-
+            const monthlyElement = document.querySelector('#monthlyProductionChart');
+            if (monthlyElement) {
+                const chart = new ApexCharts(monthlyElement, {
+                    chart: { ...baseChartOptions(t), height: 360, type: 'line' },
                     series: [
-                        {{ $totales['usuarios_activos'] ?? 0 }},
-                        {{ $totales['usuarios_inactivos'] ?? 0 }}
+                        { name: 'Actividades', type: 'column', data: monthlyTrend.actividades },
+                        { name: 'Puros', type: 'line', data: monthlyTrend.puros },
+                        { name: 'Horas', type: 'line', data: monthlyTrend.horas }
                     ],
+                    colors: [t.primary, t.blue, t.green],
+                    stroke: { width: [0, 3, 3], curve: 'smooth' },
+                    plotOptions: { bar: { borderRadius: 7, columnWidth: '48%' } },
+                    dataLabels: { enabled: false },
+                    labels: monthlyTrend.labels,
+                    xaxis: { labels: { style: { colors: t.muted } }, axisBorder: { show: false }, axisTicks: { show: false } },
+                    yaxis: { labels: { style: { colors: t.muted }, formatter: value => Math.round(value).toLocaleString('es-HN') } },
+                    grid: { borderColor: t.grid, strokeDashArray: 4 },
+                    tooltip: { theme: t.tooltip, shared: true }
+                });
 
-                    labels: ['Activos', 'Inactivos'],
+                charts.push(chart);
+                chart.render();
+            }
 
-                    colors: [
-                        t.main,
-                        t.soft
-                    ],
-
-                    stroke: {
-                        width: 0
-                    },
-
+            const processElement = document.querySelector('#processChart');
+            if (processElement) {
+                const chart = new ApexCharts(processElement, {
+                    chart: { ...baseChartOptions(t), height: 260, type: 'donut' },
+                    series: processBreakdown.data,
+                    labels: processBreakdown.labels,
+                    colors: [t.primary, t.blue, t.green, t.amber],
+                    stroke: { width: 0 },
+                    dataLabels: { enabled: false },
+                    legend: { position: 'bottom', labels: { colors: t.muted } },
                     plotOptions: {
                         pie: {
                             donut: {
                                 size: '72%',
                                 labels: {
                                     show: true,
-                                    name: {
-                                        show: true,
-                                        color: t.muted,
-                                        fontSize: '13px',
-                                        fontWeight: 600
-                                    },
-                                    value: {
-                                        show: true,
-                                        color: t.text,
-                                        fontSize: '24px',
-                                        fontWeight: 800,
-                                        formatter: function (value) {
-                                            return parseInt(value).toLocaleString('es-HN');
-                                        }
-                                    },
-                                    total: {
-                                        show: true,
-                                        label: 'Total',
-                                        color: t.muted,
-                                        fontSize: '13px',
-                                        formatter: function () {
-                                            return {{ $totales['usuarios'] ?? 0 }};
-                                        }
-                                    }
+                                    total: { show: true, label: 'Total', color: t.muted },
+                                    value: { color: t.text, fontSize: '22px', fontWeight: 800 }
                                 }
                             }
                         }
                     },
-
-                    legend: {
-                        show: true,
-                        position: 'bottom',
-                        labels: {
-                            colors: t.muted
-                        }
-                    },
-
-                    tooltip: {
-                        theme: t.tooltip
-                    },
-
-                    dataLabels: {
-                        enabled: false
-                    }
+                    tooltip: { theme: t.tooltip }
                 });
 
-                usuariosChart.render();
+                charts.push(chart);
+                chart.render();
             }
+
         }
 
         function updateChartsTheme() {
             const t = chartTheme();
 
-            if (rankingChart) {
-                rankingChart.updateOptions({
-                    chart: {
-                        foreColor: t.text
-                    },
-                    colors: [t.main],
-                    xaxis: {
-                        labels: {
-                            style: {
-                                colors: t.muted
-                            }
-                        }
-                    },
-                    yaxis: {
-                        labels: {
-                            style: {
-                                colors: t.muted
-                            }
-                        }
-                    },
-                    grid: {
-                        borderColor: t.grid
-                    },
-                    dataLabels: {
-                        style: {
-                            colors: [t.dataLabel]
-                        }
-                    },
-                    tooltip: {
-                        theme: t.tooltip
-                    }
+            charts.forEach(chart => {
+                chart.updateOptions({
+                    chart: { foreColor: t.text },
+                    colors: [t.primary, t.blue, t.green, t.amber],
+                    grid: { borderColor: t.grid },
+                    xaxis: { labels: { style: { colors: t.muted } } },
+                    yaxis: { labels: { style: { colors: t.muted } } },
+                    legend: { labels: { colors: t.muted } },
+                    tooltip: { theme: t.tooltip }
                 }, false, true);
-            }
-
-            if (usuariosChart) {
-                usuariosChart.updateOptions({
-                    colors: [
-                        t.main,
-                        t.soft
-                    ],
-                    plotOptions: {
-                        pie: {
-                            donut: {
-                                labels: {
-                                    name: {
-                                        color: t.muted
-                                    },
-                                    value: {
-                                        color: t.text
-                                    },
-                                    total: {
-                                        color: t.muted
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    legend: {
-                        labels: {
-                            colors: t.muted
-                        }
-                    },
-                    tooltip: {
-                        theme: t.tooltip
-                    }
-                }, false, true);
-            }
+            });
         }
 
-        const revealObserver = new IntersectionObserver((entries) => {
+        const revealObserver = new IntersectionObserver(entries => {
             entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('is-visible');
-
-                    if (entry.target.querySelector('.counter')) {
-                        animateCounters();
-                    }
-
-                    if (
-                        entry.target.querySelector('#rankingMarcasChart') ||
-                        entry.target.querySelector('#usuariosDonutChart')
-                    ) {
-                        renderCharts();
-                    }
-
-                    revealObserver.unobserve(entry.target);
+                if (! entry.isIntersecting) {
+                    return;
                 }
-            });
-        }, {
-            threshold: 0.18,
-            rootMargin: '0px 0px -60px 0px'
-        });
 
-        document.querySelectorAll('.reveal-on-scroll').forEach(element => {
-            revealObserver.observe(element);
-        });
+                entry.target.classList.add('is-visible');
+
+                if (entry.target.querySelector('.counter')) {
+                    animateCounters();
+                }
+
+                if (
+                    entry.target.querySelector('#dailyProductionChart') ||
+                    entry.target.querySelector('#monthlyProductionChart') ||
+                    entry.target.querySelector('#processChart')
+                ) {
+                    renderCharts();
+                }
+
+                revealObserver.unobserve(entry.target);
+            });
+        }, { threshold: 0.16, rootMargin: '0px 0px -50px 0px' });
+
+        document.querySelectorAll('.reveal-on-scroll').forEach(element => revealObserver.observe(element));
 
         const firstVisible = document.querySelector('.reveal-on-scroll');
-
         if (firstVisible) {
-            setTimeout(() => {
-                firstVisible.classList.add('is-visible');
-            }, 120);
+            setTimeout(() => firstVisible.classList.add('is-visible'), 90);
         }
 
-        const themeObserver = new MutationObserver(() => {
-            updateChartsTheme();
-        });
-
-        themeObserver.observe(document.documentElement, {
+        new MutationObserver(updateChartsTheme).observe(document.documentElement, {
             attributes: true,
             attributeFilter: ['class']
         });

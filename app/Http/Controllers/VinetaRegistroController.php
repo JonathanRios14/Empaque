@@ -8,6 +8,7 @@ use App\Models\EmpleadoHoraOrdinaria;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use ZipArchive;
@@ -309,6 +310,7 @@ class VinetaRegistroController extends Controller
     public function update(Request $request, VinetaRegistro $vinetaRegistro)
     {
         $hasMinutosTrabajados = Schema::hasColumn('vineta_registros', 'minutos_trabajados');
+        $porHora = $vinetaRegistro->esPorHoraOrdinario();
         $rules = [
             'fecha_registro' => ['required', 'date_format:Y-m-d'],
             'hora_registro' => ['required', 'regex:/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/'],
@@ -316,7 +318,7 @@ class VinetaRegistroController extends Controller
             'empleado_codigo' => ['required', 'string', 'max:120'],
         ];
 
-        if ($hasMinutosTrabajados) {
+        if ($hasMinutosTrabajados && ! $porHora) {
             $rules['minutos_trabajados'] = ['required', 'integer', 'min:1', 'max:' . $this->metaDiariaMinutos];
         }
 
@@ -382,7 +384,9 @@ class VinetaRegistroController extends Controller
         ];
 
         if ($hasMinutosTrabajados) {
-            $payload['minutos_trabajados'] = (int) $data['minutos_trabajados'];
+            $payload['minutos_trabajados'] = $porHora
+                ? null
+                : (int) $data['minutos_trabajados'];
         }
 
         $vinetaRegistro->update($payload);
@@ -444,7 +448,11 @@ class VinetaRegistroController extends Controller
             'Codigo empleado',
             'Tipo',
             'Viñeta',
-            'Producto',
+            'Codigo producto',
+            'Marca',
+            'Item',
+            'Orden sistema',
+            'Orden cliente',
             'Actividad',
             'Cantidad procesada',
             'Estadistico',
@@ -466,7 +474,11 @@ class VinetaRegistroController extends Controller
                 $registro->empleado_codigo,
                 $porHora ? 'Viñeta por hora' : 'Viñeta',
                 $registro->vineta_api_id ? 'ID ' . $registro->vineta_api_id : $registro->codigo_vineta,
-                $registro->producto_nombre,
+                $this->valorExport($registro->producto_codigo),
+                $this->valorExport($registro->marca),
+                $this->valorExport($registro->producto_item),
+                $this->valorExport($registro->orden_del_sistema),
+                $this->valorExport($registro->orden),
                 $registro->actividad_nombre,
                 $registro->cantidad_puros,
                 $estadistico,
@@ -515,7 +527,11 @@ class VinetaRegistroController extends Controller
                 $hora->empleado_codigo,
                 'Hora ordinaria',
                 'N/A',
-                'Registro manual',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
+                'N/A',
                 'Hora ordinaria',
                 0,
                 0,
@@ -624,6 +640,13 @@ class VinetaRegistroController extends Controller
         ])->deleteFileAfterSend(true);
     }
 
+    private function valorExport(mixed $value): string
+    {
+        $value = trim((string) $value);
+
+        return $value !== '' ? $value : 'N/A';
+    }
+
     public function exportReporteSemanal(Request $request): BinaryFileResponse
     {
         $inicio = Carbon::parse(
@@ -661,11 +684,16 @@ class VinetaRegistroController extends Controller
             : collect();
         $registrosPorEmpleado = $registros->groupBy('empleado_codigo');
         $horasPorEmpleado = $horasOrdinarias->groupBy('empleado_codigo');
+        $empleadosLlenado = $empleados
+            ->filter(fn (Empleado $empleado) => $this->empleadoEsLlenadoReporte($empleado))
+            ->sortBy(fn (Empleado $empleado) => mb_strtolower((string) $empleado->nombre) . '|' . $empleado->codigo)
+            ->values();
         $sheets = [];
 
         foreach ($areas as $areaKey => $areaTitulo) {
             $empleadosArea = $empleados
-                ->filter(fn (Empleado $empleado) => $this->empleadoPerteneceAreaReporte($empleado, $areaKey))
+                ->filter(fn (Empleado $empleado) => $this->empleadoPerteneceAreaReporte($empleado, $areaKey)
+                    && ! $this->empleadoEsLlenadoReporte($empleado))
                 ->sortBy(fn (Empleado $empleado) => mb_strtolower((string) $empleado->nombre) . '|' . $empleado->codigo)
                 ->values();
             $rows = $this->reporteSemanalAreaRows(
@@ -681,6 +709,24 @@ class VinetaRegistroController extends Controller
                 'name' => $areaKey === 'tarea' ? 'Empaque tarea' : 'Empaque brocha',
                 'rows' => $rows,
                 'format' => 'weekly_report',
+                'paper_size' => 'letter',
+                'employees_per_page' => 3,
+            ];
+        }
+
+        if ($empleadosLlenado->isNotEmpty()) {
+            $sheets[] = [
+                'name' => 'Llenado',
+                'rows' => $this->reporteSemanalLlenadoRows(
+                    $inicio,
+                    $fin,
+                    $empleadosLlenado,
+                    $registrosPorEmpleado,
+                    $horasPorEmpleado
+                ),
+                'format' => 'weekly_report',
+                'paper_size' => 'legal',
+                'employees_per_page' => 1,
             ];
         }
 
@@ -731,7 +777,7 @@ class VinetaRegistroController extends Controller
             $registrosEmpleado = $registrosPorEmpleado->get($empleado->codigo, collect());
             $horasEmpleado = $horasPorEmpleado->get($empleado->codigo, collect());
             $tipo = $this->tipoReporteEmpleado($empleado, $registrosEmpleado);
-            $columnasActividad = $this->columnasActividadReporte();
+            $columnasActividad = $this->columnasActividadReporte($tipo);
             $header = array_merge([
                 'Dia',
                 'Incap.',
@@ -807,7 +853,7 @@ class VinetaRegistroController extends Controller
                     '',
                     $this->numeroReporte($ho),
                 ], $actividadValores, [
-                    $this->numeroReporte($totalDia),
+                    $this->totalDiaReporte($totalDia, $ho),
                     '',
                 ]);
             }
@@ -837,6 +883,125 @@ class VinetaRegistroController extends Controller
         return $rows;
     }
 
+    private function reporteSemanalLlenadoRows(
+        Carbon $inicio,
+        Carbon $fin,
+        $empleados,
+        $registrosPorEmpleado,
+        $horasPorEmpleado
+    ): array {
+        $columnasActividad = $this->columnasActividadLlenadoReporte();
+        $precios = $this->preciosActividadLlenadoReporte($columnasActividad);
+        $header = array_merge([
+            'Dia',
+            'Inc.',
+            'Per',
+            'S.S.',
+            'Lact.',
+            'HD',
+            'HO',
+        ], array_values($columnasActividad), [
+            'Total',
+            'Precios',
+            'Actividades',
+            'Otros Ing.',
+        ]);
+        $totalIndex = 7 + count($columnasActividad);
+        $precioIndex = $totalIndex + 1;
+        $actividadPrecioIndex = $totalIndex + 2;
+        $rows = [
+            ['Tabacos de Oriente "El Paraiso"'],
+            ['Periodo del ' . $this->fechaLarga($inicio) . ' al ' . $this->fechaLarga($fin)],
+            ['Llenado de Cajas y Paquetes / Sellado de Bolsas'],
+            [],
+        ];
+
+        foreach ($empleados as $empleado) {
+            $registrosEmpleado = $registrosPorEmpleado->get($empleado->codigo, collect());
+            $horasEmpleado = $horasPorEmpleado->get($empleado->codigo, collect());
+            $empleadoRow = array_fill(0, count($header), '');
+            $empleadoRow[0] = 'COD: ' . $empleado->codigo;
+            $empleadoRow[1] = $empleado->nombre;
+            $empleadoRow[max(0, $totalIndex - 4)] = 'Puesto:';
+            $empleadoRow[max(0, $totalIndex - 3)] = $this->puestoReporteEmpleado($empleado, 'llenado');
+            $empleadoRow[$totalIndex] = $empleado->area ?: 'Empaque a la Tarea Permanente 2';
+
+            $rows[] = $empleadoRow;
+            $rows[] = $header;
+
+            $totalesActividad = array_fill_keys(array_keys($columnasActividad), 0);
+            $totalGeneral = 0;
+            $totalHo = 0.0;
+            $dias = [];
+
+            for ($date = $inicio->copy(); $date->lte($fin) && count($dias) < 6; $date->addDay()) {
+                $dias[] = [$this->diaSemanaCorto($date), $date->toDateString()];
+            }
+
+            $lineas = max(count($dias), count($precios));
+
+            for ($index = 0; $index < $lineas; $index++) {
+                $row = array_fill(0, count($header), '');
+
+                if (isset($dias[$index])) {
+                    [$dia, $fecha] = $dias[$index];
+                    $actividadDia = array_fill_keys(array_keys($columnasActividad), 0);
+                    $registrosDia = $registrosEmpleado->filter(
+                        fn (VinetaRegistro $registro) => $registro->fecha_registro?->format('Y-m-d') === $fecha
+                    );
+
+                    foreach ($registrosDia as $registro) {
+                        $columna = $this->columnaActividadLlenadoRegistroReporte($registro);
+
+                        if ($columna !== null && array_key_exists($columna, $actividadDia)) {
+                            $actividadDia[$columna] += (int) $registro->total_actividades;
+                        }
+                    }
+
+                    $ho = $this->horasOrdinariasDia($horasEmpleado, $fecha);
+                    $totalDia = (int) array_sum($actividadDia);
+                    $row[0] = $dia;
+                    $row[6] = $this->numeroReporte($ho);
+                    $totalHo += $ho;
+                    $totalGeneral += $totalDia;
+
+                    $columnIndex = 7;
+
+                    foreach ($columnasActividad as $key => $label) {
+                        $valor = $actividadDia[$key] ?? 0;
+                        $row[$columnIndex++] = $this->numeroReporte($valor);
+                        $totalesActividad[$key] += $valor;
+                    }
+
+                    $row[$totalIndex] = $this->totalDiaReporte($totalDia, $ho);
+                }
+
+                if (isset($precios[$index])) {
+                    $row[$precioIndex] = $precios[$index]['precio'];
+                    $row[$actividadPrecioIndex] = $precios[$index]['actividad'];
+                }
+
+                $rows[] = $row;
+            }
+
+            $totalRow = array_fill(0, count($header), '');
+            $totalRow[0] = 'Total Semanal';
+            $totalRow[6] = $this->numeroReporte($totalHo);
+            $columnIndex = 7;
+
+            foreach ($columnasActividad as $key => $label) {
+                $totalRow[$columnIndex++] = $this->numeroReporte($totalesActividad[$key] ?? 0);
+            }
+
+            $totalRow[$totalIndex] = $this->numeroReporte($totalGeneral);
+            $totalRow[$actividadPrecioIndex] = 'Totales';
+            $rows[] = $totalRow;
+            $rows[] = [];
+        }
+
+        return $rows;
+    }
+
     private function empleadoPerteneceAreaReporte(Empleado $empleado, string $areaKey): bool
     {
         $area = $this->normalizarTextoReporte($empleado->area);
@@ -852,6 +1017,14 @@ class VinetaRegistroController extends Controller
         };
     }
 
+    private function empleadoEsLlenadoReporte(Empleado $empleado): bool
+    {
+        $texto = $this->normalizarTextoReporte(($empleado->cargo ?? '') . ' ' . ($empleado->area ?? ''));
+
+        return str_contains($texto, 'llenad')
+            || (str_contains($texto, 'sell') && str_contains($texto, 'bolsa'));
+    }
+
     private function tipoReporteEmpleado(Empleado $empleado, $registros): string
     {
         $texto = $this->normalizarTextoReporte(($empleado->cargo ?? '') . ' ' . ($empleado->area ?? ''));
@@ -860,7 +1033,12 @@ class VinetaRegistroController extends Controller
             return 'rezago';
         }
 
-        if (str_contains($texto, 'anill') || str_contains($texto, 'celof') || str_contains($texto, 'sell')) {
+        if (
+            str_contains($texto, 'anill')
+            || str_contains($texto, 'celof')
+            || str_contains($texto, 'sell')
+            || (str_contains($texto, 'brocha') && str_contains($texto, 'limp'))
+        ) {
             return 'anillado';
         }
 
@@ -876,7 +1054,12 @@ class VinetaRegistroController extends Controller
             return 'rezago';
         }
 
-        if (str_contains($actividadTexto, 'anill') || str_contains($actividadTexto, 'celof') || str_contains($actividadTexto, 'sell')) {
+        if (
+            str_contains($actividadTexto, 'anill')
+            || str_contains($actividadTexto, 'celof')
+            || str_contains($actividadTexto, 'sell')
+            || (str_contains($actividadTexto, 'brocha') && str_contains($actividadTexto, 'limp'))
+        ) {
             return 'anillado';
         }
 
@@ -897,16 +1080,242 @@ class VinetaRegistroController extends Controller
             'rezago' => 'Rezago Puros',
             'anillado' => 'Anilladora / Celofanadora',
             'limpia' => 'Limpia Puros',
+            'llenado' => 'Llenado de Cajas y Paquetes',
             default => 'Empaque',
         };
     }
 
-    private function columnasActividadReporte(): array
+    private function columnasActividadReporte(string $tipo): array
     {
-        return ['Anillado', 'Celofan', 'Rezago'];
+        return match ($tipo) {
+            'rezago' => ['Bols/1/Pac', 'Llen/Disp/Br', '6 y 7/PH', 'Rez/Puros'],
+            'anillado' => ['Cel/Brocha', 'Rasurado', 'Limp/Brocha', 'Ani/Cel/Sel'],
+            'limpia' => ['2/PHM', 'Sampler de 5', '6/7 PPHM', 'Limp/Puros'],
+            default => ['2/PHM', 'Sampler de 5', '6/7 PPHM', 'Limp/Puros'],
+        };
     }
 
-    private function columnaActividadReporte(?string $actividad, array $columnas, string $tipo): ?string
+    private function columnasActividadLlenadoReporte(): array
+    {
+        return [
+            '1_phm' => '1/PHM',
+            '2_phm' => '2/PHM',
+            '3_phm' => '3/PHM',
+            '3_pp' => '3/PP',
+            '4_shm' => '4/SHM',
+            '5_shm' => '5/SHM',
+            '7_pphm' => '6,7/PH',
+            'ani_cel_sel' => 'Ani/Cel/Sel',
+            'bols_1_pac' => 'Bols/1/Pac',
+            'llen_100' => 'Llen/100',
+            'llen_10_40' => 'Llen/10-40',
+            'llen_50' => 'Llen/50',
+            'petaca_4' => 'Petaca 4',
+            'sampler_5' => 'Sampler de 5',
+            'sampler_10' => 'Samp/Cost/10',
+            'llen_bolsa_3p' => 'Llen/Bols/3p',
+            'llen_bolsa_5p' => 'Llen/Bols/5p',
+            'sell_bolsa_3p' => 'Sell/Bols/3p',
+            'sell_bolsa_5p' => 'Sell/Bols/5p',
+            'llen_disp_24p' => 'Llen/Disp/24p',
+            'llen_disp_30p' => 'Llen/Disp/30p',
+        ];
+    }
+
+    private function preciosActividadLlenadoReporte(array $columnasActividad): array
+    {
+        $precios = array_fill_keys(array_keys($columnasActividad), null);
+
+        DB::table('actividad_producto')
+            ->join('actividades', 'actividades.id', '=', 'actividad_producto.actividad_id')
+            ->where(function ($query) {
+                $query->whereRaw('LOWER(actividades.nombre) LIKE ?', ['%llenad%'])
+                    ->orWhereRaw('LOWER(actividades.nombre) LIKE ?', ['%sell%'])
+                    ->orWhereRaw('LOWER(actividades.nombre) LIKE ?', ['%paquete%'])
+                    ->orWhereRaw('LOWER(actividades.nombre) LIKE ?', ['%sampler%'])
+                    ->orWhereRaw('LOWER(actividades.nombre) LIKE ?', ['%petaca%']);
+            })
+            ->whereNotNull('actividad_producto.precio_mo')
+            ->orderBy('actividades.nombre')
+            ->get(['actividades.nombre', 'actividad_producto.precio_mo'])
+            ->each(function ($actividad) use (&$precios) {
+                $key = $this->columnaActividadLlenadoTextoReporte((string) $actividad->nombre);
+                $precio = (float) $actividad->precio_mo;
+
+                if ($key !== null && array_key_exists($key, $precios) && $precio > 0 && $precios[$key] === null) {
+                    $precios[$key] = $precio;
+                }
+            });
+
+        foreach ($this->fuentesPrecioLlenadoReporte() as $key => $nombres) {
+            if (! array_key_exists($key, $precios)) {
+                continue;
+            }
+
+            $precio = $this->precioActividadPorNombres($nombres);
+
+            if ($precio !== null) {
+                $precios[$key] = $precio;
+            }
+        }
+
+        $precios['sell_bolsa_3p'] = 0.0179583;
+        $precios['sell_bolsa_5p'] = 0.0107750;
+
+        $rows = [
+            ['precio' => 'L53.88', 'actividad' => 'H.O'],
+            ['precio' => 'L431.00', 'actividad' => 'Al Dia'],
+        ];
+
+        foreach ($columnasActividad as $key => $label) {
+            $rows[] = [
+                'precio' => $precios[$key] === null ? '' : $this->monedaReporte($precios[$key]),
+                'actividad' => $label,
+            ];
+        }
+
+        return $rows;
+    }
+
+    private function fuentesPrecioLlenadoReporte(): array
+    {
+        return [
+            'ani_cel_sel' => ['Anillado', 'Celofanado', 'Pegado de Sellos en Celofan'],
+            'petaca_4' => ['Petaca 4 Puros'],
+            'sampler_5' => ['Sampler de 5'],
+            'sampler_10' => ['Sampler COTSCO 10 Puros'],
+            'llen_bolsa_3p' => ['Llenado de Bolsas 3 Puros (Kretek)'],
+            'llen_bolsa_5p' => ['Llenado de Bolsas 5 Puros (Kretek)'],
+            'sell_bolsa_3p' => ['Sellado de bolsas (Altadis)'],
+            'sell_bolsa_5p' => ['Sellado de bolsas (Altadis)'],
+            'llen_disp_24p' => ['Llenado de Display 24 Puros(Kretek)'],
+            'llen_disp_30p' => ['Llenado de Display 30 Puros(Kretek)'],
+        ];
+    }
+
+    private function precioActividadPorNombres(array $nombres): ?float
+    {
+        $precio = DB::table('actividad_producto')
+            ->join('actividades', 'actividades.id', '=', 'actividad_producto.actividad_id')
+            ->whereIn('actividades.nombre', $nombres)
+            ->whereNotNull('actividad_producto.precio_mo')
+            ->orderBy('actividades.nombre')
+            ->value('actividad_producto.precio_mo');
+
+        return $precio === null ? null : (float) $precio;
+    }
+
+    private function monedaReporte(float $value): string
+    {
+        return 'L' . number_format($value, 6, '.', '');
+    }
+
+    private function columnaActividadLlenadoRegistroReporte(VinetaRegistro $registro): ?string
+    {
+        return $this->columnaActividadLlenadoTextoReporte($this->textoActividadReporte($registro));
+    }
+
+    private function columnaActividadLlenadoTextoReporte(string $texto): ?string
+    {
+        $texto = $this->normalizarTextoReporte($texto);
+
+        if ($texto === '') {
+            return null;
+        }
+
+        if (str_contains($texto, '1/phm') || str_contains($texto, '1 phm')) {
+            return '1_phm';
+        }
+
+        if (str_contains($texto, '2/phm') || str_contains($texto, '2 phm')) {
+            return '2_phm';
+        }
+
+        if (str_contains($texto, '3/phm') || str_contains($texto, '3 phm')) {
+            return '3_phm';
+        }
+
+        if (str_contains($texto, '3/pp') || str_contains($texto, '3 pp')) {
+            return '3_pp';
+        }
+
+        if (str_contains($texto, '4/shm') || str_contains($texto, '4 shm')) {
+            return '4_shm';
+        }
+
+        if (str_contains($texto, '5/shm') || str_contains($texto, '5 shm')) {
+            return '5_shm';
+        }
+
+        if ($this->esActividadSeisSieteReporte($texto)) {
+            return '7_pphm';
+        }
+
+        if (
+            str_contains($texto, 'anill')
+            || str_contains($texto, 'anil')
+            || str_contains($texto, 'celof')
+            || str_contains($texto, 'sello')
+        ) {
+            return 'ani_cel_sel';
+        }
+
+        if (str_contains($texto, 'bolsa') && (str_contains($texto, '1 pack') || str_contains($texto, '1/p') || str_contains($texto, '1 pac'))) {
+            return 'bols_1_pac';
+        }
+
+        if (str_contains($texto, 'caja') && str_contains($texto, '100')) {
+            return 'llen_100';
+        }
+
+        if (str_contains($texto, '10-40') || str_contains($texto, '10/40')) {
+            return 'llen_10_40';
+        }
+
+        if (str_contains($texto, 'caja') && str_contains($texto, '50')) {
+            return 'llen_50';
+        }
+
+        if (str_contains($texto, 'petaca')) {
+            return 'petaca_4';
+        }
+
+        if (str_contains($texto, 'sampler') && str_contains($texto, '5')) {
+            return 'sampler_5';
+        }
+
+        if (str_contains($texto, 'sampler') && str_contains($texto, '10')) {
+            return 'sampler_10';
+        }
+
+        if (str_contains($texto, 'sell') && str_contains($texto, 'bolsa') && str_contains($texto, '5')) {
+            return 'sell_bolsa_5p';
+        }
+
+        if (str_contains($texto, 'sell') && str_contains($texto, 'bolsa')) {
+            return 'sell_bolsa_3p';
+        }
+
+        if (str_contains($texto, 'bolsa') && (str_contains($texto, '3 puro') || str_contains($texto, '3 pack') || str_contains($texto, '3 p'))) {
+            return 'llen_bolsa_3p';
+        }
+
+        if (str_contains($texto, 'bolsa') && (str_contains($texto, '5 puro') || str_contains($texto, '5 pack') || str_contains($texto, '5 p') || str_contains($texto, 'bolsa/5'))) {
+            return 'llen_bolsa_5p';
+        }
+
+        if (str_contains($texto, 'display') && str_contains($texto, '24')) {
+            return 'llen_disp_24p';
+        }
+
+        if (str_contains($texto, 'display') && str_contains($texto, '30')) {
+            return 'llen_disp_30p';
+        }
+
+        return null;
+    }
+
+    private function columnaActividadReporte(?string $actividad, string $tipo): ?string
     {
         $texto = $this->normalizarTextoReporte($actividad);
 
@@ -914,38 +1323,105 @@ class VinetaRegistroController extends Controller
             return null;
         }
 
+        return match ($tipo) {
+            'rezago' => $this->columnaActividadRezagoReporte($texto),
+            'anillado' => $this->columnaActividadAnilladoReporte($texto),
+            'limpia' => $this->columnaActividadLimpiaReporte($texto),
+            default => $this->columnaActividadLimpiaReporte($texto),
+        };
+    }
+
+    private function columnaActividadRegistroReporte(VinetaRegistro $registro, string $tipo): ?string
+    {
+        return $this->columnaActividadReporte($this->textoActividadReporte($registro), $tipo);
+    }
+
+    private function columnaActividadRezagoReporte(string $texto): ?string
+    {
         if (str_contains($texto, 'rezag') || str_contains($texto, 'rezad') || str_contains($texto, 'resag')) {
-            return 'Rezago';
+            return 'Rez/Puros';
         }
 
-        if (str_contains($texto, 'celof') || str_contains($texto, 'celofan')) {
-            return 'Celofan';
+        if (str_contains($texto, 'bolsa') && (str_contains($texto, '1 pack') || str_contains($texto, '1/p') || str_contains($texto, '1 pac'))) {
+            return 'Bols/1/Pac';
         }
 
-        if (str_contains($texto, 'anill') || str_contains($texto, 'anil')) {
-            return 'Anillado';
+        if (
+            str_contains($texto, 'display')
+            || (str_contains($texto, 'brocha') && (
+                str_contains($texto, 'llenad')
+                || str_contains($texto, 'bolsa')
+                || str_contains($texto, 'paquete')
+                || str_contains($texto, 'empaque')
+            ))
+        ) {
+            return 'Llen/Disp/Br';
+        }
+
+        if ($this->esActividadSeisSieteReporte($texto)) {
+            return '6 y 7/PH';
         }
 
         return null;
     }
 
-    private function columnaActividadRegistroReporte(VinetaRegistro $registro, string $tipo): ?string
+    private function columnaActividadAnilladoReporte(string $texto): ?string
     {
-        $nombre = $this->normalizarTextoReporte($registro->actividad_nombre);
-
-        if (str_contains($nombre, 'rezag') || str_contains($nombre, 'rezad') || str_contains($nombre, 'resag')) {
-            return 'Rezago';
+        if (str_contains($texto, 'celof') && str_contains($texto, 'brocha')) {
+            return 'Cel/Brocha';
         }
 
-        if (str_contains($nombre, 'celof') || str_contains($nombre, 'celofan')) {
-            return 'Celofan';
+        if (str_contains($texto, 'rasur')) {
+            return 'Rasurado';
         }
 
-        if (str_contains($nombre, 'anill') || str_contains($nombre, 'anil')) {
-            return 'Anillado';
+        if ((str_contains($texto, 'limp') || str_contains($texto, 'gomad')) && str_contains($texto, 'brocha')) {
+            return 'Limp/Brocha';
         }
 
-        return $this->columnaActividadReporte($this->textoActividadReporte($registro), [], $tipo);
+        if (
+            str_contains($texto, 'anill')
+            || str_contains($texto, 'anil')
+            || str_contains($texto, 'celof')
+            || str_contains($texto, 'sello')
+            || str_contains($texto, 'sell')
+        ) {
+            return 'Ani/Cel/Sel';
+        }
+
+        return null;
+    }
+
+    private function columnaActividadLimpiaReporte(string $texto): ?string
+    {
+        if (str_contains($texto, 'sampler') && str_contains($texto, '5')) {
+            return 'Sampler de 5';
+        }
+
+        if (str_contains($texto, '2/phm') || str_contains($texto, '2 phm')) {
+            return '2/PHM';
+        }
+
+        if ($this->esActividadSeisSieteReporte($texto)) {
+            return '6/7 PPHM';
+        }
+
+        if (str_contains($texto, 'limp') && str_contains($texto, 'puro')) {
+            return 'Limp/Puros';
+        }
+
+        return null;
+    }
+
+    private function esActividadSeisSieteReporte(string $texto): bool
+    {
+        return str_contains($texto, '6/7')
+            || str_contains($texto, '6 y 7')
+            || str_contains($texto, '6-7')
+            || str_contains($texto, '7/ph')
+            || str_contains($texto, '7/pph')
+            || str_contains($texto, '7 pph')
+            || preg_match('/(^|\D)6(\D|$)/', $texto) === 1;
     }
 
     private function textoActividadReporte(VinetaRegistro $registro): string
@@ -976,6 +1452,18 @@ class VinetaRegistroController extends Controller
             5 => 'Viernes',
             6 => 'Sabado',
             default => 'Domingo',
+        };
+    }
+
+    private function diaSemanaCorto(Carbon $date): string
+    {
+        return match ((int) $date->dayOfWeekIso) {
+            1 => 'LU',
+            2 => 'MA',
+            3 => 'MI',
+            4 => 'JU',
+            5 => 'VI',
+            default => 'SA',
         };
     }
 
@@ -1010,6 +1498,15 @@ class VinetaRegistroController extends Controller
         }
 
         return rtrim(rtrim(number_format((float) $value, 2, '.', ''), '0'), '.');
+    }
+
+    private function totalDiaReporte(int $totalDia, float $ho): string|int
+    {
+        if ($totalDia === 0 && abs($ho - 8.0) < 0.01) {
+            return 'Al dia';
+        }
+
+        return $this->numeroReporte($totalDia);
     }
 
     private function normalizarTextoReporte(?string $value): string
@@ -1050,7 +1547,12 @@ class VinetaRegistroController extends Controller
         foreach ($sheets as $index => $sheet) {
             $zip->addFromString(
                 'xl/worksheets/sheet' . ($index + 1) . '.xml',
-                $this->xlsxWorksheetXml($sheet['rows'], $sheet['format'] ?? null)
+                $this->xlsxWorksheetXml(
+                    $sheet['rows'],
+                    $sheet['format'] ?? null,
+                    $sheet['paper_size'] ?? null,
+                    $sheet['employees_per_page'] ?? null
+                )
             );
         }
 
@@ -1059,13 +1561,22 @@ class VinetaRegistroController extends Controller
         return $path;
     }
 
-    private function xlsxWorksheetXml(array $rows, ?string $format = null): string
+    private function xlsxWorksheetXml(array $rows, ?string $format = null, ?string $paperSize = null, ?int $employeesPerPage = null): string
     {
         $columnCount = max(1, collect($rows)->map(fn ($row) => count($row))->max() ?? 1);
         $rowCount = max(1, count($rows));
         $lastCell = $this->xlsxColumnName($columnCount) . $rowCount;
-        $widths = $this->xlsxColumnWidths($rows, $columnCount, $format);
+        $widths = $this->xlsxColumnWidths($rows, $columnCount, $format, $paperSize);
         $colsXml = '';
+        $sheetPrXml = $format === 'weekly_report'
+            ? '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>'
+            : '';
+        $printXml = $format === 'weekly_report'
+            ? $this->xlsxPrintSettingsXml($paperSize)
+            : '';
+        $rowBreaksXml = $format === 'weekly_report'
+            ? $this->xlsxRowBreaksXml($rows, $employeesPerPage ?? 1)
+            : '';
 
         foreach ($widths as $index => $width) {
             $column = $index + 1;
@@ -1076,8 +1587,13 @@ class VinetaRegistroController extends Controller
 
         foreach ($rows as $rowIndex => $row) {
             $rowNumber = $rowIndex + 1;
-            $rowsXml .= '<row r="' . $rowNumber . '">';
-            $rowStyle = $this->xlsxRowStyle($row, $rowIndex, $format);
+            $rowHeight = $format === 'weekly_report'
+                && $paperSize === 'legal'
+                && (string) ($row[0] ?? '') === 'Dia'
+                    ? ' ht="24" customHeight="1"'
+                    : '';
+            $rowsXml .= '<row r="' . $rowNumber . '"' . $rowHeight . '>';
+            $rowStyle = $this->xlsxRowStyle($row, $rowIndex, $format, $paperSize);
 
             for ($columnIndex = 0; $columnIndex < $columnCount; $columnIndex++) {
                 $value = $row[$columnIndex] ?? '';
@@ -1086,6 +1602,10 @@ class VinetaRegistroController extends Controller
 
                 if ($format === 'weekly_report' && $this->xlsxEsFilaEmpleadoReporte($row) && $columnIndex >= 11) {
                     $styleId = 5;
+                }
+
+                if ($format === 'weekly_report' && (string) $value === 'Al dia') {
+                    $styleId = $paperSize === 'legal' ? 10 : 7;
                 }
 
                 $style = $styleId === null ? '' : ' s="' . $styleId . '"';
@@ -1116,6 +1636,19 @@ class VinetaRegistroController extends Controller
                 if ($this->xlsxEsFilaEmpleadoReporte($row)) {
                     $rowNumber = $rowIndex + 1;
                     $merges[] = 'B' . $rowNumber . ':K' . $rowNumber;
+
+                    $puestoIndex = array_search('Puesto:', $row, true);
+
+                    if ($puestoIndex !== false && isset($row[$puestoIndex + 1])) {
+                        $cargoIndex = $puestoIndex + 1;
+                        $cargoEndIndex = min($cargoIndex + 2, $columnCount - 1);
+
+                        if ($cargoEndIndex > $cargoIndex) {
+                            $merges[] = $this->xlsxColumnName($cargoIndex + 1) . $rowNumber
+                                . ':'
+                                . $this->xlsxColumnName($cargoEndIndex + 1) . $rowNumber;
+                        }
+                    }
                 }
             }
 
@@ -1132,15 +1665,69 @@ class VinetaRegistroController extends Controller
 
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            . $sheetPrXml
             . '<dimension ref="A1:' . $lastCell . '"/>'
             . '<cols>' . $colsXml . '</cols>'
             . '<sheetData>' . $rowsXml . '</sheetData>'
             . $mergeXml
             . $autoFilter
+            . $printXml
+            . $rowBreaksXml
             . '</worksheet>';
     }
 
-    private function xlsxRowStyle(array $row, int $rowIndex, ?string $format): ?int
+    private function xlsxPrintSettingsXml(?string $paperSize): string
+    {
+        $paperSizeId = $paperSize === 'legal' ? 5 : 1;
+        $margins = $paperSize === 'legal'
+            ? '<pageMargins left="0.1" right="0.1" top="0.25" bottom="0.25" header="0.1" footer="0.1"/>'
+            : '<pageMargins left="0.25" right="0.25" top="0.5" bottom="0.5" header="0.2" footer="0.2"/>';
+
+        return '<printOptions horizontalCentered="1"/>'
+            . $margins
+            . '<pageSetup paperSize="' . $paperSizeId . '" orientation="landscape" fitToWidth="1" fitToHeight="0"/>';
+    }
+
+    private function xlsxRowBreaksXml(array $rows, int $employeesPerPage): string
+    {
+        $breaks = [];
+        $employeeRows = [];
+
+        foreach ($rows as $rowIndex => $row) {
+            if ($this->xlsxEsFilaEmpleadoReporte($row)) {
+                $employeeRows[] = $rowIndex + 1;
+            }
+        }
+
+        if ($employeesPerPage <= 0 || count($employeeRows) <= $employeesPerPage) {
+            return '';
+        }
+
+        foreach ($employeeRows as $index => $employeeRow) {
+            $position = $index + 1;
+
+            if ($position % $employeesPerPage !== 0 || ! isset($employeeRows[$index + 1])) {
+                continue;
+            }
+
+            $breakRow = max($employeeRows[$index + 1] - 1, $employeeRow);
+            $breaks[$breakRow] = true;
+        }
+
+        if ($breaks === []) {
+            return '';
+        }
+
+        $breaksXml = '';
+
+        foreach (array_keys($breaks) as $breakRow) {
+            $breaksXml .= '<brk id="' . $breakRow . '" max="16383" man="1"/>';
+        }
+
+        return '<rowBreaks count="' . count($breaks) . '" manualBreakCount="' . count($breaks) . '">' . $breaksXml . '</rowBreaks>';
+    }
+
+    private function xlsxRowStyle(array $row, int $rowIndex, ?string $format, ?string $paperSize = null): ?int
     {
         if ($format !== 'weekly_report') {
             return $rowIndex === 0 ? 1 : null;
@@ -1153,11 +1740,20 @@ class VinetaRegistroController extends Controller
         }
 
         if ($first === 'Dia' || $first === 'Total Semanal') {
-            return 4;
+            return $paperSize === 'legal' ? 9 : 4;
         }
 
-        if (in_array($first, ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo'], true)) {
-            return 3;
+        if (in_array($first, ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'], true)) {
+            return $paperSize === 'legal' ? 8 : 3;
+        }
+
+        if ($first === '' && count($row) > 20) {
+            $precio = (string) ($row[count($row) - 3] ?? '');
+            $actividad = (string) ($row[count($row) - 2] ?? '');
+
+            if ($precio !== '' || $actividad !== '') {
+                return $paperSize === 'legal' ? 8 : 3;
+            }
         }
 
         if ($this->xlsxEsFilaEmpleadoReporte($row)) {
@@ -1172,10 +1768,23 @@ class VinetaRegistroController extends Controller
         return str_starts_with((string) ($row[0] ?? ''), 'COD: ');
     }
 
-    private function xlsxColumnWidths(array $rows, int $columnCount, ?string $format = null): array
+    private function xlsxColumnWidths(array $rows, int $columnCount, ?string $format = null, ?string $paperSize = null): array
     {
         if ($format === 'weekly_report') {
-            $base = [13, 9, 8, 8, 7, 7, 7, 7, 12, 12, 12, 11, 13];
+            if ($paperSize === 'legal') {
+                $base = [9, 5.4, 5.4, 5.4, 5.4, 5.4, 5.4];
+
+                for ($index = 7; $index < $columnCount; $index++) {
+                    $base[$index] = match (true) {
+                        $index >= $columnCount - 4 => 8.8,
+                        default => 7.2,
+                    };
+                }
+
+                return $base;
+            }
+
+            $base = [13, 9, 8, 8, 7, 7, 7, 7, 12, 13, 12, 12, 11, 13];
 
             return array_pad(array_slice($base, 0, $columnCount), $columnCount, 10);
         }
@@ -1195,17 +1804,32 @@ class VinetaRegistroController extends Controller
     private function xlsxWorkbookXml(array $sheets): string
     {
         $sheetsXml = '';
+        $definedNamesXml = '';
 
         foreach ($sheets as $index => $sheet) {
             $sheetId = $index + 1;
             $name = $this->xml($this->xlsxSheetName($sheet['name']));
             $sheetsXml .= '<sheet name="' . $name . '" sheetId="' . $sheetId . '" r:id="rId' . $sheetId . '"/>';
+
+            if (($sheet['format'] ?? null) === 'weekly_report') {
+                $definedNamesXml .= '<definedName name="_xlnm.Print_Titles" localSheetId="' . $index . '">'
+                    . $this->xml($this->xlsxQuotedSheetName($sheet['name']) . '!$1:$3')
+                    . '</definedName>';
+            }
         }
+
+        $definedNamesXml = $definedNamesXml === '' ? '' : '<definedNames>' . $definedNamesXml . '</definedNames>';
 
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
             . '<sheets>' . $sheetsXml . '</sheets>'
+            . $definedNamesXml
             . '</workbook>';
+    }
+
+    private function xlsxQuotedSheetName(string $name): string
+    {
+        return "'" . str_replace("'", "''", $this->xlsxSheetName($name)) . "'";
     }
 
     private function xlsxWorkbookRelsXml(int $sheetCount): string
@@ -1254,11 +1878,11 @@ class VinetaRegistroController extends Controller
     {
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            . '<fonts count="4"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="16"/><name val="Georgia"/></font><font><b/><sz val="12"/><name val="Calibri"/></font></fonts>'
-            . '<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>'
+            . '<fonts count="6"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="16"/><name val="Georgia"/></font><font><b/><sz val="12"/><name val="Calibri"/></font><font><sz val="9"/><name val="Calibri"/></font><font><b/><sz val="9"/><name val="Calibri"/></font></fonts>'
+            . '<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF59D"/><bgColor indexed="64"/></patternFill></fill></fills>'
             . '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color auto="1"/></left><right style="thin"><color auto="1"/></right><top style="thin"><color auto="1"/></top><bottom style="thin"><color auto="1"/></bottom><diagonal/></border></borders>'
             . '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-            . '<cellXfs count="7">'
+            . '<cellXfs count="11">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
             . '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>'
             . '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
@@ -1266,6 +1890,10 @@ class VinetaRegistroController extends Controller
             . '<xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="0" fontId="4" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+            . '<xf numFmtId="0" fontId="5" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+            . '<xf numFmtId="0" fontId="5" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
             . '</cellXfs>'
             . '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
             . '</styleSheet>';
@@ -1466,13 +2094,15 @@ class VinetaRegistroController extends Controller
 
     private function totalActividades($query, bool $hasCantidadActividades): int
     {
+        $columns = ['cantidad_puros', 'actividad_nombre'];
+
         if ($hasCantidadActividades) {
-            return (int) (clone $query)
-                ->selectRaw('COALESCE(SUM(cantidad_puros * COALESCE(cantidad_actividades, 1)), 0) as suma_actividades')
-                ->value('suma_actividades');
+            $columns[] = 'cantidad_actividades';
         }
 
-        return (int) (clone $query)->sum('cantidad_puros');
+        return (int) (clone $query)
+            ->get($columns)
+            ->sum(fn (VinetaRegistro $registro) => $registro->total_actividades);
     }
 
     private function totalMonto($query): float

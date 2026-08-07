@@ -82,18 +82,11 @@
                                     </div>
                                 </div>
 
-                                <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-7 gap-2 min-w-full xl:min-w-[58rem]">
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 min-w-full xl:min-w-[34rem]">
                                     <div class="theme-badge rounded-2xl border px-3 py-2">
                                         <p class="theme-text text-[11px] font-semibold">Registros</p>
                                         <p class="theme-title text-lg font-black">{{ number_format($totales['registros']) }}</p>
                                     </div>
-
-                                    @if ($hasHorasOrdinarias)
-                                        <div class="theme-badge rounded-2xl border px-3 py-2">
-                                            <p class="theme-text text-[11px] font-semibold">Horas ord.</p>
-                                            <p class="theme-title text-lg font-black">{{ number_format($totales['ordinarias']) }}</p>
-                                        </div>
-                                    @endif
 
                                     <div class="theme-badge rounded-2xl border px-3 py-2">
                                         <p class="theme-text text-[11px] font-semibold">Puros</p>
@@ -105,22 +98,11 @@
                                         <p class="theme-title text-lg font-black">{{ number_format($totales['cajones']) }}</p>
                                     </div>
 
-                                    @if ($hasMinutosTrabajados)
-                                        <div class="theme-badge rounded-2xl border px-3 py-2">
-                                            <p class="theme-text text-[11px] font-semibold">Tiempo</p>
-                                            <p class="theme-title text-lg font-black">{{ $totales['tiempo'] }}</p>
-                                        </div>
-                                    @endif
-
                                     <div class="theme-badge rounded-2xl border px-3 py-2">
                                         <p class="theme-text text-[11px] font-semibold">Total act.</p>
                                         <p class="theme-title text-lg font-black">{{ number_format($totales['actividades']) }}</p>
                                     </div>
 
-                                    <div class="theme-badge rounded-2xl border px-3 py-2">
-                                        <p class="theme-text text-[11px] font-semibold">Total MO</p>
-                                        <p class="theme-title text-lg font-black">{{ number_format($totales['monto'], 2) }}</p>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -128,7 +110,7 @@
                         <div class="theme-card bg-white rounded-2xl border theme-border theme-shadow p-3 sm:p-4">
                             <form method="GET"
                                   action="{{ route('vineta-registros.index') }}"
-                                  class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-7 gap-2 items-end">
+                                  class="vineta-registros-filter-form grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-7 gap-2 items-end">
 
                                 <div class="xl:col-span-2">
                                     <label class="theme-text block text-xs font-semibold mb-1">Buscar</label>
@@ -201,94 +183,20 @@
                                         Reporte semanal
                                     </a>
 
+                                    @if ($hasHorasOrdinarias)
+                                        <button type="button"
+                                                id="createHoraOrdinariaOpen"
+                                                class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-[#0f172a] text-white text-sm font-black hover:bg-[#1e293b] transition">
+                                            Agregar hora ordinaria
+                                        </button>
+                                    @endif
+
                                     <button type="submit"
                                             class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-[#0f172a] text-white text-sm font-black hover:bg-[#1e293b] transition">
                                         Filtrar
                                     </button>
                                 </div>
                             </form>
-                        </div>
-
-                        <div class="theme-card bg-white rounded-2xl border theme-border theme-shadow p-3 sm:p-4">
-                            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
-                                <div class="min-w-0">
-                                    <p class="theme-title text-sm font-black">
-                                        Agregar hora ordinaria
-                                    </p>
-
-                                    <p class="theme-text text-xs mt-1">
-                                        Se guarda como registro manual y aparece en esta misma tabla y en el Excel.
-                                    </p>
-                                </div>
-
-                                @if (! $hasHorasOrdinarias)
-                                    <div class="theme-soft rounded-2xl border theme-border px-4 py-3 text-sm font-semibold theme-text lg:max-w-xl">
-                                        Pendiente ejecutar la migración de horas ordinarias para habilitar este formulario.
-                                    </div>
-                                @else
-                                    <form method="POST"
-                                          action="{{ route('vineta-registros.horas-ordinarias.store') }}"
-                                          class="grid flex-1 grid-cols-1 sm:grid-cols-2 xl:grid-cols-7 gap-2 items-end">
-                                        @csrf
-
-                                        <div>
-                                            <label class="theme-text block text-xs font-semibold mb-1">Empleado</label>
-                                            <input type="text"
-                                                   name="empleado_codigo"
-                                                   value="{{ old('empleado_codigo') }}"
-                                                   placeholder="Código"
-                                                   required
-                                                   class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
-                                        </div>
-
-                                        <div>
-                                            <label class="theme-text block text-xs font-semibold mb-1">Fecha</label>
-                                            <input type="date"
-                                                   name="fecha"
-                                                   value="{{ old('fecha', now('America/Tegucigalpa')->toDateString()) }}"
-                                                   required
-                                                   class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
-                                        </div>
-
-                                        <div>
-                                            <label class="theme-text block text-xs font-semibold mb-1">Horas</label>
-                                            <input type="number"
-                                                   name="horas"
-                                                   value="{{ old('horas') }}"
-                                                   min="0"
-                                                   max="9"
-                                                   placeholder="0"
-                                                   class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
-                                        </div>
-
-                                        <div>
-                                            <label class="theme-text block text-xs font-semibold mb-1">Minutos</label>
-                                            <input type="number"
-                                                   name="minutos"
-                                                   value="{{ old('minutos') }}"
-                                                   min="0"
-                                                   max="59"
-                                                   placeholder="0"
-                                                   class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
-                                        </div>
-
-                                        <div class="sm:col-span-2 xl:col-span-2">
-                                            <label class="theme-text block text-xs font-semibold mb-1">Observación</label>
-                                            <input type="text"
-                                                   name="observacion"
-                                                   value="{{ old('observacion') }}"
-                                                   placeholder="Motivo o detalle"
-                                                   required
-                                                   class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
-                                        </div>
-
-                                        <button type="submit"
-                                                class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-[#0f172a] text-white text-sm font-black hover:bg-[#1e293b] transition">
-                                            Agregar
-                                        </button>
-                                    </form>
-                                @endif
-                            </div>
                         </div>
 
                         <div class="productos-card theme-card bg-white rounded-2xl border theme-border theme-shadow overflow-visible">
@@ -565,6 +473,7 @@
                                                                     data-hora="{{ substr((string) $registro->hora_registro, 0, 5) }}"
                                                                     data-cantidad="{{ $registro->cantidad_puros }}"
                                                                     data-minutos="{{ $registro->minutos_trabajados ?? '' }}"
+                                                                    data-por-hora="{{ $isRegistroPorHora ? '1' : '0' }}"
                                                                     data-empleado-codigo="{{ $registro->empleado_codigo }}"
                                                                     data-empleado-nombre="{{ $registro->empleado_nombre }}"
                                                                     data-vineta="ID {{ $registro->vineta_api_id ?? $registro->vineta_id }}"
@@ -779,7 +688,7 @@
                     </div>
 
                     @if ($hasMinutosTrabajados)
-                        <div>
+                        <div id="edit_minutos_trabajados_group">
                             <label for="edit_minutos_trabajados" class="theme-text mb-1 block text-xs font-bold">
                                 Minutos trabajados
                             </label>
@@ -840,6 +749,130 @@
             </form>
         </div>
     </div>
+
+    @if ($hasHorasOrdinarias)
+        <div id="createHoraOrdinariaModal"
+             class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/55 px-4 py-6 backdrop-blur-sm">
+            <div class="theme-card w-full max-w-xl rounded-3xl border theme-border bg-white shadow-2xl overflow-hidden">
+                <div class="flex items-start justify-between gap-4 border-b theme-border px-5 py-4">
+                    <div>
+                        <p class="theme-text text-xs font-black uppercase tracking-wide">
+                            Hora ordinaria
+                        </p>
+
+                        <h2 class="theme-title mt-1 text-xl font-black">
+                            Agregar hora ordinaria
+                        </h2>
+
+                        <p class="theme-text mt-1 text-sm">
+                            Registra tiempo manual por empleado para seguimiento y reportes.
+                        </p>
+                    </div>
+
+                    <button type="button"
+                            id="createHoraOrdinariaClose"
+                            class="theme-button-secondary inline-flex h-10 w-10 items-center justify-center rounded-2xl border theme-border text-xl font-black transition hover:bg-[#f3efe7]">
+                        ×
+                    </button>
+                </div>
+
+                <form method="POST"
+                      action="{{ route('vineta-registros.horas-ordinarias.store') }}"
+                      class="px-5 py-5">
+                    @csrf
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label for="create_hora_ord_empleado_codigo" class="theme-text mb-1 block text-xs font-bold">
+                                Código empleado
+                            </label>
+
+                            <input id="create_hora_ord_empleado_codigo"
+                                   type="text"
+                                   name="empleado_codigo"
+                                   value="{{ old('empleado_codigo') }}"
+                                   placeholder="Código"
+                                   required
+                                   class="w-full rounded-2xl border theme-border bg-white px-4 py-3 text-sm theme-title outline-none transition focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20">
+                        </div>
+
+                        <div>
+                            <label for="create_hora_ord_fecha" class="theme-text mb-1 block text-xs font-bold">
+                                Fecha
+                            </label>
+
+                            <input id="create_hora_ord_fecha"
+                                   type="date"
+                                   name="fecha"
+                                   value="{{ old('fecha', now('America/Tegucigalpa')->toDateString()) }}"
+                                   required
+                                   class="w-full rounded-2xl border theme-border bg-white px-4 py-3 text-sm theme-title outline-none transition focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20">
+                        </div>
+
+                        <div>
+                            <label for="create_hora_ord_horas" class="theme-text mb-1 block text-xs font-bold">
+                                Horas
+                            </label>
+
+                            <input id="create_hora_ord_horas"
+                                   type="number"
+                                   name="horas"
+                                   value="{{ old('horas') }}"
+                                   min="0"
+                                   max="9"
+                                   placeholder="0"
+                                   class="w-full rounded-2xl border theme-border bg-white px-4 py-3 text-sm theme-title outline-none transition focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20">
+                        </div>
+
+                        <div>
+                            <label for="create_hora_ord_minutos" class="theme-text mb-1 block text-xs font-bold">
+                                Minutos
+                            </label>
+
+                            <input id="create_hora_ord_minutos"
+                                   type="number"
+                                   name="minutos"
+                                   value="{{ old('minutos') }}"
+                                   min="0"
+                                   max="59"
+                                   placeholder="0"
+                                   class="w-full rounded-2xl border theme-border bg-white px-4 py-3 text-sm theme-title outline-none transition focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20">
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label for="create_hora_ord_observacion" class="theme-text mb-1 block text-xs font-bold">
+                                Observación
+                            </label>
+
+                            <textarea id="create_hora_ord_observacion"
+                                      name="observacion"
+                                      rows="4"
+                                      placeholder="Motivo o detalle"
+                                      required
+                                      class="w-full rounded-2xl border theme-border bg-white px-4 py-3 text-sm theme-title outline-none transition focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20">{{ old('observacion') }}</textarea>
+                        </div>
+                    </div>
+
+                    <p class="theme-text mt-3 text-[11px] font-semibold">
+                        Tiempo máximo por registro: 570 min (9 h 30 min).
+                    </p>
+
+                    <div class="mt-5 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                        <button type="button"
+                                id="createHoraOrdinariaCancel"
+                                class="theme-button-secondary inline-flex items-center justify-center rounded-2xl border theme-border bg-white px-4 py-3 text-sm font-bold transition hover:bg-[#f3efe7]">
+                            Cancelar
+                        </button>
+
+                        <button type="submit"
+                                class="inline-flex items-center justify-center rounded-2xl bg-[#0f172a] px-5 py-3 text-sm font-black text-white transition hover:bg-[#1e293b]">
+                            Agregar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
 
     <div id="editHoraOrdinariaModal"
          class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/55 px-4 py-6 backdrop-blur-sm">
@@ -1108,7 +1141,8 @@
                  fecha: document.getElementById('edit_fecha_registro'),
                  hora: document.getElementById('edit_hora_registro'),
                  cantidad: document.getElementById('edit_cantidad_puros'),
-                 minutos: document.getElementById('edit_minutos_trabajados'),
+                  minutos: document.getElementById('edit_minutos_trabajados'),
+                  minutosGroup: document.getElementById('edit_minutos_trabajados_group'),
                  empleado: document.getElementById('edit_empleado_codigo'),
              };
 
@@ -1188,13 +1222,21 @@
 
             document.querySelectorAll('.vineta-registro-edit').forEach((button) => {
                 button.addEventListener('click', () => {
+                    const isPorHora = button.dataset.porHora === '1';
+
                     form.action = button.dataset.action;
-                     fields.fecha.value = button.dataset.fecha || '';
-                     fields.hora.value = button.dataset.hora || '';
-                     fields.cantidad.value = button.dataset.cantidad || '';
-                     if (fields.minutos) {
-                         fields.minutos.value = button.dataset.minutos || '';
-                     }
+                      fields.fecha.value = button.dataset.fecha || '';
+                      fields.hora.value = button.dataset.hora || '';
+                      fields.cantidad.value = button.dataset.cantidad || '';
+                      if (fields.minutos) {
+                          fields.minutos.value = isPorHora ? '' : (button.dataset.minutos || '');
+                          fields.minutos.disabled = isPorHora;
+                          fields.minutos.required = ! isPorHora;
+                      }
+
+                      if (fields.minutosGroup) {
+                          fields.minutosGroup.classList.toggle('hidden', isPorHora);
+                      }
                      fields.empleado.value = button.dataset.empleadoCodigo || '';
                     setEmpleadoStatus(
                         button.dataset.empleadoNombre || 'N/A',
@@ -1235,6 +1277,45 @@
             @endif
         });
     </script>
+
+    @if ($hasHorasOrdinarias)
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const modal = document.getElementById('createHoraOrdinariaModal');
+                const openButton = document.getElementById('createHoraOrdinariaOpen');
+
+                if (!modal || !openButton) {
+                    return;
+                }
+
+                const openModal = () => {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                };
+
+                const closeModal = () => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                };
+
+                openButton.addEventListener('click', openModal);
+                document.getElementById('createHoraOrdinariaClose').addEventListener('click', closeModal);
+                document.getElementById('createHoraOrdinariaCancel').addEventListener('click', closeModal);
+
+                modal.addEventListener('click', (event) => {
+                    if (event.target === modal) {
+                        closeModal();
+                    }
+                });
+
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        closeModal();
+                    }
+                });
+            });
+        </script>
+    @endif
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {

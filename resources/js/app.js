@@ -680,15 +680,47 @@ document.addEventListener('DOMContentLoaded', () => {
     const getTarget = (event) => event.target.closest('a.sidebar-link, button.sidebar-link, a.sidebar-active, button.sidebar-active');
 
     let highlightedTarget = null;
+    let highlightFrame = null;
+    let pendingHighlightTarget = null;
+    let transitionTimer = null;
+    let lastExpandedState = sidebar.classList.contains('sidebar-expanded');
+
+    const positionHighlight = (target) => {
+        highlight.style.setProperty('--sidebar-hover-top', `${target.offsetTop}px`);
+        highlight.style.setProperty('--sidebar-hover-height', `${target.offsetHeight}px`);
+        highlight.classList.add('is-visible');
+    };
+
+    const scheduleHighlight = (target) => {
+        pendingHighlightTarget = target;
+
+        if (highlightFrame) {
+            return;
+        }
+
+        highlightFrame = requestAnimationFrame(() => {
+            highlightFrame = null;
+
+            if (pendingHighlightTarget && highlightedTarget === pendingHighlightTarget) {
+                positionHighlight(pendingHighlightTarget);
+            }
+        });
+    };
 
     const hideHighlight = () => {
+        if (highlightFrame) {
+            cancelAnimationFrame(highlightFrame);
+            highlightFrame = null;
+        }
+
+        pendingHighlightTarget = null;
         highlightedTarget?.classList.remove('sidebar-hover-target');
         highlightedTarget = null;
         highlight.classList.remove('is-visible');
     };
 
     const showHighlight = (target) => {
-        if (! target || target.classList.contains('sidebar-active')) {
+        if (! target || target.classList.contains('sidebar-active') || sidebar.classList.contains('sidebar-is-transitioning')) {
             hideHighlight();
             return;
         }
@@ -699,10 +731,25 @@ document.addEventListener('DOMContentLoaded', () => {
             highlightedTarget.classList.add('sidebar-hover-target');
         }
 
-        highlight.style.setProperty('--sidebar-hover-top', `${target.offsetTop}px`);
-        highlight.style.setProperty('--sidebar-hover-height', `${target.offsetHeight}px`);
-        highlight.classList.add('is-visible');
+        scheduleHighlight(target);
     };
+
+    new MutationObserver(() => {
+        const expandedState = sidebar.classList.contains('sidebar-expanded');
+
+        if (expandedState === lastExpandedState) {
+            return;
+        }
+
+        lastExpandedState = expandedState;
+        sidebar.classList.add('sidebar-is-transitioning');
+        hideHighlight();
+
+        clearTimeout(transitionTimer);
+        transitionTimer = setTimeout(() => {
+            sidebar.classList.remove('sidebar-is-transitioning');
+        }, 390);
+    }).observe(sidebar, { attributes: true, attributeFilter: ['class'] });
 
     nav.addEventListener('mouseover', (event) => {
         const target = getTarget(event);

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Producto;
 use App\Models\TipoEmpaque;
 use App\Models\Vineta;
+use App\Models\VinetaRegistro;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -200,7 +201,99 @@ class VinetaController extends Controller
             'fecha_escaneo' => $scannedAt->format('Y-m-d'),
             'hora_escaneo' => $scannedAt->format('H:i:s'),
             'escaneado_en_texto' => $scannedAt->format('d/m/Y h:i A'),
+            'proceso' => $this->procesoVinetaPayload($vineta),
         ];
+    }
+
+    private function procesoVinetaPayload(Vineta $vineta): array
+    {
+        $registros = VinetaRegistro::query()
+            ->where('estado', VinetaRegistro::ESTADO_ACTIVO)
+            ->where(function ($query) use ($vineta) {
+                $query->where('vineta_id', $vineta->id);
+
+                if ($vineta->api_id && $vineta->fecha) {
+                    $query->orWhere(function ($query) use ($vineta) {
+                        $query->where('vineta_api_id', $vineta->api_id)
+                            ->whereDate('vineta_fecha', $vineta->fecha->format('Y-m-d'));
+                    });
+                }
+            })
+            ->orderBy('fecha_registro')
+            ->orderBy('hora_registro')
+            ->orderBy('id')
+            ->get();
+        $grupos = [
+            'rezago' => null,
+            'anillado' => null,
+            'llenado' => null,
+        ];
+
+        foreach ($registros as $registro) {
+            $grupo = $this->grupoActividadProceso(
+                $registro->actividad_nombre,
+                $registro->actividad_tipo_empaque,
+                $registro->actividad_codigo
+            );
+
+            if ($grupo && array_key_exists($grupo, $grupos)) {
+                $grupos[$grupo] = $registro;
+            }
+        }
+
+        return [
+            'puede_llenar' => $grupos['anillado'] !== null,
+            'mensaje_bloqueo_llenado' => $grupos['anillado'] === null
+                ? 'Para registrar llenado, primero debe existir una actividad de anillado, celofan o sello.'
+                : null,
+            'pasos' => [
+                $this->pasoProcesoPayload('rezago', 'Rezago', $grupos['rezago'], true),
+                $this->pasoProcesoPayload('anillado', 'Anillado', $grupos['anillado'], false),
+                $this->pasoProcesoPayload('llenado', 'Llenado', $grupos['llenado'], false),
+            ],
+        ];
+    }
+
+    private function pasoProcesoPayload(string $key, string $label, ?VinetaRegistro $registro, bool $opcional): array
+    {
+        return [
+            'key' => $key,
+            'label' => $label,
+            'completado' => $registro !== null,
+            'opcional' => $opcional,
+            'actividad' => $registro?->actividad_nombre,
+            'empleado' => $registro?->empleado_nombre,
+            'fecha' => $registro?->fechaHoraRegistroTexto(),
+        ];
+    }
+
+    private function grupoActividadProceso(?string $nombre, ?string $tipoEmpaque = null, ?string $codigo = null): ?string
+    {
+        $texto = $this->normalizeMatchValue(implode(' ', array_filter([$nombre, $tipoEmpaque, $codigo])));
+
+        if ($texto === '') {
+            return null;
+        }
+
+        if (str_contains($texto, 'rezag') || str_contains($texto, 'rezad') || str_contains($texto, 'resag')) {
+            return 'rezago';
+        }
+
+        if (
+            str_contains($texto, 'anill')
+            || str_contains($texto, 'anil')
+            || str_contains($texto, 'celof')
+            || str_contains($texto, 'sello')
+            || str_contains($texto, 'sell')
+        ) {
+            return 'anillado';
+        }
+
+        if (str_contains($texto, 'llenad') || str_contains($texto, 'llenado')) {
+            return 'llenado';
+        }
+
+        return null;
     }
 
     private function findProducto(Vineta $vineta): ?Producto

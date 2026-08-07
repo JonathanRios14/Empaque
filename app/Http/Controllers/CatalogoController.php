@@ -30,6 +30,7 @@ class CatalogoController extends Controller
         'vitola',
         'capa',
         'tipo_empaque',
+        'actividades_count',
     ];
 
     if (! in_array($orden, $ordenesPermitidos)) {
@@ -50,7 +51,8 @@ class CatalogoController extends Controller
             'presentacion',
             'tipoEmpaque',
             'actividades',
-        ]);
+        ])
+        ->withCount('actividades');
 
     if ($request->filled('buscar')) {
         $buscar = $request->buscar;
@@ -122,6 +124,8 @@ class CatalogoController extends Controller
     } elseif ($orden === 'tipo_empaque') {
         $query->leftJoin('tipo_empaques', 'productos.tipo_empaque_id', '=', 'tipo_empaques.id')
             ->orderBy('tipo_empaques.nombre', $direccion);
+    } elseif ($orden === 'actividades_count') {
+        $query->orderBy('actividades_count', $direccion);
     } else {
         $query->orderBy('productos.' . $orden, $direccion);
     }
@@ -129,7 +133,7 @@ class CatalogoController extends Controller
 $perPageInput = $request->get('per_page', 10);
 
 if ($perPageInput === 'all') {
-    $perPage = max((clone $query)->count(), 1);
+    $perPage = max((clone $query)->reorder()->count(), 1);
 } else {
     $perPage = (int) $perPageInput;
 

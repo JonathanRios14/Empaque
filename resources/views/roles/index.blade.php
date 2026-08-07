@@ -53,14 +53,14 @@
 
                         @can('roles.crear')
                             <a href="{{ route('roles.create') }}"
-                               class="gooey-action px-4 py-2 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
+                               class="mobile-create-action gooey-action px-4 py-2 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
                                 Nuevo rol
                             </a>
                         @endcan
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
+                    <div class="roles-table-scroll overflow-x-auto">
+                        <table class="roles-table w-full text-sm">
 
                             <thead class="theme-table-head bg-[#f3efe7] text-[#3b2818]">
                                 <tr>

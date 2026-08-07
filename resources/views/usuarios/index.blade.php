@@ -50,8 +50,8 @@
                             </div>
                         </div>
 
-                        <div class="flex flex-col sm:flex-row gap-3">
-                            <form method="GET" action="{{ route('usuarios.index') }}" class="flex gap-2">
+                        <div class="mobile-toolbar-actions flex flex-col sm:flex-row gap-3">
+                            <form method="GET" action="{{ route('usuarios.index') }}" class="usuarios-filter-form flex gap-2">
                                 <div class="relative">
                                     <input type="text"
                                            name="buscar"
@@ -76,7 +76,7 @@
 
                             @can('usuarios.crear')
                                 <a href="{{ route('usuarios.create') }}"
-                                   class="gooey-action px-4 py-2 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition text-center">
+                                   class="mobile-create-action gooey-action px-4 py-2 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition text-center">
                                     Nuevo usuario
                                 </a>
                             @endcan
@@ -110,8 +110,8 @@
                     }
                 @endphp
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
+                <div class="usuarios-table-scroll overflow-x-auto">
+                    <table class="usuarios-table w-full text-sm">
                         <thead class="theme-table-head bg-[#f3efe7] text-[#3b2818]">
                             <tr>
                                 <th class="px-6 py-4 text-left font-semibold">

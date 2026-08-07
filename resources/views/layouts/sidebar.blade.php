@@ -2,7 +2,21 @@
     $catalogosActivo = request()->routeIs('catalogos.*');
 @endphp
 
+<div x-data="{ mobileSidebarOpen: false }"
+     x-effect="document.body.classList.toggle('mobile-sidebar-lock', mobileSidebarOpen)"
+     x-on:open-mobile-sidebar.window="mobileSidebarOpen = true"
+     x-on:close-mobile-sidebar.window="mobileSidebarOpen = false"
+     x-on:keydown.escape.window="mobileSidebarOpen = false"
+     x-on:resize.window="if (window.innerWidth >= 768) mobileSidebarOpen = false"
+     class="contents">
+    <div x-show="mobileSidebarOpen"
+         x-transition.opacity
+         @click="mobileSidebarOpen = false"
+         class="mobile-sidebar-backdrop fixed inset-0 z-50 bg-black/45 backdrop-blur-sm md:hidden"
+         style="display: none;"></div>
+
 <aside
+    id="appSidebar"
     x-init="
         const savedSidebar = localStorage.getItem('sidebarOpen');
 
@@ -18,7 +32,11 @@
             document.documentElement.classList.remove('sidebar-preload', 'sidebar-preload-collapsed', 'sidebar-preload-expanded');
         });
     "
-    :class="sidebarOpen ? 'w-72 sidebar-expanded' : 'w-20 sidebar-collapsed'"
+    @click="if (window.innerWidth < 768 && $event.target.closest('a')) mobileSidebarOpen = false"
+    :class="[
+        sidebarOpen ? 'w-72 sidebar-expanded' : 'w-20 sidebar-collapsed',
+        mobileSidebarOpen ? 'mobile-sidebar-open' : 'mobile-sidebar-closed'
+    ]"
     class="app-sidebar hidden md:block shrink-0 bg-[#3b2818] text-white">
     <div class="app-sidebar-header h-20 flex items-center border-b border-white/10">
         <div class="sidebar-brand flex items-center gap-3">
@@ -33,9 +51,16 @@
                 <p class="text-sm text-white/60 leading-tight">Empaque</p>
             </div>
         </div>
-        <button @click="sidebarOpen = !sidebarOpen; localStorage.setItem('sidebarOpen', sidebarOpen)"
+        <button @click="
+                    if (window.innerWidth < 768) {
+                        mobileSidebarOpen = false;
+                    } else {
+                        sidebarOpen = !sidebarOpen;
+                        localStorage.setItem('sidebarOpen', sidebarOpen);
+                    }
+                "
                 class="app-sidebar-toggle sidebar-menu-toggle w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white transition duration-200"
-                :class="sidebarOpen ? 'is-open' : 'is-closed'"
+                :class="(mobileSidebarOpen || sidebarOpen) ? 'is-open' : 'is-closed'"
                 aria-label="Alternar menú">
             <span class="sidebar-menu-toggle__line"></span>
             <span class="sidebar-menu-toggle__line"></span>
@@ -152,7 +177,7 @@
                 </svg>
             </button>
 
-            <div :class="catalogos && sidebarOpen ? 'max-h-[26rem] opacity-100 mt-2' : 'max-h-0 opacity-0 mt-0 pointer-events-none'"
+            <div :class="catalogos && sidebarOpen ? 'sidebar-submenu-open max-h-[26rem] opacity-100 mt-2' : 'sidebar-submenu-closed max-h-0 opacity-0 mt-0 pointer-events-none'"
                  class="sidebar-submenu ml-8 mr-4 space-y-1 text-sm overflow-hidden max-h-0 opacity-0">
 
                 @can('productos.ver')
@@ -274,3 +299,4 @@
 <div aria-hidden="true"
      :class="sidebarOpen ? 'w-72' : 'w-20'"
      class="app-sidebar-spacer hidden md:block shrink-0"></div>
+</div>
