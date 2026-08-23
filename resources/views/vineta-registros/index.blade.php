@@ -147,14 +147,6 @@
                                         Reporte semanal
                                     </button>
 
-                                    @if ($hasHorasOrdinarias)
-                                        <button type="button"
-                                                id="createHoraOrdinariaOpen"
-                                                class="gooey-action inline-flex items-center justify-center px-3 py-2.5 rounded-xl bg-[#0f172a] text-white text-sm font-black hover:bg-[#1e293b] transition">
-                                            Agregar hora ordinaria
-                                        </button>
-                                    @endif
-
                                     <button type="submit"
                                             class="gooey-action inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-[#0f172a] text-white text-sm font-black hover:bg-[#1e293b] transition">
                                         Filtrar
@@ -462,129 +454,7 @@
         </div>
     </div>
 
-    @if ($hasHorasOrdinarias)
-        <div id="createHoraOrdinariaModal"
-             class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/55 px-4 py-6 backdrop-blur-sm">
-            <div class="theme-card w-full max-w-xl rounded-3xl border theme-border bg-white shadow-2xl overflow-hidden">
-                <div class="flex items-start justify-between gap-4 border-b theme-border px-5 py-4">
-                    <div>
-                        <p class="theme-text text-xs font-black uppercase tracking-wide">
-                            Hora ordinaria
-                        </p>
 
-                        <h2 class="theme-title mt-1 text-xl font-black">
-                            Agregar hora ordinaria
-                        </h2>
-
-                        <p class="theme-text mt-1 text-sm">
-                            Registra tiempo manual por empleado para seguimiento y reportes.
-                        </p>
-                    </div>
-
-                    <button type="button"
-                            id="createHoraOrdinariaClose"
-                            class="theme-button-secondary inline-flex h-10 w-10 items-center justify-center rounded-2xl border theme-border text-xl font-black transition hover:bg-[#f3efe7]">
-                        ×
-                    </button>
-                </div>
-
-                <form method="POST"
-                      action="{{ route('vineta-registros.horas-ordinarias.store') }}"
-                      class="px-5 py-5">
-                    @csrf
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label for="create_hora_ord_empleado_codigo" class="theme-text mb-1 block text-xs font-bold">
-                                Código empleado
-                            </label>
-
-                            <input id="create_hora_ord_empleado_codigo"
-                                   type="text"
-                                   name="empleado_codigo"
-                                   value="{{ old('empleado_codigo') }}"
-                                   placeholder="Código"
-                                   required
-                                   class="w-full rounded-2xl border theme-border bg-white px-4 py-3 text-sm theme-title outline-none transition focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20">
-                        </div>
-
-                        <div>
-                            <label for="create_hora_ord_fecha" class="theme-text mb-1 block text-xs font-bold">
-                                Fecha
-                            </label>
-
-                            <input id="create_hora_ord_fecha"
-                                   type="date"
-                                   name="fecha"
-                                   value="{{ old('fecha', now('America/Tegucigalpa')->toDateString()) }}"
-                                   required
-                                   class="w-full rounded-2xl border theme-border bg-white px-4 py-3 text-sm theme-title outline-none transition focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20">
-                        </div>
-
-                        <div>
-                            <label for="create_hora_ord_horas" class="theme-text mb-1 block text-xs font-bold">
-                                Horas
-                            </label>
-
-                            <input id="create_hora_ord_horas"
-                                   type="number"
-                                   name="horas"
-                                   value="{{ old('horas') }}"
-                                   min="0"
-                                   max="9"
-                                   placeholder="0"
-                                   class="w-full rounded-2xl border theme-border bg-white px-4 py-3 text-sm theme-title outline-none transition focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20">
-                        </div>
-
-                        <div>
-                            <label for="create_hora_ord_minutos" class="theme-text mb-1 block text-xs font-bold">
-                                Minutos
-                            </label>
-
-                            <input id="create_hora_ord_minutos"
-                                   type="number"
-                                   name="minutos"
-                                   value="{{ old('minutos') }}"
-                                   min="0"
-                                   max="59"
-                                   placeholder="0"
-                                   class="w-full rounded-2xl border theme-border bg-white px-4 py-3 text-sm theme-title outline-none transition focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20">
-                        </div>
-
-                        <div class="sm:col-span-2">
-                            <label for="create_hora_ord_observacion" class="theme-text mb-1 block text-xs font-bold">
-                                Observación
-                            </label>
-
-                            <textarea id="create_hora_ord_observacion"
-                                      name="observacion"
-                                      rows="4"
-                                      placeholder="Motivo o detalle"
-                                      required
-                                      class="w-full rounded-2xl border theme-border bg-white px-4 py-3 text-sm theme-title outline-none transition focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20">{{ old('observacion') }}</textarea>
-                        </div>
-                    </div>
-
-                    <p class="theme-text mt-3 text-[11px] font-semibold">
-                        Tiempo máximo por registro: 570 min (9 h 30 min).
-                    </p>
-
-                    <div class="mt-5 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-                        <button type="button"
-                                id="createHoraOrdinariaCancel"
-                                class="theme-button-secondary inline-flex items-center justify-center rounded-2xl border theme-border bg-white px-4 py-3 text-sm font-bold transition hover:bg-[#f3efe7]">
-                            Cancelar
-                        </button>
-
-                        <button type="submit"
-                                class="inline-flex items-center justify-center rounded-2xl bg-[#0f172a] px-5 py-3 text-sm font-black text-white transition hover:bg-[#1e293b]">
-                            Agregar
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    @endif
 
     <div id="editHoraOrdinariaModal"
          class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/55 px-4 py-6 backdrop-blur-sm">
@@ -1420,44 +1290,7 @@
         });
     </script>
 
-    @if ($hasHorasOrdinarias)
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                const modal = document.getElementById('createHoraOrdinariaModal');
-                const openButton = document.getElementById('createHoraOrdinariaOpen');
 
-                if (!modal || !openButton) {
-                    return;
-                }
-
-                const openModal = () => {
-                    modal.classList.remove('hidden');
-                    modal.classList.add('flex');
-                };
-
-                const closeModal = () => {
-                    modal.classList.add('hidden');
-                    modal.classList.remove('flex');
-                };
-
-                openButton.addEventListener('click', openModal);
-                document.getElementById('createHoraOrdinariaClose').addEventListener('click', closeModal);
-                document.getElementById('createHoraOrdinariaCancel').addEventListener('click', closeModal);
-
-                modal.addEventListener('click', (event) => {
-                    if (event.target === modal) {
-                        closeModal();
-                    }
-                });
-
-                document.addEventListener('keydown', (event) => {
-                    if (event.key === 'Escape') {
-                        closeModal();
-                    }
-                });
-            });
-        </script>
-    @endif
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {

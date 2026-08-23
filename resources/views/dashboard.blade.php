@@ -35,19 +35,50 @@
         }
 
         .dashboard-welcome {
-            background:
-                radial-gradient(circle at 92% 15%, rgba(37, 99, 235, .12), transparent 21rem),
-                linear-gradient(125deg, #ffffff 0%, #f8fbff 55%, #eff6ff 100%);
+            background: #ffffff;
             border: 1px solid #dbeafe;
             box-shadow: 0 18px 44px rgba(15, 23, 42, .07);
         }
 
         html.dark-navy .dashboard-welcome {
-            background:
-                radial-gradient(circle at 92% 15%, rgba(56, 189, 248, .10), transparent 21rem),
-                linear-gradient(125deg, #111c33 0%, #16233d 100%);
+            background: #111c33;
             border-color: #263650;
             box-shadow: none;
+        }
+
+        /* ── Welcome banner avatar + slide reveal animation ── */
+        .welcome-avatar-wrapper {
+            opacity: 0;
+            transform: scale(0.6);
+            animation: welcome-avatar-pop 0.5s cubic-bezier(0.34, 1.45, 0.64, 1) 0.15s forwards;
+        }
+
+        .welcome-text-reveal {
+            opacity: 0;
+            transform: translateX(-28px);
+            animation: welcome-slide-right 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.35s forwards;
+        }
+
+        @keyframes welcome-avatar-pop {
+            0% {
+                opacity: 0;
+                transform: scale(0.6);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes welcome-slide-right {
+            0% {
+                opacity: 0;
+                transform: translateX(-28px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
 
         .dashboard-kicker {
@@ -58,46 +89,37 @@
             color: #38bdf8;
         }
 
-        .hero-stat {
-            background: rgba(255, 255, 255, .82);
-            border: 1px solid #dbeafe;
-            min-width: 0;
+        /* ── Modern Borderless Hero Stats ── */
+        .hero-stats-strip {
+            background: transparent;
+            border: none;
+        }
+
+        .hero-stat-clean {
+            background: transparent;
+            border: none;
             position: relative;
-            transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+            transition: transform .25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .hero-stat::before {
-            background: var(--stat-color);
-            border-radius: 999px;
-            content: '';
-            height: 3px;
-            inset: 0.65rem 0.8rem auto;
-            position: absolute;
+        .hero-stat-clean:hover {
+            transform: translateY(-3px);
         }
 
-        .hero-stat:hover {
-            border-color: #93c5fd;
-            box-shadow: 0 12px 25px rgba(37, 99, 235, .09);
-            transform: translateY(-2px);
+        .metric-number-reveal {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(8px);
+            transition:
+                opacity .6s cubic-bezier(.16, 1, .3, 1),
+                transform .6s cubic-bezier(.16, 1, .3, 1);
+            transition-delay: calc(var(--reveal-delay, 0ms) + var(--item-delay, 100ms) + 50ms);
         }
 
-        html.dark-navy .hero-stat {
-            background: #16233d;
-            border-color: #263650;
+        .reveal-on-scroll.is-visible .metric-number-reveal {
+            opacity: 1;
+            transform: translateY(0);
         }
-
-        html.dark-navy .hero-stat:hover {
-            border-color: #38bdf8;
-            box-shadow: none;
-        }
-
-        .hero-stat:nth-child(1) { --stat-color: #60a5fa; }
-        .hero-stat:nth-child(2) { --stat-color: #2563eb; }
-        .hero-stat:nth-child(3) { --stat-color: #0f172a; }
-
-        html.dark-navy .hero-stat:nth-child(1) { --stat-color: #7dd3fc; }
-        html.dark-navy .hero-stat:nth-child(2) { --stat-color: #38bdf8; }
-        html.dark-navy .hero-stat:nth-child(3) { --stat-color: #0ea5e9; }
 
         .dashboard-primary-action {
             background: #0b1220;
@@ -216,9 +238,9 @@
         }
 
         .area-card-llenado {
-            --area-color: #16a34a;
-            --area-soft: rgba(22, 163, 74, .12);
-            --area-border: rgba(22, 163, 74, .38);
+            --area-color: #6366f1;
+            --area-soft: rgba(99, 102, 241, .12);
+            --area-border: rgba(99, 102, 241, .38);
         }
 
         html.dark-navy .area-card-rezago {
@@ -234,9 +256,9 @@
         }
 
         html.dark-navy .area-card-llenado {
-            --area-color: #4ade80;
-            --area-soft: rgba(74, 222, 128, .12);
-            --area-border: rgba(74, 222, 128, .38);
+            --area-color: #818cf8;
+            --area-soft: rgba(129, 140, 248, .14);
+            --area-border: rgba(129, 140, 248, .38);
         }
 
         .area-card {
@@ -254,13 +276,7 @@
         }
 
         .area-card::after {
-            background: radial-gradient(circle, var(--area-soft), transparent 68%);
-            content: '';
-            height: 13rem;
-            position: absolute;
-            right: -5rem;
-            top: -6rem;
-            width: 13rem;
+            display: none;
         }
 
         .area-card:hover {
@@ -294,6 +310,130 @@
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-5px); }
         }
+
+        /* ── Animated area icons (White & Dark Blue Palette) ── */
+        .area-icon-animated {
+            --anim-icon-primary: #0f172a;
+            --anim-icon-secondary: #ffffff;
+            color: var(--anim-icon-primary);
+        }
+
+        html.dark-navy .area-icon-animated {
+            --anim-icon-primary: #ffffff;
+            --anim-icon-secondary: #0f172a;
+            color: var(--anim-icon-primary);
+        }
+
+        /* ── 1. REZAGO: 3 puros verticales, mano selecciona y se retira ── */
+        .area-anim-cigar-a path,
+        .area-anim-cigar-a line {
+            stroke-dasharray: 60;
+            stroke-dashoffset: 60;
+            animation: anim-draw-stroke 0.45s ease-out 0.15s forwards;
+        }
+        .area-anim-cigar-b path,
+        .area-anim-cigar-b line {
+            stroke-dasharray: 60;
+            stroke-dashoffset: 60;
+            animation: anim-draw-stroke 0.45s ease-out 0.45s forwards;
+        }
+        .area-anim-cigar-c path,
+        .area-anim-cigar-c line {
+            stroke-dasharray: 60;
+            stroke-dashoffset: 60;
+            animation: anim-draw-stroke 0.45s ease-out 0.75s forwards;
+        }
+        .area-anim-hand-pick {
+            animation: anim-hand-pick-and-fade 1.1s ease-in-out 1.1s forwards;
+        }
+        .area-anim-cigar-b {
+            transform-origin: center bottom;
+            animation: anim-cigar-lift 0.65s cubic-bezier(.34,1.35,.64,1) 1.5s forwards;
+        }
+
+        /* ── 2. ANILLADO: puro horizontal, mano coloca anillo y se desvanece ── */
+        .area-anim-cigar2 path,
+        .area-anim-cigar2 line {
+            stroke-dasharray: 80;
+            stroke-dashoffset: 80;
+            animation: anim-draw-stroke 0.6s ease-out 2.0s forwards;
+        }
+        .area-anim-hand-ring {
+            animation: anim-hand-place-and-fade 1.1s ease-in-out 2.4s forwards;
+        }
+        .area-anim-ring-painted {
+            animation: anim-ring-painted-drop 0.6s cubic-bezier(.34,1.3,.64,1) 2.5s forwards;
+        }
+        .area-anim-shine-star {
+            animation: anim-shine-star 0.7s ease-out 3.1s forwards;
+        }
+
+        /* ── 3. LLENADO: caja moderna, puros entrando en cascada, mano se retira ── */
+        .area-anim-cigar-box path,
+        .area-anim-cigar-box rect {
+            stroke-dasharray: 90;
+            stroke-dashoffset: 90;
+            animation: anim-draw-stroke 0.6s ease-out 3.5s forwards;
+        }
+        .area-anim-pack-hand {
+            animation: anim-hand-pack-glide 1.4s ease-in-out 3.8s forwards;
+        }
+        .area-anim-cigar-in-1 {
+            animation: anim-cigar-into-box 0.45s cubic-bezier(.22,1,.36,1) 3.85s forwards;
+        }
+        .area-anim-cigar-in-2 {
+            animation: anim-cigar-into-box 0.45s cubic-bezier(.22,1,.36,1) 4.25s forwards;
+        }
+        .area-anim-cigar-in-3 {
+            animation: anim-cigar-into-box 0.45s cubic-bezier(.22,1,.36,1) 4.65s forwards;
+        }
+        .area-anim-box-sparkle {
+            animation: anim-shine-star 0.7s ease-out 5.05s forwards;
+        }
+
+        /* ── Keyframes Limpios ── */
+        @keyframes anim-draw-stroke {
+            to { stroke-dashoffset: 0; }
+        }
+        @keyframes anim-hand-pick-and-fade {
+            0%   { opacity: 0; transform: translateY(-8px); }
+            35%  { opacity: 1; transform: translateY(0); }
+            70%  { opacity: 1; transform: translateY(-2px); }
+            100% { opacity: 0; transform: translateY(-8px); }
+        }
+        @keyframes anim-cigar-lift {
+            0%   { transform: translateY(0); }
+            100% { transform: translateY(-8.5px); filter: drop-shadow(0 6px 10px rgba(0,0,0,0.18)); }
+        }
+        @keyframes anim-hand-place-and-fade {
+            0%   { opacity: 0; transform: translateY(-8px); }
+            35%  { opacity: 1; transform: translateY(0); }
+            70%  { opacity: 1; transform: translateY(2px); }
+            100% { opacity: 0; transform: translateY(-6px); }
+        }
+        @keyframes anim-ring-painted-drop {
+            0%   { opacity: 0; transform: translateY(-14px) scale(0.9); }
+            40%  { opacity: 1; }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes anim-shine-star {
+            0%   { opacity: 0; transform: scale(0.2) rotate(0deg); }
+            50%  { opacity: 1; transform: scale(1.2) rotate(45deg); }
+            100% { opacity: 0; transform: scale(1.5) rotate(90deg); }
+        }
+        @keyframes anim-cigar-into-box {
+            0%   { opacity: 0; transform: translateY(-16px) scale(0.95); }
+            40%  { opacity: 1; }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes anim-hand-pack-glide {
+            0%   { opacity: 0; transform: translateY(-6px); }
+            20%  { opacity: 1; transform: translateY(0); }
+            75%  { opacity: 1; transform: translateY(3px); }
+            100% { opacity: 0; transform: translateY(-4px); }
+        }
+
+
 
         html.dark-navy .area-card:hover {
             box-shadow: none;
@@ -493,15 +633,34 @@
             <div class="w-full max-w-[1600px] mx-auto space-y-5 lg:space-y-6">
 
                 <section class="dashboard-welcome reveal-on-scroll rounded-[1.75rem] p-5 lg:p-6 overflow-hidden relative">
-                    <div class="absolute -right-16 -top-24 h-64 w-64 rounded-full border border-[#dbeafe] theme-border"></div>
-                    <div class="absolute -right-6 -top-10 h-40 w-40 rounded-full border border-[#dbeafe] theme-border"></div>
-
-                    <div class="relative grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_560px] xl:items-center gap-5 lg:gap-8">
+                    <div class="relative grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center gap-5 lg:gap-8">
                         <div class="reveal-item min-w-0" style="--item-delay: 80ms">
-                            <h1 class="theme-title mt-1 text-2xl lg:text-3xl font-black tracking-tight truncate">
-                                Buenos días, {{ Auth::user()->name }}
-                            </h1>
-                            <div class="theme-text mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold">
+                            <div class="flex items-center gap-3.5 sm:gap-4">
+                                {{-- Avatar / Foto de perfil o inicial --}}
+                                <div class="welcome-avatar-wrapper shrink-0">
+                                    @if (Auth::user()->photo)
+                                        <img src="{{ asset('storage/' . Auth::user()->photo) }}"
+                                             class="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl object-cover shadow-sm ring-2 ring-blue-500/20"
+                                             alt="Foto de perfil">
+                                    @else
+                                        <div class="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-[#0f172a] text-white flex items-center justify-center text-lg lg:text-xl font-black shadow-sm ring-2 ring-slate-300/40">
+                                            {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                                        </div>
+                                    @endif
+                                </div>
+
+                                {{-- Textos con animación deslizante a la derecha --}}
+                                <div class="welcome-text-reveal min-w-0">
+                                    <p class="theme-text text-xs lg:text-sm font-black uppercase tracking-wider text-[#2563eb]">
+                                        Buenos días,
+                                    </p>
+                                    <h1 class="theme-title text-2xl lg:text-3xl font-black tracking-tight truncate leading-tight mt-0.5">
+                                        {{ Auth::user()->name }}
+                                    </h1>
+                                </div>
+                            </div>
+
+                            <div class="theme-text mt-3.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold">
                                 <span>{{ Auth::user()->getRoleNames()->first() ?? 'Sin rol' }}</span>
                                 <span class="hidden sm:inline h-1 w-1 rounded-full bg-[#93c5fd]"></span>
                                 <span>{{ $today->locale('es')->translatedFormat('d \d\e F \d\e Y') }}</span>
@@ -518,21 +677,35 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-3 gap-2.5 sm:gap-3">
-                            <div class="hero-stat reveal-item rounded-2xl px-3 pb-3 pt-5 sm:px-4" style="--item-delay: 130ms">
-                                <p class="theme-text text-[10px] font-black uppercase tracking-[.14em]">Hoy</p>
-                                <p class="theme-title mt-1 truncate text-xl sm:text-2xl font-black counter" data-count="{{ $produccionHoy['actividades'] ?? 0 }}">0</p>
-                                <p class="theme-text mt-0.5 text-[10px] font-bold">actividades</p>
+                        <div class="hero-stats-strip flex items-center justify-between sm:justify-end gap-3 sm:gap-5 lg:gap-7 divide-x theme-border pt-4 xl:pt-0 border-t xl:border-t-0 theme-border">
+                            {{-- HOY --}}
+                            <div class="hero-stat-clean reveal-item text-left min-w-0" style="--item-delay: 130ms">
+                                <div class="flex items-center gap-1.5 mb-1">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-[#2563eb] animate-pulse"></span>
+                                    <span class="theme-text text-[10px] sm:text-[11px] font-black uppercase tracking-[.14em]">Hoy</span>
+                                </div>
+                                <p class="theme-title text-lg sm:text-xl md:text-2xl lg:text-[1.7rem] xl:text-[1.85rem] font-black tracking-tight metric-number-reveal leading-tight">{{ number_format($produccionHoy['actividades'] ?? 0) }}</p>
+                                <p class="theme-text text-[10px] sm:text-[11px] font-bold mt-0.5">actividades</p>
                             </div>
-                            <div class="hero-stat reveal-item rounded-2xl px-3 pb-3 pt-5 sm:px-4" style="--item-delay: 180ms">
-                                <p class="theme-text text-[10px] font-black uppercase tracking-[.14em]">Mes</p>
-                                <p class="theme-title mt-1 truncate text-xl sm:text-2xl font-black counter" data-count="{{ $produccionMes['actividades'] ?? 0 }}">0</p>
-                                <p class="theme-text mt-0.5 text-[10px] font-bold">actividades</p>
+
+                            {{-- MES --}}
+                            <div class="hero-stat-clean reveal-item pl-3.5 sm:pl-5 lg:pl-7 text-left min-w-0" style="--item-delay: 180ms">
+                                <div class="flex items-center gap-1.5 mb-1">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-[#0891b2]"></span>
+                                    <span class="theme-text text-[10px] sm:text-[11px] font-black uppercase tracking-[.14em]">Mes</span>
+                                </div>
+                                <p class="theme-title text-lg sm:text-xl md:text-2xl lg:text-[1.7rem] xl:text-[1.85rem] font-black tracking-tight metric-number-reveal leading-tight">{{ number_format($produccionMes['actividades'] ?? 0) }}</p>
+                                <p class="theme-text text-[10px] sm:text-[11px] font-bold mt-0.5">actividades</p>
                             </div>
-                            <div class="hero-stat reveal-item rounded-2xl px-3 pb-3 pt-5 sm:px-4" style="--item-delay: 230ms">
-                                <p class="theme-text text-[10px] font-black uppercase tracking-[.14em]">Año</p>
-                                <p class="theme-title mt-1 truncate text-xl sm:text-2xl font-black counter" data-count="{{ $produccionAnio['actividades'] ?? 0 }}">0</p>
-                                <p class="theme-text mt-0.5 text-[10px] font-bold">actividades</p>
+
+                            {{-- AÑO --}}
+                            <div class="hero-stat-clean reveal-item pl-3.5 sm:pl-5 lg:pl-7 text-left min-w-0" style="--item-delay: 230ms">
+                                <div class="flex items-center gap-1.5 mb-1">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-[#6366f1]"></span>
+                                    <span class="theme-text text-[10px] sm:text-[11px] font-black uppercase tracking-[.14em]">Año</span>
+                                </div>
+                                <p class="theme-title text-lg sm:text-xl md:text-2xl lg:text-[1.7rem] xl:text-[1.85rem] font-black tracking-tight metric-number-reveal leading-tight">{{ number_format($produccionAnio['actividades'] ?? 0) }}</p>
+                                <p class="theme-text text-[10px] sm:text-[11px] font-bold mt-0.5">actividades</p>
                             </div>
                         </div>
                     </div>
@@ -555,22 +728,118 @@
                             @php($share = round(($area['actividades'] / $totalMesAreas) * 100))
                             <article class="area-card area-card-{{ $area['key'] }} reveal-item dashboard-panel rounded-[1.6rem] p-5 lg:p-6" style="--item-delay: {{ 80 + ($loop->index * 70) }}ms">
                                 <div class="relative z-10">
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex items-center gap-3">
-                                            <span class="h-3 w-3 rounded-full shadow-sm" style="background: var(--area-color)"></span>
-                                            <h3 class="theme-title text-base font-black">{{ $area['label'] }}</h3>
-                                        </div>
+                                    <div class="flex items-center justify-between">
+                                        <h3 class="theme-title text-xl lg:text-2xl font-black tracking-tight">{{ $area['label'] }}</h3>
                                     </div>
 
                                     <div class="mt-5 flex items-end justify-between gap-4">
                                         <div>
-                                            <p class="theme-title text-4xl xl:text-[2.7rem] leading-none font-black counter" data-count="{{ $area['actividades'] }}">0</p>
+                                            <p class="theme-title text-4xl xl:text-[2.7rem] leading-none font-black metric-number-reveal">{{ number_format($area['actividades']) }}</p>
                                             <p class="theme-text mt-2 text-xs font-bold">Actividades</p>
                                         </div>
-                                        <div class="area-icon h-11 w-11 rounded-2xl flex items-center justify-center" style="background: var(--area-soft); color: var(--area-color)">
-                                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                                <path d="M4 19V9M10 19V5M16 19v-7M22 19H2"></path>
-                                            </svg>
+                                        <div class="area-icon area-icon-animated flex items-center justify-center" data-area="{{ $area['key'] }}" data-area-index="{{ $loop->index }}">
+                                            @if($area['key'] === 'rezago')
+                                                {{-- Rezago: 3 puros verticales estilizados y limpios, el central se levanta como seleccionado --}}
+                                                <svg class="h-16 w-16 area-anim-svg" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    {{-- Puro Izquierdo --}}
+                                                    <g class="area-anim-cigar-a">
+                                                        <path d="M5 11 C5 7 9 7 9 11 V31 H5 Z" fill="currentColor" fill-opacity="0.08"/>
+                                                        <line x1="5" y1="11" x2="9" y2="11" opacity="0.6"/>
+                                                        <line x1="5" y1="19" x2="9" y2="22" opacity="0.4"/>
+                                                        <line x1="5" y1="24" x2="9" y2="27" opacity="0.4"/>
+                                                    </g>
+
+                                                    {{-- Puro Central (se eleva notablemente al ser seleccionado) --}}
+                                                    <g class="area-anim-cigar-b">
+                                                        <path d="M16 11 C16 7 20 7 20 11 V31 H16 Z" fill="currentColor" fill-opacity="0.16"/>
+                                                        <line x1="16" y1="11" x2="20" y2="11" opacity="0.7"/>
+                                                        <line x1="16" y1="19" x2="20" y2="22" opacity="0.5"/>
+                                                        <line x1="16" y1="24" x2="20" y2="27" opacity="0.5"/>
+                                                    </g>
+
+                                                    {{-- Puro Derecho --}}
+                                                    <g class="area-anim-cigar-c">
+                                                        <path d="M27 11 C27 7 31 7 31 11 V31 H27 Z" fill="currentColor" fill-opacity="0.08"/>
+                                                        <line x1="27" y1="11" x2="31" y2="11" opacity="0.6"/>
+                                                        <line x1="27" y1="19" x2="31" y2="22" opacity="0.4"/>
+                                                        <line x1="27" y1="24" x2="31" y2="27" opacity="0.4"/>
+                                                    </g>
+
+                                                    {{-- Mano que baja a escoger y se retira limpiamente --}}
+                                                    <g class="area-anim-hand-pick" opacity="0">
+                                                        <path d="M18 1 V6" stroke-width="1.8"/>
+                                                        <path d="M14 6 C15.5 4.5 17 5 18 6 C19 5 20.5 4.5 22 6" stroke-width="1.6"/>
+                                                    </g>
+                                                </svg>
+                                            @elseif($area['key'] === 'anillado')
+                                                {{-- Anillado: puro horizontal limpio, mano coloca anillo y se desvanece por completo --}}
+                                                <svg class="h-16 w-16 area-anim-svg" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    {{-- Puro Horizontal con proporciones limpias --}}
+                                                    <g class="area-anim-cigar2">
+                                                        <path d="M6 14 C2 14 2 22 6 22 H32 V14 H6 Z" fill="currentColor" fill-opacity="0.08"/>
+                                                        <line x1="6" y1="14" x2="6" y2="22" opacity="0.6"/>
+                                                        <line x1="20" y1="14" x2="17" y2="22" opacity="0.4"/>
+                                                        <line x1="27" y1="14" x2="24" y2="22" opacity="0.4"/>
+                                                        <line x1="32" y1="14" x2="32" y2="22" stroke-width="1.8"/>
+                                                    </g>
+
+                                                    {{-- Anillo pintado --}}
+                                                    <g class="area-anim-ring-painted" opacity="0">
+                                                        <rect x="9.5" y="12" width="7" height="12" rx="2" fill="currentColor" stroke="currentColor" stroke-width="1"/>
+                                                        <ellipse cx="13" cy="18" rx="1.8" ry="2.8" fill="var(--anim-icon-secondary)" stroke="none"/>
+                                                        <circle cx="13" cy="18" r="0.9" fill="currentColor"/>
+                                                    </g>
+
+                                                    {{-- Destello al colocar el anillo que se apaga solo --}}
+                                                    <path class="area-anim-shine-star" d="M13 7.5 L14 10 L16.5 11 L14 12 L13 14.5 L12 12 L9.5 11 L12 10 Z" fill="currentColor" opacity="0"/>
+
+                                                    {{-- Mano que baja y se desvanece al 100% --}}
+                                                    <g class="area-anim-hand-ring" opacity="0">
+                                                        <path d="M10 1 V6 M16 1 V6" stroke-width="1.4"/>
+                                                        <path d="M9 6 C10.5 4.5 14.5 4.5 16 6" stroke-width="1.6"/>
+                                                    </g>
+                                                </svg>
+                                            @else
+                                                {{-- Llenado: caja moderna estilizada y limpia, puros entrando ordenadamente --}}
+                                                <svg class="h-16 w-16 area-anim-svg" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    {{-- Caja de puros estilizada y limpia sin manchas --}}
+                                                    <g class="area-anim-cigar-box">
+                                                        {{-- Tapa abierta limpia --}}
+                                                        <path d="M 4 14 L 8 4 H 32 L 28 14" stroke-width="1.6"/>
+                                                        {{-- Cuerpo de la caja --}}
+                                                        <rect x="4" y="14" width="28" height="18" rx="2.5" fill="none" stroke-width="1.6"/>
+                                                        <line x1="4" y1="14" x2="32" y2="14" stroke-width="1.6"/>
+                                                    </g>
+
+                                                    {{-- Puros con su anilla entrando ordenadamente a la caja --}}
+                                                    <g class="area-anim-cigar-in-1" opacity="0">
+                                                        <rect x="6.5" y="26" width="23" height="4.5" rx="2" fill="currentColor" fill-opacity="0.14" stroke-width="1.2"/>
+                                                        <rect x="10.5" y="25.5" width="4" height="5.5" rx="1" fill="currentColor" stroke="none"/>
+                                                        <circle cx="12.5" cy="28.25" r="0.7" fill="var(--anim-icon-secondary)" stroke="none"/>
+                                                    </g>
+
+                                                    <g class="area-anim-cigar-in-2" opacity="0">
+                                                        <rect x="6.5" y="20.5" width="23" height="4.5" rx="2" fill="currentColor" fill-opacity="0.16" stroke-width="1.2"/>
+                                                        <rect x="10.5" y="20" width="4" height="5.5" rx="1" fill="currentColor" stroke="none"/>
+                                                        <circle cx="12.5" cy="22.75" r="0.7" fill="var(--anim-icon-secondary)" stroke="none"/>
+                                                    </g>
+
+                                                    <g class="area-anim-cigar-in-3" opacity="0">
+                                                        <rect x="6.5" y="15" width="23" height="4.5" rx="2" fill="currentColor" fill-opacity="0.18" stroke-width="1.2"/>
+                                                        <rect x="10.5" y="14.5" width="4" height="5.5" rx="1" fill="currentColor" stroke="none"/>
+                                                        <circle cx="12.5" cy="17.25" r="0.7" fill="var(--anim-icon-secondary)" stroke="none"/>
+                                                    </g>
+
+                                                    {{-- Mano que empaca y luego se retira completamente --}}
+                                                    <g class="area-anim-pack-hand" opacity="0">
+                                                        <path d="M 18 1 V 6" stroke-width="1.6"/>
+                                                        <path d="M 14 6 C 15.5 4.5 17 5 18 6 C 19 5 20.5 4.5 22 6" stroke-width="1.6"/>
+                                                    </g>
+
+                                                    {{-- Destello final de caja llena que se desvanece --}}
+                                                    <path class="area-anim-box-sparkle" d="M 28 8 L 29 10 L 31 11 L 29 12 L 28 14 L 27 12 L 25 11 L 27 10 Z" fill="currentColor" opacity="0"/>
+                                                </svg>
+                                            @endif
                                         </div>
                                     </div>
 
@@ -751,8 +1020,8 @@
                 tooltip: isDark ? 'dark' : 'light',
                 empty: isDark ? '#263650' : '#dbeafe',
                 areas: isDark
-                    ? { rezago: '#38bdf8', anillado: '#22d3ee', llenado: '#4ade80' }
-                    : { rezago: '#2563eb', anillado: '#0891b2', llenado: '#16a34a' }
+                    ? { rezago: '#38bdf8', anillado: '#22d3ee', llenado: '#818cf8' }
+                    : { rezago: '#2563eb', anillado: '#0891b2', llenado: '#6366f1' }
             };
         }
 
@@ -1037,29 +1306,6 @@
             trendChart?.updateSeries(trendSeries(period), true);
         }
 
-        function animateCounters(root = document) {
-            root.querySelectorAll('.counter').forEach(counter => {
-                if (counter.dataset.animated === 'true') {
-                    return;
-                }
-
-                counter.dataset.animated = 'true';
-                const target = Number(counter.dataset.count || 0);
-                const startTime = performance.now();
-
-                const tick = currentTime => {
-                    const progress = Math.min((currentTime - startTime) / 720, 1);
-                    counter.textContent = Math.floor(target * (1 - Math.pow(1 - progress, 3))).toLocaleString('es-HN');
-
-                    if (progress < 1) {
-                        requestAnimationFrame(tick);
-                    }
-                };
-
-                requestAnimationFrame(tick);
-            });
-        }
-
         function updateChartsTheme() {
             const theme = chartTheme();
             const trendColors = trendAreas(currentTrendPeriod).map(area => areaColor(area.key));
@@ -1101,7 +1347,6 @@
             if (! ('IntersectionObserver' in window)) {
                 elements.forEach(element => {
                     element.classList.add('is-visible');
-                    animateCounters(element);
                 });
 
                 return;
@@ -1114,7 +1359,6 @@
                     }
 
                     entry.target.classList.add('is-visible');
-                    animateCounters(entry.target);
 
                     if (entry.target.querySelector('#areaTrendChart')) {
                         trendChart?.updateSeries(trendSeries(currentTrendPeriod), true);

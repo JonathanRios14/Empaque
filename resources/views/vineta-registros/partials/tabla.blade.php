@@ -224,11 +224,11 @@
                         @endif
                     </td>
 
-                    <td class="px-4 py-3 theme-title font-semibold whitespace-nowrap">
+                    <td class="px-4 py-3 whitespace-nowrap theme-text">
                         {{ $isHoraOrdinaria ? 'N/A' : ($registro->producto?->presentacion?->nombre ?? 'N/A') }}
                     </td>
 
-                    <td class="px-4 py-3 theme-title font-semibold whitespace-nowrap">
+                    <td class="px-4 py-3 whitespace-nowrap theme-title font-semibold">
                         {{ $isHoraOrdinaria ? 'N/A' : ($registro->producto_codigo ?? 'N/A') }}
                     </td>
 
@@ -236,8 +236,8 @@
                         {{ $isHoraOrdinaria ? 'N/A' : ($registro->marca ?? 'N/A') }}
                     </td>
 
-                    <td class="px-4 py-3 min-w-[220px]">
-                        <p class="theme-title font-semibold leading-tight">
+                    <td class="px-4 py-3 min-w-[220px] theme-text">
+                        <p class="leading-tight">
                             {{ $isHoraOrdinaria ? 'Hora ordinaria' : $registro->productoNombreReporte() }}
                         </p>
                         @if ($isHoraOrdinaria)
@@ -245,27 +245,27 @@
                         @endif
                     </td>
 
-                    <td class="px-4 py-3 theme-title font-semibold whitespace-nowrap">
+                    <td class="px-4 py-3 whitespace-nowrap theme-text">
                         {{ $isHoraOrdinaria ? 'N/A' : ($registro->vitola ?? 'N/A') }}
                     </td>
 
-                    <td class="px-4 py-3 theme-title font-semibold whitespace-nowrap">
+                    <td class="px-4 py-3 whitespace-nowrap theme-text">
                         {{ $isHoraOrdinaria ? 'N/A' : ($registro->capa ?? 'N/A') }}
                     </td>
 
-                    <td class="px-4 py-3 theme-title font-semibold whitespace-nowrap">
+                    <td class="px-4 py-3 whitespace-nowrap theme-text">
                         {{ $isHoraOrdinaria ? 'N/A' : $registro->tipoEmpaqueReporte() }}
                     </td>
 
-                    <td class="px-4 py-3 theme-title font-semibold whitespace-nowrap">
+                    <td class="px-4 py-3 whitespace-nowrap theme-title font-semibold">
                         {{ $isHoraOrdinaria ? 'N/A' : ($registro->producto_item ?? 'N/A') }}
                     </td>
 
-                    <td class="px-4 py-3 theme-title font-semibold whitespace-nowrap">
+                    <td class="px-4 py-3 whitespace-nowrap theme-title font-semibold">
                         {{ $isHoraOrdinaria ? 'N/A' : ($registro->orden_del_sistema ?? 'N/A') }}
                     </td>
 
-                    <td class="px-4 py-3 theme-title font-semibold whitespace-nowrap">
+                    <td class="px-4 py-3 whitespace-nowrap theme-title font-semibold">
                         {{ $isHoraOrdinaria ? 'N/A' : ($registro->orden ?? 'N/A') }}
                     </td>
 
@@ -294,19 +294,19 @@
                         </div>
                     </td>
 
-                    <td class="px-4 py-3 text-right theme-title font-black whitespace-nowrap">{{ number_format($registro->cantidad_puros) }}</td>
-                    <td class="px-4 py-3 text-right theme-title font-black whitespace-nowrap">{{ number_format($registro->cantidad_cajones) }}</td>
+                    <td class="px-4 py-3 text-right theme-title font-semibold whitespace-nowrap">{{ number_format($registro->cantidad_puros) }}</td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap theme-text">{{ number_format($registro->cantidad_cajones) }}</td>
 
                     @if ($hasMinutosTrabajados)
-                        <td class="px-4 py-3 text-right theme-title font-black whitespace-nowrap">
+                        <td class="px-4 py-3 text-right whitespace-nowrap theme-title font-semibold">
                             {{ method_exists($registro, 'tiempoTrabajadoReporteTexto') ? $registro->tiempoTrabajadoReporteTexto() : $registro->tiempoTrabajadoTexto() }}
                         </td>
                     @endif
 
-                    <td class="px-4 py-3 text-right theme-title font-black whitespace-nowrap">{{ number_format($registro->cantidadActividadesValor()) }}</td>
-                    <td class="px-4 py-3 text-right theme-title font-black whitespace-nowrap">{{ number_format($registro->total_actividades) }}</td>
-                    <td class="px-4 py-3 text-right theme-title font-semibold whitespace-nowrap">{{ number_format((float) ($isHoraOrdinaria ? 0 : ($registro->precioMoEfectivo() ?? 0)), 7) }}</td>
-                    <td class="px-4 py-3 text-right theme-title font-black whitespace-nowrap">{{ number_format($registro->total_mo, 2) }}</td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap theme-text">{{ number_format($registro->cantidadActividadesValor()) }}</td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap theme-title font-semibold">{{ number_format($registro->total_actividades) }}</td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap theme-text">{{ number_format((float) ($isHoraOrdinaria ? 0 : ($registro->precioMoEfectivo() ?? 0)), 7) }}</td>
+                    <td class="px-4 py-3 text-right theme-title font-semibold whitespace-nowrap">{{ number_format($registro->total_mo, 2) }}</td>
 
                     <td class="px-4 py-3 whitespace-nowrap">
                         <span class="theme-badge vinetas-status-badge inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border">

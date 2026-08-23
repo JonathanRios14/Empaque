@@ -25,6 +25,7 @@ class CatalogoController extends Controller
         'nombre',
         'item',
         'codigo_producto',
+        'api_id_producto',
         'precio',
         'created_at',
         'marca',
@@ -32,6 +33,7 @@ class CatalogoController extends Controller
         'capa',
         'tipo_empaque',
         'actividades_count',
+        'presentacion',
     ];
 
     if (! in_array($orden, $ordenesPermitidos)) {
@@ -84,12 +86,20 @@ class CatalogoController extends Controller
         });
     }
 
+    if ($request->filled('codigo_producto')) {
+        $query->where('productos.codigo_producto', 'like', "%{$request->codigo_producto}%");
+    }
+
+    if ($request->filled('item')) {
+        $query->where('productos.item', 'like', "%{$request->item}%");
+    }
+
     if ($request->filled('marca_id')) {
         $query->where('productos.marca_id', $request->marca_id);
     }
     if ($request->filled('empresa_id')) {
-    $query->where('productos.empresa_id', $request->empresa_id);
-}
+        $query->where('productos.empresa_id', $request->empresa_id);
+    }
 
     if ($request->filled('vitola_id')) {
         $query->where('productos.vitola_id', $request->vitola_id);
@@ -103,7 +113,12 @@ class CatalogoController extends Controller
         $query->where('productos.tipo_empaque_id', $request->tipo_empaque_id);
     }
 
-    if ($request->filled('presentacion_id')) {
+    if ($request->filled('presentacion')) {
+        $presentacion = $request->presentacion;
+        $query->whereHas('presentacion', function ($q) use ($presentacion) {
+            $q->where('nombre', 'like', "%{$presentacion}%");
+        });
+    } elseif ($request->filled('presentacion_id')) {
         $query->where('productos.presentacion_id', $request->presentacion_id);
     }
 
@@ -125,6 +140,9 @@ class CatalogoController extends Controller
     } elseif ($orden === 'tipo_empaque') {
         $query->leftJoin('tipo_empaques', 'productos.tipo_empaque_id', '=', 'tipo_empaques.id')
             ->orderBy('tipo_empaques.nombre', $direccion);
+    } elseif ($orden === 'presentacion') {
+        $query->leftJoin('presentaciones', 'productos.presentacion_id', '=', 'presentaciones.id')
+            ->orderBy('presentaciones.nombre', $direccion);
     } elseif ($orden === 'actividades_count') {
         $query->orderBy('actividades_count', $direccion);
     } else {

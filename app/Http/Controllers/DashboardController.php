@@ -13,9 +13,9 @@ class DashboardController extends Controller
     private string $timezone = 'America/Tegucigalpa';
 
     private array $areasProduccion = [
-        'rezago' => ['label' => 'Rezago', 'color' => '#f59e0b'],
-        'anillado' => ['label' => 'Anillado', 'color' => '#2563eb'],
-        'llenado' => ['label' => 'Llenado', 'color' => '#16a34a'],
+        'rezago' => ['label' => 'Rezago', 'color' => '#2563eb'],
+        'anillado' => ['label' => 'Anillado', 'color' => '#0891b2'],
+        'llenado' => ['label' => 'Llenado', 'color' => '#6366f1'],
     ];
 
     public function index(Request $request)

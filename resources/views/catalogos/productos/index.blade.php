@@ -43,15 +43,32 @@
                                 'clear' => route('catalogos.productos.index', request()->except('buscar', 'page')),
                             ];
                         }
-                        if (request()->filled('empresa_id')) {
-    $empresaSeleccionada = \App\Models\Empresa::find(request('empresa_id'));
 
-    $filtrosActivos[] = [
-        'label' => 'Empresa',
-        'value' => $empresaSeleccionada?->nombre ?? 'ID ' . request('empresa_id'),
-        'clear' => route('catalogos.productos.index', request()->except('empresa_id', 'page')),
-    ];
-}
+                        if (request()->filled('codigo_producto')) {
+                            $filtrosActivos[] = [
+                                'label' => 'Código',
+                                'value' => request('codigo_producto'),
+                                'clear' => route('catalogos.productos.index', request()->except('codigo_producto', 'page')),
+                            ];
+                        }
+
+                        if (request()->filled('item')) {
+                            $filtrosActivos[] = [
+                                'label' => 'Item',
+                                'value' => request('item'),
+                                'clear' => route('catalogos.productos.index', request()->except('item', 'page')),
+                            ];
+                        }
+
+                        if (request()->filled('empresa_id')) {
+                            $empresaSeleccionada = \App\Models\Empresa::find(request('empresa_id'));
+
+                            $filtrosActivos[] = [
+                                'label' => 'Empresa',
+                                'value' => $empresaSeleccionada?->nombre ?? 'ID ' . request('empresa_id'),
+                                'clear' => route('catalogos.productos.index', request()->except('empresa_id', 'page')),
+                            ];
+                        }
 
                         if (request()->filled('marca_id')) {
                             $marcaSeleccionada = $marcas->firstWhere('id', (int) request('marca_id'));
@@ -103,7 +120,13 @@
                             ];
                         }
 
-                        if (request()->filled('presentacion_id')) {
+                        if (request()->filled('presentacion')) {
+                            $filtrosActivos[] = [
+                                'label' => 'Presentación',
+                                'value' => request('presentacion'),
+                                'clear' => route('catalogos.productos.index', request()->except('presentacion', 'page')),
+                            ];
+                        } elseif (request()->filled('presentacion_id')) {
                             $presentacionSeleccionada = $presentaciones->firstWhere('id', (int) request('presentacion_id'));
 
                             $filtrosActivos[] = [
@@ -281,9 +304,9 @@
                                       action="{{ route('catalogos.productos.index') }}"
                                       class="ajax-filter-form">
 
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8 gap-2 items-end">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-9 gap-2.5 items-end">
                                         {{-- BUSCADOR --}}
-                                        <div class="sm:col-span-2 xl:col-span-2 2xl:col-span-2">
+                                        <div>
                                             <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
                                                 Buscar
                                             </label>
@@ -292,12 +315,12 @@
                                                 <input type="text"
                                                        name="buscar"
                                                        value="{{ request('buscar') }}"
-                                                       placeholder="Producto, marca, vitola, código o actividad"
-                                                       class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm pl-10 pr-9 focus:border-[#0f172a] focus:ring-[#0f172a]">
+                                                       placeholder="Buscar..."
+                                                       class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm pl-9 pr-7 focus:border-[#0f172a] focus:ring-[#0f172a]">
 
                                                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                                                     <svg xmlns="http://www.w3.org/2000/svg"
-                                                         class="w-4 h-4"
+                                                         class="w-3.5 h-3.5"
                                                          fill="none"
                                                          viewBox="0 0 24 24"
                                                          stroke="currentColor"
@@ -310,7 +333,7 @@
 
                                                 @if(request('buscar'))
                                                     <a href="{{ route('catalogos.productos.index', request()->except('buscar', 'page')) }}"
-                                                       class="ajax-filter-link absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition"
+                                                       class="ajax-filter-link absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition"
                                                        title="Quitar búsqueda">
                                                         ×
                                                     </a>
@@ -318,7 +341,33 @@
                                             </div>
                                         </div>
 
-                                        {{-- SELECTS --}}
+                                        {{-- CÓDIGO PRODUCTO --}}
+                                        <div>
+                                            <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
+                                                Código
+                                            </label>
+
+                                            <input type="text"
+                                                   name="codigo_producto"
+                                                   value="{{ request('codigo_producto') }}"
+                                                   placeholder="Código producto"
+                                                   class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm px-3 focus:border-[#0f172a] focus:ring-[#0f172a]">
+                                        </div>
+
+                                        {{-- ITEM --}}
+                                        <div>
+                                            <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
+                                                Item
+                                            </label>
+
+                                            <input type="text"
+                                                   name="item"
+                                                   value="{{ request('item') }}"
+                                                   placeholder="Item"
+                                                   class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm px-3 focus:border-[#0f172a] focus:ring-[#0f172a]">
+                                        </div>
+
+                                        {{-- MARCA --}}
                                         <div>
                                             <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
                                                 Marca
@@ -334,6 +383,7 @@
                                             </select>
                                         </div>
 
+                                        {{-- ACTIVIDAD --}}
                                         <div>
                                             <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
                                                 Actividad
@@ -349,6 +399,7 @@
                                             </select>
                                         </div>
 
+                                        {{-- VITOLA --}}
                                         <div>
                                             <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
                                                 Vitola
@@ -364,6 +415,7 @@
                                             </select>
                                         </div>
 
+                                        {{-- CAPA --}}
                                         <div>
                                             <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
                                                 Capa
@@ -379,6 +431,7 @@
                                             </select>
                                         </div>
 
+                                        {{-- TIPO EMPAQUE --}}
                                         <div>
                                             <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
                                                 Tipo empaque
@@ -394,6 +447,7 @@
                                             </select>
                                         </div>
 
+                                        {{-- PRESENTACIÓN --}}
                                         <div>
                                             <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
                                                 Presentación
@@ -408,28 +462,13 @@
                                                 @endforeach
                                             </select>
                                         </div>
+                                    </div>
 
-                                        {{-- ACCIONES --}}
-                                        <div class="sm:col-span-2 xl:col-span-4 2xl:col-span-2 flex flex-col sm:flex-row justify-end gap-2">
-                                            @if($hayFiltros)
-                                                <a href="{{ route('catalogos.productos.index') }}"
-                                                   class="ajax-filter-link filter-clear-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#d9e1ec] bg-white text-[#0f172a] text-sm font-semibold hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition">
-                                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                                         class="w-4 h-4"
-                                                         fill="none"
-                                                         viewBox="0 0 24 24"
-                                                         stroke="currentColor"
-                                                         stroke-width="2">
-                                                        <path stroke-linecap="round"
-                                                              stroke-linejoin="round"
-                                                              d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                    Quitar filtros
-                                                </a>
-                                            @endif
-
-                                            <button type="submit"
-                                                    class="gooey-action filter-submit-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0f172a] text-white text-sm font-semibold hover:bg-[#1e293b] transition shadow-sm">
+                                    {{-- ACCIONES --}}
+                                    <div class="mt-3 flex flex-wrap items-center justify-end gap-2">
+                                        @if($hayFiltros)
+                                            <a href="{{ route('catalogos.productos.index') }}"
+                                               class="ajax-filter-link filter-clear-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#d9e1ec] bg-white text-[#0f172a] text-sm font-semibold hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition">
                                                 <svg xmlns="http://www.w3.org/2000/svg"
                                                      class="w-4 h-4"
                                                      fill="none"
@@ -438,11 +477,26 @@
                                                      stroke-width="2">
                                                     <path stroke-linecap="round"
                                                           stroke-linejoin="round"
-                                                          d="M3 4a1 1 0 0 1 1-1h16a1 1 0 0 1 .8 1.6L14 13.5V19a1 1 0 0 1-1.447.894l-2-1A1 1 0 0 1 10 18v-4.5L3.2 4.6A1 1 0 0 1 3 4z" />
+                                                          d="M6 18L18 6M6 6l12 12" />
                                                 </svg>
-                                                Aplicar filtros
-                                            </button>
-                                        </div>
+                                                Quitar filtros
+                                            </a>
+                                        @endif
+
+                                        <button type="submit"
+                                                class="gooey-action filter-submit-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0f172a] text-white text-sm font-semibold hover:bg-[#1e293b] transition shadow-sm">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 class="w-4 h-4"
+                                                 fill="none"
+                                                 viewBox="0 0 24 24"
+                                                 stroke="currentColor"
+                                                 stroke-width="2">
+                                                <path stroke-linecap="round"
+                                                      stroke-linejoin="round"
+                                                      d="M3 4a1 1 0 0 1 1-1h16a1 1 0 0 1 .8 1.6L14 13.5V19a1 1 0 0 1-1.447.894l-2-1A1 1 0 0 1 10 18v-4.5L3.2 4.6A1 1 0 0 1 3 4z" />
+                                            </svg>
+                                            Aplicar filtros
+                                        </button>
                                     </div>
                                 </form>
                             </div>
@@ -553,6 +607,163 @@ const hideTableLoader = () => {
             }
         };
 
+        let stickyHeaderClone = null;
+        let floatingScroll = null;
+        let boundFloatingScroll = null;
+        let syncingFloatingScroll = false;
+        let windowEventsBound = false;
+
+        const getTableScroll = () => document.querySelector('#productosTableContainer .vinetas-table-scroll');
+        const getTopbarBottom = () => document.querySelector('.app-topbar')?.getBoundingClientRect().bottom || 0;
+
+        const removeStickyHeaderClone = () => {
+            stickyHeaderClone?.remove();
+            stickyHeaderClone = null;
+        };
+
+        const syncStickyHeaderClone = () => {
+            const scroll = getTableScroll();
+            const table = scroll?.querySelector('.vinetas-table');
+            const header = table?.querySelector('thead');
+
+            if (!scroll || !table || !header || !stickyHeaderClone) {
+                return;
+            }
+
+            const tableRect = scroll.getBoundingClientRect();
+            const headerRect = header.getBoundingClientRect();
+            const topbarBottom = getTopbarBottom();
+            const shouldShow = headerRect.top < topbarBottom
+                && tableRect.bottom > topbarBottom + headerRect.height;
+
+            stickyHeaderClone.classList.toggle('is-visible', shouldShow);
+
+            if (!shouldShow) {
+                return;
+            }
+
+            stickyHeaderClone.style.top = `${topbarBottom}px`;
+            stickyHeaderClone.style.left = `${tableRect.left}px`;
+            stickyHeaderClone.style.width = `${tableRect.width}px`;
+
+            const cloneTable = stickyHeaderClone.querySelector('table');
+
+            if (cloneTable) {
+                cloneTable.style.width = `${table.scrollWidth}px`;
+                cloneTable.style.transform = `translateX(${-scroll.scrollLeft}px)`;
+            }
+        };
+
+        const syncFloatingScrollFromTable = () => {
+            const scroll = getTableScroll();
+
+            if (!scroll || !floatingScroll || syncingFloatingScroll) {
+                return;
+            }
+
+            syncingFloatingScroll = true;
+            floatingScroll.scrollLeft = scroll.scrollLeft;
+            syncingFloatingScroll = false;
+        };
+
+        const updateFloatingScroll = () => {
+            const scroll = getTableScroll();
+            const table = scroll?.querySelector('.vinetas-table');
+            floatingScroll = document.getElementById('productosFloatingScroll');
+
+            if (!scroll || !table || !floatingScroll) {
+                return;
+            }
+
+            const rect = scroll.getBoundingClientRect();
+            const hasHorizontalOverflow = table.scrollWidth > Math.ceil(rect.width);
+            const isTableVisible = rect.top < window.innerHeight - 80 && rect.bottom > getTopbarBottom();
+
+            floatingScroll.classList.toggle('is-visible', hasHorizontalOverflow && isTableVisible);
+
+            if (!hasHorizontalOverflow || !isTableVisible) {
+                return;
+            }
+
+            const inner = floatingScroll.querySelector('.vinetas-floating-scrollbar-inner');
+
+            if (inner) {
+                inner.style.width = `${table.scrollWidth}px`;
+            }
+
+            syncFloatingScrollFromTable();
+        };
+
+        const initTableFeatures = () => {
+            removeStickyHeaderClone();
+
+            const scroll = getTableScroll();
+            const table = scroll?.querySelector('.vinetas-table');
+            const header = table?.querySelector('thead');
+            floatingScroll = document.getElementById('productosFloatingScroll');
+
+            if (!scroll || !table || !header || !floatingScroll) {
+                return;
+            }
+
+            stickyHeaderClone = document.createElement('div');
+            stickyHeaderClone.className = 'vinetas-sticky-header-clone';
+            stickyHeaderClone.innerHTML = `
+                <div class="vinetas-sticky-header-inner">
+                    <table class="w-full text-sm">${header.outerHTML}</table>
+                </div>
+            `;
+
+            const originalHeaders = [...header.querySelectorAll('th')];
+            const cloneHeaders = [...stickyHeaderClone.querySelectorAll('th')];
+
+            cloneHeaders.forEach((th, index) => {
+                const width = originalHeaders[index]?.getBoundingClientRect().width;
+
+                if (width) {
+                    th.style.width = `${width}px`;
+                    th.style.minWidth = `${width}px`;
+                }
+            });
+
+            document.body.appendChild(stickyHeaderClone);
+
+            scroll.addEventListener('scroll', () => {
+                syncStickyHeaderClone();
+                syncFloatingScrollFromTable();
+            }, { passive: true });
+
+            if (boundFloatingScroll !== floatingScroll) {
+                floatingScroll.addEventListener('scroll', () => {
+                    const currentScroll = getTableScroll();
+
+                    if (!currentScroll || syncingFloatingScroll) {
+                        return;
+                    }
+
+                    syncingFloatingScroll = true;
+                    currentScroll.scrollLeft = floatingScroll.scrollLeft;
+                    syncStickyHeaderClone();
+                    syncingFloatingScroll = false;
+                }, { passive: true });
+                boundFloatingScroll = floatingScroll;
+            }
+
+            if (!windowEventsBound) {
+                window.addEventListener('scroll', () => {
+                    syncStickyHeaderClone();
+                    updateFloatingScroll();
+                }, { passive: true });
+                window.addEventListener('resize', () => requestAnimationFrame(initTableFeatures));
+                windowEventsBound = true;
+            }
+
+            requestAnimationFrame(() => {
+                syncStickyHeaderClone();
+                updateFloatingScroll();
+            });
+        };
+
         const loadTable = async (url) => {
             const container = getTableContainer();
 
@@ -574,9 +785,10 @@ const hideTableLoader = () => {
 
                 const html = await response.text();
 
-               container.innerHTML = html;
-window.history.pushState({}, '', url);
-hideTableLoader();
+                container.innerHTML = html;
+                window.history.pushState({}, '', url);
+                initTableFeatures();
+                hideTableLoader();
 
             } catch (error) {
                 console.error(error);
@@ -615,6 +827,7 @@ hideTableLoader();
 
                 if (newTable && currentTable) {
                     currentTable.replaceWith(newTable);
+                    initTableFeatures();
                 }
 
                 window.history.pushState({}, '', url);
@@ -625,6 +838,8 @@ hideTableLoader();
                 window.location.href = url;
             }
         };
+
+        initTableFeatures();
 
         document.addEventListener('click', (event) => {
             const link = event.target.closest('a');

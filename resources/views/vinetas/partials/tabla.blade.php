@@ -172,11 +172,11 @@
                             </span>
                         </td>
 
-                        <td class="px-4 py-3 whitespace-nowrap theme-title font-semibold">
+                        <td class="px-4 py-3 whitespace-nowrap theme-text">
                             {{ $vineta->presentacion ?? 'N/A' }}
                         </td>
 
-                        <td class="px-4 py-3 whitespace-nowrap theme-text">
+                        <td class="px-4 py-3 whitespace-nowrap theme-title font-semibold">
                             {{ $vineta->codigo_producto ?? 'N/A' }}
                         </td>
 
@@ -196,15 +196,15 @@
                             {{ $vineta->capa ?? 'Sin capa' }}
                         </td>
 
-                        <td class="px-4 py-3 whitespace-nowrap theme-text">
+                        <td class="px-4 py-3 whitespace-nowrap theme-title font-semibold">
                             {{ $vineta->item ?? 'N/A' }}
                         </td>
 
-                        <td class="px-4 py-3 whitespace-nowrap theme-text">
+                        <td class="px-4 py-3 whitespace-nowrap theme-title font-semibold">
                             {{ $vineta->orden_del_sistema ?? 'N/A' }}
                         </td>
 
-                        <td class="px-4 py-3 whitespace-nowrap theme-text">
+                        <td class="px-4 py-3 whitespace-nowrap theme-title font-semibold">
                             {{ $vineta->orden ?? 'N/A' }}
                         </td>
 

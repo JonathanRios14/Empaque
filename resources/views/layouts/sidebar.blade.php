@@ -38,7 +38,7 @@
         mobileSidebarOpen ? 'mobile-sidebar-open' : 'mobile-sidebar-closed'
     ]"
     class="app-sidebar hidden md:block shrink-0 bg-[#3b2818] text-white">
-    <div class="app-sidebar-header h-20 flex items-center border-b border-white/10">
+    <div class="app-sidebar-header h-20 flex items-center">
         <div class="sidebar-brand flex items-center gap-3">
             <div class="w-12 h-12  flex items-center justify-center shadow-sm">
                 <img src="{{ asset('img/plasencia-logo.png') }}"

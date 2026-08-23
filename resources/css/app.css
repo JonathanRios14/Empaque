@@ -775,29 +775,159 @@ html.dark-navy .theme-switch {
     transform: none;
 }
 
-.theme-button-secondary.gooey-action,
-a.bg-white.gooey-action,
-button.bg-white.gooey-action,
-.filter-toggle-btn.gooey-action {
-    --button: #ffffff;
-    --gooey-highlight: rgba(56, 189, 248, 0.65);
-}
-
 html.dark-navy .gooey-action {
     --button: #38bdf8;
     --gooey-highlight: rgba(224, 242, 254, 0.78);
 }
 
-html.dark-navy .theme-button-secondary.gooey-action,
-html.dark-navy a.bg-white.gooey-action,
-html.dark-navy button.bg-white.gooey-action,
-html.dark-navy .filter-toggle-btn.gooey-action {
-    --button: #16233d;
-    --gooey-highlight: rgba(56, 189, 248, 0.56);
-}
-
 html.dark-navy .gooey-action::before {
     filter: blur(9px) url("#gooey-action-filter") drop-shadow(0 0.22rem 0.48rem rgba(56, 189, 248, 0.24));
+}
+
+/* ==========================================================================
+   Desactivar efecto gooey, brillo, sombra, movimiento y color de borde:
+   - Botones blancos del tema claro
+   - Botones azul oscuro del tema oscuro
+   ========================================================================== */
+
+:is(
+    .theme-button-secondary,
+    .filter-toggle-btn,
+    .filter-clear-btn,
+    a.bg-white,
+    button.bg-white,
+    .vinetas-notification-button,
+    [class*="ajax-clear"],
+    [class*="ajax-filter-link"],
+    .catalogo-ajax-clear
+) {
+    transform: none !important;
+    box-shadow: none !important;
+    filter: none !important;
+    text-shadow: none !important;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
+}
+
+:is(
+    .theme-button-secondary,
+    .filter-toggle-btn,
+    .filter-clear-btn,
+    a.bg-white,
+    button.bg-white,
+    .vinetas-notification-button,
+    [class*="ajax-clear"],
+    [class*="ajax-filter-link"],
+    .catalogo-ajax-clear
+)::before,
+:is(
+    .theme-button-secondary,
+    .filter-toggle-btn,
+    .filter-clear-btn,
+    a.bg-white,
+    button.bg-white,
+    .vinetas-notification-button,
+    [class*="ajax-clear"],
+    [class*="ajax-filter-link"],
+    .catalogo-ajax-clear
+)::after {
+    display: none !important;
+    content: none !important;
+    filter: none !important;
+    box-shadow: none !important;
+    background: none !important;
+}
+
+:is(
+    .theme-button-secondary,
+    .filter-toggle-btn,
+    .filter-clear-btn,
+    a.bg-white,
+    button.bg-white,
+    .vinetas-notification-button,
+    [class*="ajax-clear"],
+    [class*="ajax-filter-link"],
+    .catalogo-ajax-clear
+):hover,
+:is(
+    .theme-button-secondary,
+    .filter-toggle-btn,
+    .filter-clear-btn,
+    a.bg-white,
+    button.bg-white,
+    .vinetas-notification-button,
+    [class*="ajax-clear"],
+    [class*="ajax-filter-link"],
+    .catalogo-ajax-clear
+):active,
+:is(
+    .theme-button-secondary,
+    .filter-toggle-btn,
+    .filter-clear-btn,
+    a.bg-white,
+    button.bg-white,
+    .vinetas-notification-button,
+    [class*="ajax-clear"],
+    [class*="ajax-filter-link"],
+    .catalogo-ajax-clear
+):focus {
+    transform: none !important;
+    box-shadow: none !important;
+    filter: none !important;
+    outline: none !important;
+}
+
+/* Tema Claro - Botones blancos */
+html:not(.dark-navy) :is(
+    .theme-button-secondary,
+    .filter-toggle-btn,
+    a.bg-white,
+    button.bg-white,
+    .vinetas-notification-button
+) {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #d9e1ec !important;
+    box-shadow: none !important;
+}
+
+html:not(.dark-navy) :is(
+    .theme-button-secondary,
+    .filter-toggle-btn,
+    a.bg-white,
+    button.bg-white,
+    .vinetas-notification-button
+):hover {
+    background-color: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+    box-shadow: none !important;
+}
+
+/* Tema Oscuro - Botones azul oscuro */
+html.dark-navy :is(
+    .theme-button-secondary,
+    .filter-toggle-btn,
+    a.bg-white,
+    button.bg-white,
+    .vinetas-notification-button
+) {
+    background-color: #111c33 !important;
+    color: #e5e7eb !important;
+    border-color: #263650 !important;
+    box-shadow: none !important;
+}
+
+html.dark-navy :is(
+    .theme-button-secondary,
+    .filter-toggle-btn,
+    a.bg-white,
+    button.bg-white,
+    .vinetas-notification-button
+):hover {
+    background-color: #16233d !important;
+    border-color: #263650 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
 }
 
 /* Dropdown perfil */
@@ -834,7 +964,7 @@ html.dark-navy .app-sidebar {
 }
 
 html.dark-navy .app-sidebar-header {
-    border-color: #1e293b !important;
+    border: none !important;
 }
 
 html.dark-navy .sidebar-link {
@@ -1026,7 +1156,7 @@ html:not(.dark-navy) .app-sidebar {
 }
 
 html:not(.dark-navy) .app-sidebar-header {
-    border-color: #1e293b !important;
+    border: none !important;
 }
 
 html:not(.dark-navy) .sidebar-link {

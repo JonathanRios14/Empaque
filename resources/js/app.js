@@ -804,7 +804,7 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('pointermove', (event) => {
     const target = event.target.closest('.gooey-action');
 
-    if (! target) {
+    if (! target || target.matches('.theme-button-secondary, .filter-toggle-btn, .filter-clear-btn, a.bg-white, button.bg-white, .vinetas-notification-button, [class*="ajax-clear"], [class*="ajax-filter-link"]')) {
         return;
     }
 
