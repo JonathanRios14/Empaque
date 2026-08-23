@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Producto;
 use App\Services\CatalogoApiService;
+use App\Support\PerPageOptions;
 use Illuminate\Http\Request;
 use App\Models\Actividad;
 use App\Models\Capa;
@@ -131,20 +132,16 @@ class CatalogoController extends Controller
     }
 
 $perPageInput = $request->get('per_page', 10);
-
-if ($perPageInput === 'all') {
-    $perPage = max((clone $query)->reorder()->count(), 1);
-} else {
-    $perPage = (int) $perPageInput;
-
-    if (! in_array($perPage, [10, 25, 50, 100])) {
-        $perPage = 10;
-    }
-}
+$perPageSelected = 10;
 
 $productos = $query
-    ->paginate($perPage)
+    ->paginate(function (int $total) use ($perPageInput, &$perPageSelected) {
+        $perPageSelected = PerPageOptions::resolve($perPageInput, $total, 10);
+
+        return PerPageOptions::pageSize($perPageSelected, $total);
+    })
     ->appends($request->query());
+$perPageOptions = PerPageOptions::forTotal($productos->total());
 
     $marcas = Marca::orderBy('nombre')->get();
     $vitolas = Vitola::orderBy('nombre')->get();
@@ -163,7 +160,9 @@ $productos = $query
         'capas',
         'tipoEmpaques',
         'presentaciones',
-        'actividades'
+        'actividades',
+        'perPageOptions',
+        'perPageSelected'
     ))->render();
 }
 
@@ -176,7 +175,9 @@ return view('catalogos.productos.index', compact(
     'capas',
     'tipoEmpaques',
     'presentaciones',
-    'actividades'
+    'actividades',
+    'perPageOptions',
+    'perPageSelected'
 ));
 }
 

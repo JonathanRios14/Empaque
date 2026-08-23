@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ActividadController as ApiActividadController;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmpleadoController as ApiEmpleadoController;
 use App\Http\Controllers\Api\EmpleadoHoraOrdinariaController as ApiEmpleadoHoraOrdinariaController;
 use App\Http\Controllers\Api\VinetaController as ApiVinetaController;
@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/vinetas-registradas', [ApiVinetaRegistroController::class, 'feed'])
+    ->name('api.vinetas-registradas');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
@@ -34,11 +36,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/vineta-registros/{vinetaRegistro}', [ApiVinetaRegistroController::class, 'update']);
     Route::get('/actividades/search', [ApiActividadController::class, 'search']);
     Route::get('/empleados/seguimiento', [ApiVinetaRegistroController::class, 'seguimientoEmpleado']);
+    Route::get('/empleados/horas-ordinarias/resumen', [ApiEmpleadoHoraOrdinariaController::class, 'resumenEmpleados']);
     Route::get('/empleados/{empleado}/resumen-diario', [ApiVinetaRegistroController::class, 'resumenDiarioEmpleado']);
     Route::get('/empleados/{empleado}/horas-ordinarias', [ApiEmpleadoHoraOrdinariaController::class, 'index']);
     Route::post('/empleados/{empleado}/horas-ordinarias', [ApiEmpleadoHoraOrdinariaController::class, 'store']);
     Route::patch('/empleados/{empleado}/horas-ordinarias/{horaOrdinaria}', [ApiEmpleadoHoraOrdinariaController::class, 'update']);
     Route::delete('/empleados/{empleado}/horas-ordinarias/{horaOrdinaria}', [ApiEmpleadoHoraOrdinariaController::class, 'destroy']);
     Route::post('/empleados/{empleado}/jornada-laboral', [ApiEmpleadoHoraOrdinariaController::class, 'distributeJornada']);
+    Route::delete('/empleados/{empleado}/jornada-laboral', [ApiEmpleadoHoraOrdinariaController::class, 'destroyJornada']);
     Route::post('/empleados/lookup', [ApiEmpleadoController::class, 'lookup']);
 });

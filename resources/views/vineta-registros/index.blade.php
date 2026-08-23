@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" class="h-full">
 <head>
+    @include('layouts.favicon')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Viñetas registradas | Sistema de Empaque</title>
@@ -10,32 +11,10 @@
 </head>
 
 @php
-    $sortLink = function ($campo) {
-        $ordenActual = request('orden', 'fecha_registro');
-        $direccionActual = request('direccion', 'desc');
-
-        $nuevaDireccion = ($ordenActual === $campo && $direccionActual === 'asc') ? 'desc' : 'asc';
-
-        return route('vineta-registros.index', array_merge(request()->query(), [
-            'orden' => $campo,
-            'direccion' => $nuevaDireccion,
-            'page' => null,
-        ]));
-    };
-
-    $sortIcon = function ($campo) {
-        $ordenActual = request('orden', 'fecha_registro');
-        $direccionActual = request('direccion', 'desc');
-
-        if ($ordenActual !== $campo) {
-            return '↕';
-        }
-
-        return $direccionActual === 'asc' ? '↑' : '↓';
-    };
-
     $hasHorasOrdinarias = $hasHorasOrdinarias ?? false;
-    $emptyColspan = ($hasMinutosTrabajados ?? false) ? 14 : 13;
+    $today = now('America/Tegucigalpa');
+    $defaultExportStart = request('fecha_desde', $today->copy()->startOfWeek()->toDateString());
+    $defaultExportEnd = request('fecha_hasta', $today->toDateString());
     $editDefaultSubtitle = ($hasMinutosTrabajados ?? false)
         ? 'Actualiza fecha, hora, cantidad, tiempo y empleado.'
         : 'Actualiza fecha, hora, cantidad y empleado.';
@@ -60,64 +39,57 @@
                 <section class="app-content-compact">
                     <div class="w-full max-w-none space-y-3">
 
-                        <div class="theme-card bg-white rounded-2xl border theme-border theme-shadow p-3 sm:p-4">
-                            <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
-                                <div class="min-w-0">
-                                    <div class="flex items-center gap-3">
-                                        <div class="section-title-icon vinetas-header-icon w-9 h-9 rounded-xl flex items-center justify-center shrink-0">
-                                            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6M7 4h10a2 2 0 0 1 2 2v14l-4-2-4 2-4-2-4 2V6a2 2 0 0 1 2-2Z" />
-                                            </svg>
-                                        </div>
-
-                                        <div class="min-w-0">
-                                            <h1 class="theme-title text-lg sm:text-xl font-bold leading-tight">
-                                                Viñetas registradas
-                                            </h1>
-
-                                            <p class="theme-text text-xs sm:text-sm mt-0.5 truncate">
-                                                Registros guardados desde el móvil y horas ordinarias para seguimiento y planilla.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 min-w-full xl:min-w-[34rem]">
-                                    <div class="theme-badge rounded-2xl border px-3 py-2">
-                                        <p class="theme-text text-[11px] font-semibold">Registros</p>
-                                        <p class="theme-title text-lg font-black">{{ number_format($totales['registros']) }}</p>
-                                    </div>
-
-                                    <div class="theme-badge rounded-2xl border px-3 py-2">
-                                        <p class="theme-text text-[11px] font-semibold">Puros</p>
-                                        <p class="theme-title text-lg font-black">{{ number_format($totales['puros']) }}</p>
-                                    </div>
-
-                                    <div class="theme-badge rounded-2xl border px-3 py-2">
-                                        <p class="theme-text text-[11px] font-semibold">Cajones</p>
-                                        <p class="theme-title text-lg font-black">{{ number_format($totales['cajones']) }}</p>
-                                    </div>
-
-                                    <div class="theme-badge rounded-2xl border px-3 py-2">
-                                        <p class="theme-text text-[11px] font-semibold">Total act.</p>
-                                        <p class="theme-title text-lg font-black">{{ number_format($totales['actividades']) }}</p>
-                                    </div>
-
-                                </div>
-                            </div>
+                        <div id="vinetaRegistrosSummaryContainer">
+                            @include('vineta-registros.partials.resumen')
                         </div>
 
                         <div class="theme-card bg-white rounded-2xl border theme-border theme-shadow p-3 sm:p-4">
                             <form method="GET"
                                   action="{{ route('vineta-registros.index') }}"
-                                  class="vineta-registros-filter-form grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-7 gap-2 items-end">
+                                  class="vineta-registros-filter-form vineta-registros-ajax-filter-form grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-9 gap-2 items-end">
 
-                                <div class="xl:col-span-2">
-                                    <label class="theme-text block text-xs font-semibold mb-1">Buscar</label>
+                                <div>
+                                    <label class="theme-text block text-xs font-semibold mb-1">ID viñeta</label>
                                     <input type="text"
-                                           name="buscar"
-                                           value="{{ request('buscar') }}"
-                                           placeholder="Viñeta, producto, empleado, observación..."
+                                           name="id_vineta"
+                                           value="{{ request('id_vineta') }}"
+                                           placeholder="ID o código"
+                                           class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
+                                </div>
+
+                                <div>
+                                    <label class="theme-text block text-xs font-semibold mb-1">Item</label>
+                                    <input type="text"
+                                           name="item"
+                                           value="{{ request('item') }}"
+                                           placeholder="Item"
+                                           class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
+                                </div>
+
+                                <div>
+                                    <label class="theme-text block text-xs font-semibold mb-1">Orden del sistema</label>
+                                    <input type="text"
+                                           name="orden_del_sistema"
+                                           value="{{ request('orden_del_sistema') }}"
+                                           placeholder="Orden sistema"
+                                           class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
+                                </div>
+
+                                <div>
+                                    <label class="theme-text block text-xs font-semibold mb-1">Orden del cliente</label>
+                                    <input type="text"
+                                           name="orden_cliente"
+                                           value="{{ request('orden_cliente') }}"
+                                           placeholder="Orden cliente"
+                                           class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
+                                </div>
+
+                                <div>
+                                    <label class="theme-text block text-xs font-semibold mb-1">Código producto</label>
+                                    <input type="text"
+                                           name="codigo_producto"
+                                           value="{{ request('codigo_producto') }}"
+                                           placeholder="Código producto"
                                            class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
                                 </div>
 
@@ -157,42 +129,34 @@
                                            class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
                                 </div>
 
-                                <div>
-                                    <label class="theme-text block text-xs font-semibold mb-1">Estado</label>
-                                    <select name="estado"
-                                            class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
-                                        <option value="activo" @selected($estado === 'activo')>Activos</option>
-                                        <option value="anulado" @selected($estado === 'anulado')>Anulados</option>
-                                        <option value="todos" @selected($estado === 'todos')>Todos</option>
-                                    </select>
-                                </div>
-
-                                <div class="sm:col-span-2 xl:col-span-7 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 pt-1">
+                                <div class="sm:col-span-2 xl:col-span-9 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 pt-1">
                                     <a href="{{ route('vineta-registros.index') }}"
-                                       class="theme-button-secondary inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white text-[#0b1220] text-sm font-bold border theme-border hover:bg-[#f1f5f9] transition">
+                                       class="vineta-registros-ajax-clear gooey-action theme-button-secondary inline-flex items-center justify-center px-3 py-2.5 rounded-xl bg-white text-[#0b1220] text-sm font-bold border theme-border hover:bg-[#f1f5f9] transition">
                                         Limpiar
                                     </a>
 
-                                    <a href="{{ route('vineta-registros.export', request()->except('page')) }}"
-                                       class="theme-button-secondary inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white text-[#5b3a1e] text-sm font-black border theme-border hover:bg-[#f3efe7] transition">
+                                    <button type="button"
+                                            id="vinetaRegistrosExportOpen"
+                                            class="gooey-action theme-button-secondary inline-flex items-center justify-center px-3 py-2.5 rounded-xl bg-white text-[#5b3a1e] text-sm font-black border theme-border hover:bg-[#f3efe7] transition">
                                         Exportar Excel
-                                    </a>
+                                    </button>
 
-                                    <a href="{{ route('vineta-registros.reporte-semanal', request()->except('page')) }}"
-                                       class="theme-button-secondary inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white text-[#0f766e] text-sm font-black border theme-border hover:bg-[#ecfdf5] transition">
+                                    <button type="button"
+                                            id="vinetaRegistrosWeeklyReportOpen"
+                                            class="gooey-action theme-button-secondary inline-flex items-center justify-center px-3 py-2.5 rounded-xl bg-white text-[#0f766e] text-sm font-black border theme-border hover:bg-[#ecfdf5] transition">
                                         Reporte semanal
-                                    </a>
+                                    </button>
 
                                     @if ($hasHorasOrdinarias)
                                         <button type="button"
                                                 id="createHoraOrdinariaOpen"
-                                                class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-[#0f172a] text-white text-sm font-black hover:bg-[#1e293b] transition">
+                                                class="gooey-action inline-flex items-center justify-center px-3 py-2.5 rounded-xl bg-[#0f172a] text-white text-sm font-black hover:bg-[#1e293b] transition">
                                             Agregar hora ordinaria
                                         </button>
                                     @endif
 
                                     <button type="submit"
-                                            class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-[#0f172a] text-white text-sm font-black hover:bg-[#1e293b] transition">
+                                            class="gooey-action inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-[#0f172a] text-white text-sm font-black hover:bg-[#1e293b] transition">
                                         Filtrar
                                     </button>
                                 </div>
@@ -200,372 +164,120 @@
                         </div>
 
                         <div class="productos-card theme-card bg-white rounded-2xl border theme-border theme-shadow overflow-visible">
-                            <div id="vinetaRegistrosTableInner" class="productos-table-inner relative">
-                                <div class="productos-table-scroll catalogo-table-scroll vinetas-table-scroll">
-                                    <table class="vinetas-table w-full text-sm">
-                                        <thead class="theme-table-head productos-sticky-head bg-[#eff6ff] text-[#0f172a]">
-                                        <tr>
-                                            <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
-                                                <a href="{{ $sortLink('fecha_registro') }}"
-                                                   class="inline-flex items-center gap-2 hover:text-[#2563eb]">
-                                                    Fecha
-                                                    <span class="text-xs">{{ $sortIcon('fecha_registro') }}</span>
-                                                </a>
-                                            </th>
-
-                                            <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
-                                                <a href="{{ $sortLink('vineta_api_id') }}"
-                                                   class="inline-flex items-center gap-2 hover:text-[#2563eb]">
-                                                    Viñeta
-                                                    <span class="text-xs">{{ $sortIcon('vineta_api_id') }}</span>
-                                                </a>
-                                            </th>
-
-                                            <th class="px-4 py-3 text-left font-bold min-w-[240px]">
-                                                Producto
-                                            </th>
-
-                                            <th class="px-4 py-3 text-left font-bold min-w-[180px]">
-                                                <a href="{{ $sortLink('actividad_nombre') }}"
-                                                   class="inline-flex items-center gap-2 hover:text-[#2563eb]">
-                                                    Actividad
-                                                    <span class="text-xs">{{ $sortIcon('actividad_nombre') }}</span>
-                                                </a>
-                                            </th>
-
-                                            <th class="px-4 py-3 text-left font-bold min-w-[190px]">
-                                                <a href="{{ $sortLink('empleado_nombre') }}"
-                                                   class="inline-flex items-center gap-2 hover:text-[#2563eb]">
-                                                    Empleado
-                                                    <span class="text-xs">{{ $sortIcon('empleado_nombre') }}</span>
-                                                </a>
-                                            </th>
-
-                                            <th class="px-4 py-3 text-right font-bold whitespace-nowrap">
-                                                <a href="{{ $sortLink('cantidad_puros') }}"
-                                                   class="inline-flex items-center gap-2 hover:text-[#2563eb]">
-                                                    Puros
-                                                    <span class="text-xs">{{ $sortIcon('cantidad_puros') }}</span>
-                                                </a>
-                                            </th>
-
-                                            <th class="px-4 py-3 text-right font-bold whitespace-nowrap">
-                                                <a href="{{ $sortLink('cantidad_cajones') }}"
-                                                   class="inline-flex items-center gap-2 hover:text-[#2563eb]">
-                                                    Cajones
-                                                    <span class="text-xs">{{ $sortIcon('cantidad_cajones') }}</span>
-                                                </a>
-                                            </th>
-
-                                            @if ($hasMinutosTrabajados)
-                                                <th class="px-4 py-3 text-right font-bold whitespace-nowrap">
-                                                    <a href="{{ $sortLink('minutos_trabajados') }}"
-                                                       class="inline-flex items-center gap-2 hover:text-[#2563eb]">
-                                                        Tiempo
-                                                        <span class="text-xs">{{ $sortIcon('minutos_trabajados') }}</span>
-                                                    </a>
-                                                </th>
-                                            @endif
-
-                                            <th class="px-4 py-3 text-right font-bold whitespace-nowrap">
-                                                <a href="{{ $sortLink('cantidad_actividades') }}"
-                                                   class="inline-flex items-center gap-2 hover:text-[#2563eb]">
-                                                    Cant. act.
-                                                    <span class="text-xs">{{ $sortIcon('cantidad_actividades') }}</span>
-                                                </a>
-                                            </th>
-
-                                            <th class="px-4 py-3 text-right font-bold whitespace-nowrap">
-                                                Total act.
-                                            </th>
-
-                                            <th class="px-4 py-3 text-right font-bold whitespace-nowrap">
-                                                <a href="{{ $sortLink('precio_mo') }}"
-                                                   class="inline-flex items-center gap-2 hover:text-[#2563eb]">
-                                                    Precio
-                                                    <span class="text-xs">{{ $sortIcon('precio_mo') }}</span>
-                                                </a>
-                                            </th>
-
-                                            <th class="px-4 py-3 text-right font-bold whitespace-nowrap">
-                                                Total
-                                            </th>
-
-                                            <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
-                                                Estado
-                                            </th>
-
-                                            <th class="px-4 py-3 text-right font-bold whitespace-nowrap">
-                                                Acciones
-                                            </th>
-                                        </tr>
-                                        </thead>
-
-                                        <tbody class="divide-y theme-divide">
-                                        @forelse ($registros as $registro)
-                                            @php
-                                                $isHoraOrdinaria = ($registro->reporte_tipo ?? 'vineta') === 'hora_ordinaria';
-                                                $isRegistroPorHora = ! $isHoraOrdinaria && method_exists($registro, 'esPorHoraOrdinario') && $registro->esPorHoraOrdinario();
-                                                $horaOrdinariaMinutos = $isHoraOrdinaria ? (int) ($registro->minutos ?? 0) : 0;
-                                                $horaOrdinariaHoras = intdiv($horaOrdinariaMinutos, 60);
-                                                $horaOrdinariaResto = $horaOrdinariaMinutos % 60;
-                                            @endphp
-                                            <tr class="vinetas-table-row transition {{ ($isHoraOrdinaria || $isRegistroPorHora) ? 'vinetas-row-no-hover' : 'theme-row' }}">
-                                                <td class="px-4 py-3 whitespace-nowrap theme-text">
-                                                    {{ $registro->fechaHoraRegistroTexto() }}
-                                                </td>
-
-                                                 <td class="px-4 py-3 whitespace-nowrap">
-                                                     @if ($isHoraOrdinaria)
-                                                         <span class="theme-badge inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border">
-                                                             Ordinaria
-                                                         </span>
-                                                      @else
-                                                        <span class="theme-badge vinetas-id-badge inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border">
-                                                            ID {{ $registro->vineta_api_id ?? $registro->vineta_id }}
-                                                        </span>
-                                                        @if ($isRegistroPorHora)
-                                                            <span class="theme-badge mt-1 inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-black border">
-                                                                Por hora
-                                                            </span>
-                                                        @endif
-                                                      @endif
-                                                </td>
-
-                                                <td class="px-4 py-3 min-w-[240px]">
-                                                     <p class="theme-title font-semibold leading-tight">
-                                                         {{ $registro->producto_nombre ?? 'Sin producto' }}
-                                                     </p>
-
-                                                     @if ($isHoraOrdinaria)
-                                                         <p class="theme-text text-xs mt-0.5">
-                                                             {{ $registro->observacion }}
-                                                         </p>
-                                                     @else
-                                                         <p class="theme-text text-xs mt-0.5">
-                                                             Código: {{ $registro->producto_codigo ?? 'N/A' }}
-                                                         </p>
-
-                                                         <p class="theme-text text-[11px] opacity-80">
-                                                             Item: {{ $registro->producto_item ?? 'N/A' }}
-                                                         </p>
-                                                     @endif
-                                                </td>
-
-                                                <td class="px-4 py-3 min-w-[180px]">
-                                                    <p class="theme-title font-semibold leading-tight">
-                                                        {{ $registro->actividad_nombre }}
-                                                    </p>
-
-                                                      <p class="theme-text text-xs mt-0.5">
-                                                          @if ($isHoraOrdinaria)
-                                                              Registro manual
-                                                          @elseif ($isRegistroPorHora)
-                                                              Por hora ordinario
-                                                          @else
-                                                              {{ $registro->actividad_codigo ?? $registro->actividad_tipo_empaque ?? 'N/A' }}
-                                                          @endif
-                                                      </p>
-                                                </td>
-
-                                                <td class="px-4 py-3 min-w-[190px]">
-                                                    <div class="flex items-center gap-3">
-                                                        <div class="w-9 h-9 rounded-xl bg-[#0f172a] text-white flex items-center justify-center text-xs font-bold shrink-0">
-                                                            {{ mb_substr($registro->empleado_nombre, 0, 1) }}
-                                                        </div>
-
-                                                        <div class="min-w-0">
-                                                            <p class="theme-title font-semibold leading-tight truncate">
-                                                                {{ $registro->empleado_nombre }}
-                                                            </p>
-
-                                                            <p class="theme-text text-xs mt-0.5">
-                                                                {{ $registro->empleado_codigo }}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </td>
-
-                                                <td class="px-4 py-3 text-right theme-title font-black whitespace-nowrap">
-                                                    {{ number_format($registro->cantidad_puros) }}
-                                                </td>
-
-                                                <td class="px-4 py-3 text-right theme-title font-black whitespace-nowrap">
-                                                    {{ number_format($registro->cantidad_cajones) }}
-                                                </td>
-
-                                                @if ($hasMinutosTrabajados)
-                                                    <td class="px-4 py-3 text-right theme-title font-black whitespace-nowrap">
-                                                        {{ method_exists($registro, 'tiempoTrabajadoReporteTexto') ? $registro->tiempoTrabajadoReporteTexto() : $registro->tiempoTrabajadoTexto() }}
-                                                    </td>
-                                                @endif
-
-                                                <td class="px-4 py-3 text-right theme-title font-black whitespace-nowrap">
-                                                    {{ number_format($registro->cantidadActividadesValor()) }}
-                                                </td>
-
-                                                <td class="px-4 py-3 text-right theme-title font-black whitespace-nowrap">
-                                                    {{ number_format($registro->total_actividades) }}
-                                                </td>
-
-                                                <td class="px-4 py-3 text-right theme-title font-semibold whitespace-nowrap">
-                                                    {{ number_format((float) ($registro->precio_mo ?? 0), 4) }}
-                                                </td>
-
-                                                <td class="px-4 py-3 text-right theme-title font-black whitespace-nowrap">
-                                                    {{ number_format($registro->total_mo, 2) }}
-                                                </td>
-
-                                                <td class="px-4 py-3 whitespace-nowrap">
-                                                    <span class="theme-badge vinetas-status-badge inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border">
-                                                        {{ ucfirst($registro->estado) }}
-                                                    </span>
-                                                </td>
-
-                                                <td class="px-3 py-3 text-right whitespace-nowrap">
-                                                    @if ($isHoraOrdinaria)
-                                                        <div class="vineta-actions inline-flex items-center justify-end overflow-hidden rounded-xl border theme-border">
-                                                            <button type="button"
-                                                                    title="Editar hora ordinaria"
-                                                                    aria-label="Editar hora ordinaria"
-                                                                    class="hora-ordinaria-edit vineta-action-btn vineta-action-btn-secondary"
-                                                                    data-action="{{ route('vineta-registros.horas-ordinarias.update', $registro) }}"
-                                                                    data-fecha="{{ optional($registro->fecha)->format('Y-m-d') }}"
-                                                                    data-horas="{{ $horaOrdinariaHoras }}"
-                                                                    data-minutos="{{ $horaOrdinariaResto }}"
-                                                                    data-empleado-codigo="{{ $registro->empleado_codigo }}"
-                                                                    data-empleado-nombre="{{ $registro->empleado_nombre }}"
-                                                                    data-observacion="{{ $registro->observacion }}">
-                                                                Editar
-                                                            </button>
-
-                                                            <form method="POST"
-                                                                  action="{{ route('vineta-registros.horas-ordinarias.destroy', $registro) }}"
-                                                                  onsubmit="return confirm('Eliminar esta hora ordinaria?');"
-                                                                  class="inline-flex">
-                                                                @csrf
-                                                                @method('DELETE')
-
-                                                                <button type="submit"
-                                                                        title="Eliminar hora ordinaria"
-                                                                        aria-label="Eliminar hora ordinaria"
-                                                                        class="vineta-action-btn vineta-action-btn-danger">
-                                                                    Eliminar
-                                                                </button>
-                                                            </form>
-                                                        </div>
-                                                    @else
-                                                        <div class="vineta-actions inline-flex items-center justify-end overflow-hidden rounded-xl border theme-border">
-                                                            <button type="button"
-                                                                    title="Ver seguimiento"
-                                                                    aria-label="Ver seguimiento"
-                                                                    class="vineta-registro-seguimiento vineta-action-btn vineta-action-btn-primary"
-                                                                    data-vineta-id="{{ $registro->vineta_id }}">
-                                                                Seguimiento
-                                                            </button>
-
-                                                            <button type="button"
-                                                                    title="Editar registro"
-                                                                    aria-label="Editar registro"
-                                                                    class="vineta-registro-edit vineta-action-btn vineta-action-btn-secondary"
-                                                                    data-action="{{ route('vineta-registros.update', $registro) }}"
-                                                                    data-fecha="{{ optional($registro->fecha_registro)->format('Y-m-d') }}"
-                                                                    data-hora="{{ substr((string) $registro->hora_registro, 0, 5) }}"
-                                                                    data-cantidad="{{ $registro->cantidad_puros }}"
-                                                                    data-minutos="{{ $registro->minutos_trabajados ?? '' }}"
-                                                                    data-por-hora="{{ $isRegistroPorHora ? '1' : '0' }}"
-                                                                    data-empleado-codigo="{{ $registro->empleado_codigo }}"
-                                                                    data-empleado-nombre="{{ $registro->empleado_nombre }}"
-                                                                    data-vineta="ID {{ $registro->vineta_api_id ?? $registro->vineta_id }}"
-                                                                    data-actividad="{{ $registro->actividad_nombre }}">
-                                                                Editar
-                                                            </button>
-
-                                                            <form method="POST"
-                                                                  action="{{ route('vineta-registros.destroy', $registro) }}"
-                                                                  onsubmit="return confirm('Eliminar este registro de prueba?');"
-                                                                  class="inline-flex">
-                                                                @csrf
-                                                                @method('DELETE')
-
-                                                                <button type="submit"
-                                                                        title="Eliminar registro"
-                                                                        aria-label="Eliminar registro"
-                                                                        class="vineta-action-btn vineta-action-btn-danger">
-                                                                    Eliminar
-                                                                </button>
-                                                            </form>
-                                                        </div>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="{{ $emptyColspan }}" class="px-4 py-12 text-center">
-                                                    <p class="theme-title font-bold">
-                                                        No hay viñetas registradas
-                                                    </p>
-
-                                                    <p class="theme-text text-sm mt-1">
-                                                        Guarda registros desde el móvil o cambia los filtros de búsqueda.
-                                                    </p>
-                                                </td>
-                                            </tr>
-                                        @endforelse
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                <div class="theme-soft px-4 py-3 border-t border-[#e5d8c7] theme-border bg-[#fbf8f3] flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                                    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-                                        <p class="theme-text text-sm text-gray-500">
-                                            Mostrando
-                                            <span class="theme-title font-semibold text-[#3b2818]">{{ $registros->firstItem() ?? 0 }}</span>
-                                            a
-                                            <span class="theme-title font-semibold text-[#3b2818]">{{ $registros->lastItem() ?? 0 }}</span>
-                                            de
-                                            <span class="theme-title font-semibold text-[#3b2818]">{{ $registros->total() }}</span>
-                                            registro(s)
-                                        </p>
-
-                                        <form method="GET"
-                                              action="{{ route('vineta-registros.index') }}"
-                                              class="per-page-control">
-                                            @foreach(request()->except('per_page', 'page') as $key => $value)
-                                                @if(is_array($value))
-                                                    @foreach($value as $item)
-                                                        <input type="hidden" name="{{ $key }}[]" value="{{ $item }}">
-                                                    @endforeach
-                                                @else
-                                                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                                                @endif
-                                            @endforeach
-
-                                            <label class="per-page-label">
-                                                Mostrar:
-                                            </label>
-
-                                            <select name="per_page"
-                                                    onchange="this.form.requestSubmit()"
-                                                    class="per-page-select">
-                                                <option value="10" @selected(request('per_page') == 10)>10</option>
-                                                <option value="25" @selected(request('per_page', 25) == 25)>25</option>
-                                                <option value="50" @selected(request('per_page') == 50)>50</option>
-                                                <option value="100" @selected(request('per_page') == 100)>100</option>
-                                            </select>
-                                        </form>
-                                    </div>
-
-                                    <div class="pagination-cafe">
-                                        {{ $registros->onEachSide(1)->links('pagination.cafe') }}
-                                    </div>
-                                </div>
+                            <div id="vinetaRegistrosTableContainer">
+                                @include('vineta-registros.partials.tabla')
                             </div>
                         </div>
 
                     </div>
                 </section>
             </main>
+        </div>
+    </div>
+
+    <div id="vinetaRegistrosExportModal"
+         class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/55 px-4 py-6 backdrop-blur-sm">
+        <div class="theme-card w-full max-w-lg overflow-hidden rounded-3xl border theme-border bg-white shadow-2xl">
+            <div class="flex items-start justify-between gap-4 border-b theme-border px-5 py-4">
+                <div>
+                    <p class="theme-text text-xs font-black uppercase tracking-wide">Exportar Excel</p>
+                    <h2 class="theme-title mt-1 text-xl font-black">Selecciona el periodo</h2>
+                    <p class="theme-text mt-1 text-sm">La primera hoja mostrará subtotales por empleado y producto; el detalle original se conservará en otra hoja.</p>
+                </div>
+                <button type="button"
+                        data-vineta-registros-modal-close="vinetaRegistrosExportModal"
+                        class="theme-button-secondary inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border theme-border text-xl font-black transition hover:bg-[#f3efe7]"
+                        aria-label="Cerrar exportación">×</button>
+            </div>
+
+            <form method="GET" action="{{ route('vineta-registros.export') }}" class="px-5 py-5">
+                @foreach(request()->except(['page', 'fecha_desde', 'fecha_hasta']) as $key => $value)
+                    @if(is_array($value))
+                        @foreach($value as $item)
+                            <input type="hidden" name="{{ $key }}[]" value="{{ $item }}">
+                        @endforeach
+                    @else
+                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                    @endif
+                @endforeach
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label for="export_fecha_desde" class="theme-text mb-1 block text-xs font-bold">Desde</label>
+                        <input id="export_fecha_desde"
+                               type="date"
+                               name="fecha_desde"
+                               value="{{ $defaultExportStart }}"
+                               required
+                               class="w-full rounded-2xl border theme-border bg-white px-4 py-3 text-sm theme-title outline-none transition focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20">
+                    </div>
+                    <div>
+                        <label for="export_fecha_hasta" class="theme-text mb-1 block text-xs font-bold">Hasta</label>
+                        <input id="export_fecha_hasta"
+                               type="date"
+                               name="fecha_hasta"
+                               value="{{ $defaultExportEnd }}"
+                               required
+                               class="w-full rounded-2xl border theme-border bg-white px-4 py-3 text-sm theme-title outline-none transition focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20">
+                    </div>
+                </div>
+
+                <div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <button type="button"
+                            data-vineta-registros-modal-close="vinetaRegistrosExportModal"
+                            class="theme-button-secondary inline-flex items-center justify-center rounded-2xl border theme-border bg-white px-4 py-3 text-sm font-bold transition hover:bg-[#f3efe7]">Cancelar</button>
+                    <button type="submit"
+                            class="inline-flex items-center justify-center rounded-2xl bg-[#5b3a1e] px-5 py-3 text-sm font-black text-white transition hover:bg-[#3b2818]">Descargar Excel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="vinetaRegistrosWeeklyReportModal"
+         class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/55 px-4 py-6 backdrop-blur-sm">
+        <div class="theme-card w-full max-w-lg overflow-hidden rounded-3xl border theme-border bg-white shadow-2xl">
+            <div class="flex items-start justify-between gap-4 border-b theme-border px-5 py-4">
+                <div>
+                    <p class="theme-text text-xs font-black uppercase tracking-wide">Reporte semanal</p>
+                    <h2 class="theme-title mt-1 text-xl font-black">Selecciona el periodo</h2>
+                    <p class="theme-text mt-1 text-sm">El reporte incluirá únicamente los registros dentro de estas fechas.</p>
+                </div>
+                <button type="button"
+                        data-vineta-registros-modal-close="vinetaRegistrosWeeklyReportModal"
+                        class="theme-button-secondary inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border theme-border text-xl font-black transition hover:bg-[#f3efe7]"
+                        aria-label="Cerrar reporte semanal">×</button>
+            </div>
+
+            <form method="GET" action="{{ route('vineta-registros.reporte-semanal') }}" class="px-5 py-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label for="weekly_fecha_desde" class="theme-text mb-1 block text-xs font-bold">Desde</label>
+                        <input id="weekly_fecha_desde"
+                               type="date"
+                               name="fecha_desde"
+                               value="{{ $defaultExportStart }}"
+                               required
+                               class="w-full rounded-2xl border theme-border bg-white px-4 py-3 text-sm theme-title outline-none transition focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20">
+                    </div>
+                    <div>
+                        <label for="weekly_fecha_hasta" class="theme-text mb-1 block text-xs font-bold">Hasta</label>
+                        <input id="weekly_fecha_hasta"
+                               type="date"
+                               name="fecha_hasta"
+                               value="{{ $defaultExportEnd }}"
+                               required
+                               class="w-full rounded-2xl border theme-border bg-white px-4 py-3 text-sm theme-title outline-none transition focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20">
+                    </div>
+                </div>
+
+                <div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <button type="button"
+                            data-vineta-registros-modal-close="vinetaRegistrosWeeklyReportModal"
+                            class="theme-button-secondary inline-flex items-center justify-center rounded-2xl border theme-border bg-white px-4 py-3 text-sm font-bold transition hover:bg-[#f3efe7]">Cancelar</button>
+                    <button type="submit"
+                            class="inline-flex items-center justify-center rounded-2xl bg-[#5b3a1e] px-5 py-3 text-sm font-black text-white transition hover:bg-[#3b2818]">Generar reporte</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -991,6 +703,352 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const modals = {
+                export: document.getElementById('vinetaRegistrosExportModal'),
+                weekly: document.getElementById('vinetaRegistrosWeeklyReportModal'),
+            };
+
+            const openModal = (modal) => {
+                modal?.classList.remove('hidden');
+                modal?.classList.add('flex');
+            };
+
+            const closeModal = (modal) => {
+                modal?.classList.add('hidden');
+                modal?.classList.remove('flex');
+            };
+
+            document.getElementById('vinetaRegistrosExportOpen')?.addEventListener('click', () => openModal(modals.export));
+            document.getElementById('vinetaRegistrosWeeklyReportOpen')?.addEventListener('click', () => openModal(modals.weekly));
+
+            document.querySelectorAll('[data-vineta-registros-modal-close]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    closeModal(document.getElementById(button.dataset.vinetaRegistrosModalClose));
+                });
+            });
+
+            Object.values(modals).forEach((modal) => {
+                modal?.addEventListener('click', (event) => {
+                    if (event.target === modal) {
+                        closeModal(modal);
+                    }
+                });
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    Object.values(modals).forEach(closeModal);
+                }
+            });
+        });
+    </script>
+
+    <div id="vinetaRegistrosTableLoader"
+         class="productos-table-loader hidden"
+         role="status"
+         aria-live="polite">
+        <div class="productos-table-loader-card theme-card theme-shadow">
+            <div class="productos-table-loader-icon"><span></span></div>
+            <div class="text-left">
+                <p class="theme-title text-sm font-bold leading-tight">Actualizando tabla</p>
+                <p class="theme-text text-xs leading-tight mt-0.5">Cargando registros...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const getTableContainer = () => document.getElementById('vinetaRegistrosTableContainer');
+            const getSummaryContainer = () => document.getElementById('vinetaRegistrosSummaryContainer');
+            const getFilterForm = () => document.querySelector('.vineta-registros-ajax-filter-form');
+            const getTableScroll = () => document.querySelector('#vinetaRegistrosTableContainer .vineta-registros-table-scroll');
+            const getTopbarBottom = () => document.querySelector('.app-topbar')?.getBoundingClientRect().bottom || 0;
+            let stickyHeaderClone = null;
+            let floatingScroll = null;
+            let boundFloatingScroll = null;
+            let syncingFloatingScroll = false;
+            let windowEventsBound = false;
+
+            const removeStickyHeaderClone = () => {
+                stickyHeaderClone?.remove();
+                stickyHeaderClone = null;
+            };
+
+            const syncStickyHeaderClone = () => {
+                const scroll = getTableScroll();
+                const table = scroll?.querySelector('.vinetas-table');
+                const header = table?.querySelector('thead');
+
+                if (!scroll || !table || !header || !stickyHeaderClone) {
+                    return;
+                }
+
+                const tableRect = scroll.getBoundingClientRect();
+                const headerRect = header.getBoundingClientRect();
+                const topbarBottom = getTopbarBottom();
+                const shouldShow = headerRect.top < topbarBottom
+                    && tableRect.bottom > topbarBottom + headerRect.height;
+
+                stickyHeaderClone.classList.toggle('is-visible', shouldShow);
+
+                if (!shouldShow) {
+                    return;
+                }
+
+                stickyHeaderClone.style.top = `${topbarBottom}px`;
+                stickyHeaderClone.style.left = `${tableRect.left}px`;
+                stickyHeaderClone.style.width = `${tableRect.width}px`;
+
+                const cloneTable = stickyHeaderClone.querySelector('table');
+
+                if (cloneTable) {
+                    cloneTable.style.width = `${table.scrollWidth}px`;
+                    cloneTable.style.transform = `translateX(${-scroll.scrollLeft}px)`;
+                }
+            };
+
+            const syncFloatingScrollFromTable = () => {
+                const scroll = getTableScroll();
+
+                if (!scroll || !floatingScroll || syncingFloatingScroll) {
+                    return;
+                }
+
+                syncingFloatingScroll = true;
+                floatingScroll.scrollLeft = scroll.scrollLeft;
+                syncingFloatingScroll = false;
+            };
+
+            const updateFloatingScroll = () => {
+                const scroll = getTableScroll();
+                const table = scroll?.querySelector('.vinetas-table');
+                floatingScroll = document.getElementById('vinetaRegistrosFloatingScroll');
+
+                if (!scroll || !table || !floatingScroll) {
+                    return;
+                }
+
+                const rect = scroll.getBoundingClientRect();
+                const hasHorizontalOverflow = table.scrollWidth > Math.ceil(rect.width);
+                const isTableVisible = rect.top < window.innerHeight - 80 && rect.bottom > getTopbarBottom();
+
+                floatingScroll.classList.toggle('is-visible', hasHorizontalOverflow && isTableVisible);
+
+                if (!hasHorizontalOverflow || !isTableVisible) {
+                    return;
+                }
+
+                const inner = floatingScroll.querySelector('.vinetas-floating-scrollbar-inner');
+
+                if (inner) {
+                    inner.style.width = `${table.scrollWidth}px`;
+                }
+
+                syncFloatingScrollFromTable();
+            };
+
+            const initTableFeatures = () => {
+                removeStickyHeaderClone();
+
+                const scroll = getTableScroll();
+                const table = scroll?.querySelector('.vinetas-table');
+                const header = table?.querySelector('thead');
+                floatingScroll = document.getElementById('vinetaRegistrosFloatingScroll');
+
+                if (!scroll || !table || !header || !floatingScroll) {
+                    return;
+                }
+
+                stickyHeaderClone = document.createElement('div');
+                stickyHeaderClone.className = 'vinetas-sticky-header-clone';
+                stickyHeaderClone.innerHTML = `
+                    <div class="vinetas-sticky-header-inner">
+                        <table class="w-full text-sm">${header.outerHTML}</table>
+                    </div>
+                `;
+
+                const originalHeaders = [...header.querySelectorAll('th')];
+                const cloneHeaders = [...stickyHeaderClone.querySelectorAll('th')];
+
+                cloneHeaders.forEach((th, index) => {
+                    const width = originalHeaders[index]?.getBoundingClientRect().width;
+
+                    if (width) {
+                        th.style.width = `${width}px`;
+                        th.style.minWidth = `${width}px`;
+                    }
+                });
+
+                document.body.appendChild(stickyHeaderClone);
+
+                scroll.addEventListener('scroll', () => {
+                    syncStickyHeaderClone();
+                    syncFloatingScrollFromTable();
+                }, { passive: true });
+
+                if (boundFloatingScroll !== floatingScroll) {
+                    floatingScroll.addEventListener('scroll', () => {
+                        const currentScroll = getTableScroll();
+
+                        if (!currentScroll || syncingFloatingScroll) {
+                            return;
+                        }
+
+                        syncingFloatingScroll = true;
+                        currentScroll.scrollLeft = floatingScroll.scrollLeft;
+                        syncStickyHeaderClone();
+                        syncingFloatingScroll = false;
+                    }, { passive: true });
+                    boundFloatingScroll = floatingScroll;
+                }
+
+                if (!windowEventsBound) {
+                    window.addEventListener('scroll', () => {
+                        syncStickyHeaderClone();
+                        updateFloatingScroll();
+                    }, { passive: true });
+                    window.addEventListener('resize', () => requestAnimationFrame(initTableFeatures));
+                    windowEventsBound = true;
+                }
+
+                requestAnimationFrame(() => {
+                    syncStickyHeaderClone();
+                    updateFloatingScroll();
+                });
+            };
+
+            const showTableLoader = () => {
+                const loader = document.getElementById('vinetaRegistrosTableLoader');
+                const header = document.querySelector('#vinetaRegistrosTableContainer .productos-sticky-head');
+
+                if (loader && header) {
+                    const rect = header.getBoundingClientRect();
+                    loader.style.top = `${Math.max(rect.bottom + 12, getTopbarBottom() + 12)}px`;
+                    loader.classList.remove('hidden');
+                    loader.classList.add('flex');
+                }
+
+                getTableContainer()?.querySelector('#vinetaRegistrosTableInner')?.classList.add('productos-table-loading');
+                getSummaryContainer()?.classList.add('productos-table-loading');
+            };
+
+            const hideTableLoader = () => {
+                getTableContainer()?.querySelector('#vinetaRegistrosTableInner')?.classList.remove('productos-table-loading');
+                getSummaryContainer()?.classList.remove('productos-table-loading');
+
+                window.setTimeout(() => {
+                    const loader = document.getElementById('vinetaRegistrosTableLoader');
+                    loader?.classList.add('hidden');
+                    loader?.classList.remove('flex');
+                }, 160);
+            };
+
+            const loadTable = async (url, preserveHorizontalScroll = false) => {
+                const container = getTableContainer();
+                const summaryContainer = getSummaryContainer();
+
+                if (!container || !summaryContainer) {
+                    return;
+                }
+
+                const scrollLeft = preserveHorizontalScroll ? (getTableScroll()?.scrollLeft || 0) : 0;
+                showTableLoader();
+
+                try {
+                    const response = await fetch(url, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'text/html',
+                        },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('No se pudo actualizar la tabla de viñetas registradas');
+                    }
+
+                    const responseDocument = new DOMParser().parseFromString(await response.text(), 'text/html');
+                    const summaryTemplate = responseDocument.getElementById('vinetaRegistrosSummaryResponse');
+                    const tableTemplate = responseDocument.getElementById('vinetaRegistrosTableResponse');
+
+                    if (!summaryTemplate || !tableTemplate) {
+                        throw new Error('La respuesta no contiene el resumen y la tabla de viñetas registradas');
+                    }
+
+                    summaryContainer.innerHTML = summaryTemplate.innerHTML;
+                    container.innerHTML = tableTemplate.innerHTML;
+                    document.dispatchEvent(new CustomEvent('vineta-registros-table-updated'));
+                    initTableFeatures();
+
+                    if (preserveHorizontalScroll) {
+                        requestAnimationFrame(() => {
+                            const scroll = getTableScroll();
+
+                            if (scroll) {
+                                scroll.scrollLeft = Math.min(scrollLeft, Math.max(scroll.scrollWidth - scroll.clientWidth, 0));
+                                syncStickyHeaderClone();
+                                updateFloatingScroll();
+                            }
+                        });
+                    }
+
+                    window.history.pushState({}, '', url);
+                } catch (error) {
+                    console.error(error);
+                    window.location.href = url;
+                } finally {
+                    hideTableLoader();
+                }
+            };
+
+            document.addEventListener('click', (event) => {
+                const link = event.target.closest('a');
+
+                if (!link) {
+                    return;
+                }
+
+                const isSortLink = link.classList.contains('vineta-registros-ajax-table-link');
+                const isPaginationLink = link.closest('#vinetaRegistrosTableContainer .vineta-registros-ajax-pagination');
+                const isClearLink = link.classList.contains('vineta-registros-ajax-clear');
+
+                if (!isSortLink && !isPaginationLink && !isClearLink) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                if (isClearLink) {
+                    getFilterForm()?.querySelectorAll('input, select').forEach((field) => {
+                        field.value = '';
+                    });
+                }
+
+                loadTable(link.href, isSortLink);
+            });
+
+            document.addEventListener('submit', (event) => {
+                const filterForm = event.target.closest('.vineta-registros-ajax-filter-form');
+                const perPageForm = event.target.closest('.vineta-registros-ajax-per-page-form');
+
+                if (!filterForm && !perPageForm) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                const form = filterForm || perPageForm;
+                const params = new URLSearchParams(new FormData(form));
+                params.delete('page');
+                loadTable(`${form.action}?${params.toString()}`);
+            });
+
+            window.addEventListener('popstate', () => loadTable(window.location.href));
+            initTableFeatures();
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
             const modal = document.getElementById('seguimientoVinetaModal');
             const title = document.getElementById('seguimientoVinetaTitle');
             const subtitle = document.getElementById('seguimientoVinetaSubtitle');
@@ -998,9 +1056,29 @@
             const activos = document.getElementById('seguimientoVinetaActivos');
             const puros = document.getElementById('seguimientoVinetaPuros');
             const timelineContainer = document.getElementById('seguimientoVinetaTimeline');
-            const timelines = @json($seguimientoTimelineMap);
-            const summaries = @json($seguimientoResumenMap);
+            let timelines = {};
+            let summaries = {};
             const numberFormat = new Intl.NumberFormat('es-HN');
+            const seguimientoUrlTemplate = @json(route('vineta-registros.seguimiento', ['vineta' => '__VINETA_ID__']));
+
+            const refreshSeguimientoData = () => {
+                const data = document.getElementById('vinetaRegistrosSeguimientoData');
+
+                if (!data) {
+                    return;
+                }
+
+                try {
+                    const parsed = JSON.parse(data.textContent);
+                    timelines = parsed.timelines || {};
+                    summaries = parsed.summaries || {};
+                } catch (error) {
+                    console.error('No se pudo actualizar el seguimiento de viñetas.', error);
+                }
+            };
+
+            refreshSeguimientoData();
+            document.addEventListener('vineta-registros-table-updated', refreshSeguimientoData);
 
             const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({
                 '&': '&amp;',
@@ -1079,34 +1157,94 @@
                 }).join('')}</div></div>`;
             };
 
-            document.querySelectorAll('.vineta-registro-seguimiento').forEach((button) => {
-                button.addEventListener('click', () => {
-                    const vinetaId = String(button.dataset.vinetaId || '');
-                    const items = timelines[vinetaId] || [];
-                    const summary = summaries[vinetaId] || {};
+            const renderSeguimiento = (items, summary) => {
+                title.textContent = summary.vineta || 'Viñeta';
+                subtitle.innerHTML = [
+                    ['Producto', summary.producto || 'Sin producto'],
+                    ['Código', summary.producto_codigo || 'N/A'],
+                    ['Item', summary.producto_item || 'N/A'],
+                    ['Marca', summary.marca || 'N/A'],
+                    ['Orden', summary.orden || 'N/A'],
+                    ['Fecha viñeta', summary.vineta_fecha || 'N/A'],
+                ].map(([label, value]) => `
+                    <span class="vineta-modal-info-chip">
+                        <strong>${escapeHtml(label)}</strong>
+                        <span>${escapeHtml(value)}</span>
+                    </span>
+                `).join('');
+                movimientos.textContent = numberFormat.format(summary.movimientos || items.length || 0);
+                activos.textContent = numberFormat.format(summary.activos || 0);
+                puros.textContent = numberFormat.format(summary.puros || 0);
+                renderTimeline(items);
+            };
 
-                    title.textContent = summary.vineta || 'Viñeta';
-                    subtitle.innerHTML = [
-                        ['Producto', summary.producto || 'Sin producto'],
-                        ['Código', summary.producto_codigo || 'N/A'],
-                        ['Item', summary.producto_item || 'N/A'],
-                        ['Marca', summary.marca || 'N/A'],
-                        ['Orden', summary.orden || 'N/A'],
-                        ['Fecha viñeta', summary.vineta_fecha || 'N/A'],
-                    ].map(([label, value]) => `
-                        <span class="vineta-modal-info-chip">
-                            <strong>${escapeHtml(label)}</strong>
-                            <span>${escapeHtml(value)}</span>
-                        </span>
-                    `).join('');
-                    movimientos.textContent = numberFormat.format(summary.movimientos || items.length || 0);
-                    activos.textContent = numberFormat.format(summary.activos || 0);
-                    puros.textContent = numberFormat.format(summary.puros || 0);
-                    renderTimeline(items);
+            const loadSeguimiento = async (vinetaId) => {
+                const response = await fetch(
+                    seguimientoUrlTemplate.replace('__VINETA_ID__', encodeURIComponent(vinetaId)),
+                    {headers: {'Accept': 'application/json'}}
+                );
 
-                    modal.classList.remove('hidden');
-                    modal.classList.add('flex');
-                });
+                if (!response.ok) {
+                    throw new Error('No se pudo cargar el seguimiento de la viñeta.');
+                }
+
+                const data = await response.json();
+                timelines[vinetaId] = data.timeline || [];
+                summaries[vinetaId] = data.summary || {};
+
+                return {
+                    items: timelines[vinetaId],
+                    summary: summaries[vinetaId],
+                };
+            };
+
+            document.addEventListener('click', async (event) => {
+                const button = event.target.closest('.vineta-registro-seguimiento');
+
+                if (!button) {
+                    return;
+                }
+
+                const vinetaId = String(button.dataset.vinetaId || '');
+                let items = timelines[vinetaId] || [];
+                let summary = summaries[vinetaId] || {};
+                const hasPreloadedData = Object.prototype.hasOwnProperty.call(timelines, vinetaId)
+                    && Object.prototype.hasOwnProperty.call(summaries, vinetaId);
+
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+
+                if (!hasPreloadedData) {
+                    title.textContent = 'Cargando seguimiento...';
+                    subtitle.textContent = 'Consultando los movimientos de la viñeta.';
+                    movimientos.textContent = '...';
+                    activos.textContent = '...';
+                    puros.textContent = '...';
+                    timelineContainer.innerHTML = `
+                        <div class="theme-soft rounded-2xl border theme-border px-4 py-8 text-center">
+                            <p class="theme-title font-black">Cargando movimientos...</p>
+                        </div>
+                    `;
+
+                    try {
+                        ({items, summary} = await loadSeguimiento(vinetaId));
+                    } catch (error) {
+                        console.error(error);
+                        title.textContent = 'No se pudo cargar el seguimiento';
+                        subtitle.textContent = 'Intenta nuevamente.';
+                        movimientos.textContent = '0';
+                        activos.textContent = '0';
+                        puros.textContent = '0';
+                        timelineContainer.innerHTML = `
+                            <div class="theme-soft rounded-2xl border theme-border px-4 py-8 text-center">
+                                <p class="theme-title font-black">Error al cargar los movimientos</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                }
+
+                renderSeguimiento(items, summary);
             });
 
             document.getElementById('seguimientoVinetaClose').addEventListener('click', closeModal);
@@ -1220,8 +1358,13 @@
                 }, 280);
             };
 
-            document.querySelectorAll('.vineta-registro-edit').forEach((button) => {
-                button.addEventListener('click', () => {
+            document.addEventListener('click', (event) => {
+                const button = event.target.closest('.vineta-registro-edit');
+
+                if (!button) {
+                    return;
+                }
+
                     const isPorHora = button.dataset.porHora === '1';
 
                     form.action = button.dataset.action;
@@ -1248,7 +1391,6 @@
 
                     modal.classList.remove('hidden');
                     modal.classList.add('flex');
-                });
             });
 
             fields.empleado.addEventListener('input', lookupEmpleado);
@@ -1335,8 +1477,13 @@
                 modal.classList.remove('flex');
             };
 
-            document.querySelectorAll('.hora-ordinaria-edit').forEach((button) => {
-                button.addEventListener('click', () => {
+            document.addEventListener('click', (event) => {
+                const button = event.target.closest('.hora-ordinaria-edit');
+
+                if (!button) {
+                    return;
+                }
+
                     form.action = button.dataset.action || '';
                     fields.empleado.value = button.dataset.empleadoCodigo || '';
                     fields.fecha.value = button.dataset.fecha || '';
@@ -1347,7 +1494,6 @@
 
                     modal.classList.remove('hidden');
                     modal.classList.add('flex');
-                });
             });
 
             document.getElementById('editHoraOrdinariaClose').addEventListener('click', closeModal);

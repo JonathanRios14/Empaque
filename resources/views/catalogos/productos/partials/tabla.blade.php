@@ -234,11 +234,10 @@
        <select name="per_page"
         onchange="this.form.requestSubmit()"
         class="per-page-select">
-    <option value="10" @selected(request('per_page', 10) == 10)>10</option>
-    <option value="25" @selected(request('per_page') == 25)>25</option>
-    <option value="50" @selected(request('per_page') == 50)>50</option>
-    <option value="100" @selected(request('per_page') == 100)>100</option>
-    <option value="all" @selected(request('per_page') === 'all')>Todos</option>
+    @foreach ($perPageOptions as $option)
+        <option value="{{ $option }}" @selected($perPageSelected === $option)>{{ $option }}</option>
+    @endforeach
+    <option value="all" @selected($perPageSelected === 'all')>Todos</option>
 </select>
     </form>
 </div>

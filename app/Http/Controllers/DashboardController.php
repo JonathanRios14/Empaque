@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\VinetaRegistro;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -11,11 +12,24 @@ class DashboardController extends Controller
 {
     private string $timezone = 'America/Tegucigalpa';
 
-    public function index()
+    private array $areasProduccion = [
+        'rezago' => ['label' => 'Rezago', 'color' => '#f59e0b'],
+        'anillado' => ['label' => 'Anillado', 'color' => '#2563eb'],
+        'llenado' => ['label' => 'Llenado', 'color' => '#16a34a'],
+    ];
+
+    public function index(Request $request)
     {
         $today = Carbon::now($this->timezone)->startOfDay();
-        $monthStart = $today->copy()->startOfMonth();
-        $yearStart = $today->copy()->startOfYear();
+        $selectedDay = $this->dateParam($request->get('fecha'), $today);
+        $selectedDay = $selectedDay->gt($today) ? $today->copy() : $selectedDay;
+        $selectedMonth = $this->monthParam($request->get('mes'), $today);
+        $selectedYear = $this->yearParam($request->get('anio'), $today);
+        $dayStart = $selectedDay->copy()->startOfDay();
+        $monthStart = $selectedMonth->copy()->startOfMonth();
+        $monthEnd = $selectedMonth->copy()->endOfMonth();
+        $yearStart = Carbon::create($selectedYear, 1, 1, 0, 0, 0, $this->timezone)->startOfDay();
+        $yearEnd = Carbon::create($selectedYear, 12, 31, 23, 59, 59, $this->timezone)->startOfDay();
 
         $hasRegistros = Schema::hasTable('vineta_registros');
         $hasHorasOrdinarias = Schema::hasTable('empleado_horas_ordinarias');
@@ -23,32 +37,78 @@ class DashboardController extends Controller
         $hasMinutosTrabajados = $hasRegistros && Schema::hasColumn('vineta_registros', 'minutos_trabajados');
 
         $context = compact('hasRegistros', 'hasHorasOrdinarias', 'hasCantidadActividades', 'hasMinutosTrabajados');
+        $dailyAreaSummary = $this->areaSummary($dayStart, $dayStart, $context);
 
-        $produccionHoy = $this->productionSummary($today, $today, $context);
-        $produccionMes = $this->productionSummary($monthStart, $today, $context);
-        $produccionAnio = $this->productionSummary($yearStart, $today, $context);
+        if ($request->boolean('distribucion_diaria')) {
+            return response()->json([
+                'fecha' => $selectedDay->format('Y-m-d'),
+                'areas' => array_values($dailyAreaSummary),
+            ]);
+        }
+
+        $produccionHoy = $this->productionSummary($dayStart, $dayStart, $context);
+        $produccionMes = $this->productionSummary($monthStart, $monthEnd, $context);
+        $produccionAnio = $this->productionSummary($yearStart, $yearEnd, $context);
         $produccionTotal = $this->productionSummary(null, null, $context);
 
-        $tendenciaDiaria = $this->dailyTrend($monthStart, $today, $context);
-        $tendenciaMensual = $this->monthlyTrend($today, $context);
-        $rankingEmpleados = $this->topEmployees($monthStart, $today, $context);
-        $rankingActividades = $this->topActivities($monthStart, $today, $context);
-        $distribucionProcesos = $this->processBreakdown($monthStart, $today, $context);
+        $resumenAreas = [
+            'dia' => $dailyAreaSummary,
+            'mes' => $this->areaSummary($monthStart, $monthEnd, $context),
+            'anio' => $this->areaSummary($yearStart, $yearEnd, $context),
+        ];
+        $tendenciasAreas = [
+            'dia' => $this->areaTrendByDay($monthStart, $monthEnd, $context),
+            'mes' => $this->areaTrendByMonth($yearStart, $yearEnd, $context),
+            'anio' => $this->areaTrendByYear($selectedYear, $context),
+        ];
+        $rankingEmpleados = $this->topEmployeesByArea($monthStart, $monthEnd, $context);
         $ultimosRegistros = $this->latestProductionRecords($context);
 
         return view('dashboard', compact(
             'today',
+            'selectedDay',
+            'selectedMonth',
+            'selectedYear',
             'produccionHoy',
             'produccionMes',
             'produccionAnio',
             'produccionTotal',
-            'tendenciaDiaria',
-            'tendenciaMensual',
+            'resumenAreas',
+            'tendenciasAreas',
             'rankingEmpleados',
-            'rankingActividades',
-            'distribucionProcesos',
             'ultimosRegistros'
         ));
+    }
+
+    private function dateParam($value, Carbon $fallback): Carbon
+    {
+        try {
+            $date = Carbon::createFromFormat('Y-m-d', (string) $value, $this->timezone);
+
+            return $date ?: $fallback->copy();
+        } catch (\Throwable) {
+            return $fallback->copy();
+        }
+    }
+
+    private function monthParam($value, Carbon $fallback): Carbon
+    {
+        try {
+            $date = Carbon::createFromFormat('Y-m', (string) $value, $this->timezone);
+
+            return $date ? $date->startOfMonth() : $fallback->copy()->startOfMonth();
+        } catch (\Throwable) {
+            return $fallback->copy()->startOfMonth();
+        }
+    }
+
+    private function yearParam($value, Carbon $fallback): int
+    {
+        $year = (int) $value;
+
+        return $year >= 2020 && $year <= $fallback->copy()->addYear()->year
+            ? $year
+            : (int) $fallback->format('Y');
     }
 
     private function productionSummary(?Carbon $from, ?Carbon $to, array $context): array
@@ -65,24 +125,20 @@ class DashboardController extends Controller
 
         if ($context['hasRegistros']) {
             $activityExpression = $this->activityExpression($context['hasCantidadActividades']);
-            $minutesExpression = $context['hasMinutosTrabajados']
-                ? 'COALESCE(SUM(minutos_trabajados), 0)'
-                : '0';
 
             $row = $this->activeRecordsQuery($from, $to)
                 ->selectRaw('COUNT(*) as registros')
-                ->selectRaw('COALESCE(SUM(cantidad_puros), 0) as puros')
-                ->selectRaw('COALESCE(SUM(cantidad_cajones), 0) as cajones')
+                ->selectRaw('COALESCE(SUM(vineta_registros.cantidad_puros), 0) as puros')
+                ->selectRaw('COALESCE(SUM(vineta_registros.cantidad_cajones), 0) as cajones')
                 ->selectRaw("COALESCE(SUM($activityExpression), 0) as actividades")
-                ->selectRaw("$minutesExpression as minutos_cajones")
-                ->selectRaw('COALESCE(SUM(cantidad_puros * COALESCE(precio_mo, 0)), 0) as monto')
-                ->selectRaw('COUNT(DISTINCT empleado_codigo) as empleados')
+                ->selectRaw('0 as minutos_cajones')
+                ->selectRaw('COALESCE(SUM(vineta_registros.cantidad_puros * COALESCE(vineta_registros.precio_mo, 0)), 0) as monto')
+                ->selectRaw("COUNT(DISTINCT COALESCE(NULLIF(vineta_registros.empleado_codigo, ''), NULLIF(vineta_registros.empleado_nombre, ''))) as empleados")
                 ->first();
         }
 
-        $minutosOrdinarios = $this->ordinaryMinutes($from, $to, $context['hasHorasOrdinarias']);
-        $minutos = (int) $row->minutos_cajones + $minutosOrdinarios;
-        $horas = $minutos > 0 ? round($minutos / 60, 1) : 0;
+        $minutos = 0;
+        $horas = 0;
 
         return [
             'registros' => (int) $row->registros,
@@ -91,12 +147,163 @@ class DashboardController extends Controller
             'actividades' => (int) $row->actividades,
             'minutos' => $minutos,
             'minutos_cajones' => (int) $row->minutos_cajones,
-            'minutos_ordinarios' => $minutosOrdinarios,
+            'minutos_ordinarios' => 0,
             'tiempo' => VinetaRegistro::minutosATiempoTexto($minutos),
             'horas' => $horas,
             'monto' => (float) $row->monto,
             'empleados' => (int) $row->empleados,
             'actividades_por_hora' => $horas > 0 ? round(((int) $row->actividades) / $horas, 1) : 0,
+        ];
+    }
+
+    private function areaSummary(?Carbon $from, ?Carbon $to, array $context): array
+    {
+        $summary = $this->emptyAreaSummary();
+
+        if (! $context['hasRegistros']) {
+            return $summary;
+        }
+
+        $activityExpression = $this->activityExpression($context['hasCantidadActividades']);
+        $activityGroup = $this->activityGroupCaseExpression();
+
+        $rows = $this->matchedRecordsQuery($from, $to)
+            ->selectRaw("$activityGroup as grupo")
+            ->selectRaw('COUNT(*) as registros')
+            ->selectRaw('COALESCE(SUM(vineta_registros.cantidad_puros), 0) as puros')
+            ->selectRaw('COALESCE(SUM(vineta_registros.cantidad_cajones), 0) as cajones')
+            ->selectRaw("COALESCE(SUM($activityExpression), 0) as actividades")
+            ->selectRaw("COUNT(DISTINCT COALESCE(NULLIF(vineta_registros.empleado_codigo, ''), NULLIF(vineta_registros.empleado_nombre, ''))) as empleados")
+            ->groupByRaw($activityGroup)
+            ->get();
+
+        foreach ($rows as $row) {
+            $grupo = (string) $row->grupo;
+
+            if (! isset($summary[$grupo])) {
+                continue;
+            }
+
+            $summary[$grupo]['registros'] = (int) $row->registros;
+            $summary[$grupo]['puros'] = (int) $row->puros;
+            $summary[$grupo]['cajones'] = (int) $row->cajones;
+            $summary[$grupo]['actividades'] = (int) $row->actividades;
+            $summary[$grupo]['empleados'] = (int) $row->empleados;
+        }
+
+        return $summary;
+    }
+
+    private function emptyAreaSummary(): array
+    {
+        return collect($this->areasProduccion)
+            ->map(fn (array $area, string $key) => [
+                'key' => $key,
+                'label' => $area['label'],
+                'color' => $area['color'],
+                'registros' => 0,
+                'puros' => 0,
+                'cajones' => 0,
+                'actividades' => 0,
+                'empleados' => 0,
+            ])
+            ->all();
+    }
+
+    private function areaBreakdownFromSummary(array $summary): array
+    {
+        $rows = collect($summary)
+            ->values()
+            ->map(fn (array $area) => [
+                'grupo' => $area['label'],
+                'key' => $area['key'],
+                'registros' => $area['registros'],
+                'puros' => $area['puros'],
+                'cajones' => $area['cajones'],
+                'actividades' => $area['actividades'],
+                'color' => $area['color'],
+            ])
+            ->all();
+
+        return [
+            'labels' => array_column($rows, 'grupo'),
+            'data' => array_column($rows, 'actividades'),
+            'rows' => $rows,
+        ];
+    }
+
+    private function areaTrendByDay(Carbon $from, Carbon $to, array $context): array
+    {
+        $keys = [];
+        $labels = [];
+
+        for ($date = $from->copy(); $date <= $to; $date->addDay()) {
+            $keys[] = $date->format('Y-m-d');
+            $labels[] = $date->format('d/m');
+        }
+
+        return $this->areaTrend($keys, $labels, 'vineta_registros.fecha_registro', $from, $to, $context);
+    }
+
+    private function areaTrendByMonth(Carbon $from, Carbon $to, array $context): array
+    {
+        $keys = range(1, 12);
+        $labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+        return $this->areaTrend($keys, $labels, 'MONTH(vineta_registros.fecha_registro)', $from, $to, $context);
+    }
+
+    private function areaTrendByYear(int $selectedYear, array $context): array
+    {
+        $startYear = max($selectedYear - 4, 2000);
+        $keys = range($startYear, $selectedYear);
+        $labels = array_map(fn (int $year) => (string) $year, $keys);
+        $from = Carbon::create($startYear, 1, 1, 0, 0, 0, $this->timezone)->startOfDay();
+        $to = Carbon::create($selectedYear, 12, 31, 23, 59, 59, $this->timezone)->startOfDay();
+
+        return $this->areaTrend($keys, $labels, 'YEAR(vineta_registros.fecha_registro)', $from, $to, $context);
+    }
+
+    private function areaTrend(array $keys, array $labels, string $periodExpression, Carbon $from, Carbon $to, array $context): array
+    {
+        $series = collect($this->areasProduccion)
+            ->mapWithKeys(fn (array $area, string $key) => [$key => array_fill(0, count($keys), 0)])
+            ->all();
+
+        if ($context['hasRegistros']) {
+            $activityExpression = $this->activityExpression($context['hasCantidadActividades']);
+            $activityGroup = $this->activityGroupCaseExpression();
+            $keyIndexes = array_flip(array_map('strval', $keys));
+
+            $rows = $this->matchedRecordsQuery($from, $to)
+                ->selectRaw("$periodExpression as periodo")
+                ->selectRaw("$activityGroup as grupo")
+                ->selectRaw("COALESCE(SUM($activityExpression), 0) as actividades")
+                ->groupByRaw($periodExpression)
+                ->groupByRaw($activityGroup)
+                ->get();
+
+            foreach ($rows as $row) {
+                $grupo = (string) $row->grupo;
+                $periodo = (string) $row->periodo;
+
+                if (! isset($series[$grupo], $keyIndexes[$periodo])) {
+                    continue;
+                }
+
+                $series[$grupo][$keyIndexes[$periodo]] = (int) $row->actividades;
+            }
+        }
+
+        return [
+            'labels' => $labels,
+            'areas' => collect($this->areasProduccion)
+                ->mapWithKeys(fn (array $area, string $key) => [$key => [
+                    'label' => $area['label'],
+                    'color' => $area['color'],
+                    'data' => $series[$key],
+                ]])
+                ->all(),
         ];
     }
 
@@ -213,6 +420,57 @@ class DashboardController extends Controller
         ])->all();
     }
 
+    private function topEmployeesByArea(Carbon $from, Carbon $to, array $context): array
+    {
+        $ranking = collect($this->areasProduccion)
+            ->mapWithKeys(fn (array $area, string $key) => [$key => [
+                'key' => $key,
+                'label' => $area['label'],
+                'color' => $area['color'],
+                'rows' => [],
+            ]])
+            ->all();
+
+        if (! $context['hasRegistros']) {
+            return $ranking;
+        }
+
+        $activityExpression = $this->activityExpression($context['hasCantidadActividades']);
+        $activityGroup = $this->activityGroupCaseExpression();
+
+        $rows = $this->matchedRecordsQuery($from, $to)
+            ->selectRaw("$activityGroup as grupo")
+            ->selectRaw("COALESCE(NULLIF(vineta_registros.empleado_codigo, ''), 'N/A') as codigo")
+            ->selectRaw("COALESCE(NULLIF(vineta_registros.empleado_nombre, ''), 'Empleado') as nombre")
+            ->selectRaw('COUNT(*) as registros')
+            ->selectRaw('COALESCE(SUM(vineta_registros.cantidad_puros), 0) as puros')
+            ->selectRaw("COALESCE(SUM($activityExpression), 0) as actividades")
+            ->groupByRaw($activityGroup)
+            ->groupBy('vineta_registros.empleado_codigo', 'vineta_registros.empleado_nombre')
+            ->orderByDesc('actividades')
+            ->get();
+
+        foreach ($rows->groupBy('grupo') as $grupo => $items) {
+            if (! isset($ranking[$grupo])) {
+                continue;
+            }
+
+            $ranking[$grupo]['rows'] = $items
+                ->take(10)
+                ->map(fn ($row) => [
+                    'codigo' => $row->codigo,
+                    'nombre' => $row->nombre,
+                    'registros' => (int) $row->registros,
+                    'puros' => (int) $row->puros,
+                    'actividades' => (int) $row->actividades,
+                ])
+                ->values()
+                ->all();
+        }
+
+        return $ranking;
+    }
+
     private function topActivities(Carbon $from, Carbon $to, array $context): array
     {
         if (! $context['hasRegistros']) {
@@ -241,36 +499,7 @@ class DashboardController extends Controller
 
     private function processBreakdown(Carbon $from, Carbon $to, array $context): array
     {
-        if (! $context['hasRegistros']) {
-            return [
-                'labels' => [],
-                'data' => [],
-                'rows' => [],
-            ];
-        }
-
-        $activityExpression = $this->activityExpression($context['hasCantidadActividades']);
-        $case = $this->processCaseExpression();
-
-        $rows = $this->activeRecordsQuery($from, $to)
-            ->selectRaw("$case as grupo")
-            ->selectRaw('COUNT(*) as registros')
-            ->selectRaw("COALESCE(SUM($activityExpression), 0) as actividades")
-            ->groupByRaw($case)
-            ->orderByDesc('actividades')
-            ->get()
-            ->map(fn ($row) => [
-                'grupo' => $row->grupo,
-                'registros' => (int) $row->registros,
-                'actividades' => (int) $row->actividades,
-            ])
-            ->all();
-
-        return [
-            'labels' => array_column($rows, 'grupo'),
-            'data' => array_column($rows, 'actividades'),
-            'rows' => $rows,
-        ];
+        return $this->areaBreakdownFromSummary($this->areaSummary($from, $to, $context));
     }
 
     private function latestProductionRecords(array $context): array
@@ -279,24 +508,23 @@ class DashboardController extends Controller
             return [];
         }
 
-        return DB::table('vineta_registros')
-            ->where('estado', VinetaRegistro::ESTADO_ACTIVO)
-            ->orderByDesc('fecha_registro')
-            ->orderByDesc('hora_registro')
-            ->orderByDesc('id')
+        return $this->matchedRecordsQuery()
+            ->orderByDesc('vineta_registros.fecha_registro')
+            ->orderByDesc('vineta_registros.hora_registro')
+            ->orderByDesc('vineta_registros.id')
             ->limit(8)
             ->get([
-                'vineta_api_id',
-                'codigo_vineta',
-                'fecha_registro',
-                'hora_registro',
-                'empleado_nombre',
-                'actividad_nombre',
-                'marca',
-                'cantidad_puros',
+                'vineta_registros.vineta_api_id',
+                'vineta_registros.codigo_vineta',
+                'vineta_registros.fecha_registro',
+                'vineta_registros.hora_registro',
+                'vineta_registros.empleado_nombre',
+                'vineta_registros.actividad_nombre',
+                'vineta_registros.marca',
+                'vineta_registros.cantidad_puros',
             ])
             ->map(fn ($row) => [
-                'vineta' => $row->vineta_api_id ? '#' . $row->vineta_api_id : ($row->codigo_vineta ?: 'N/A'),
+                'vineta' => $row->vineta_api_id ? '#'.$row->vineta_api_id : ($row->codigo_vineta ?: 'N/A'),
                 'fecha' => Carbon::parse($row->fecha_registro)->format('d/m/Y'),
                 'hora' => $row->hora_registro ? Carbon::parse($row->hora_registro)->format('h:i A') : 'N/A',
                 'empleado' => $row->empleado_nombre ?: 'Empleado',
@@ -313,6 +541,23 @@ class DashboardController extends Controller
             ->where('estado', VinetaRegistro::ESTADO_ACTIVO)
             ->when($from, fn ($query) => $query->whereDate('fecha_registro', '>=', $from->toDateString()))
             ->when($to, fn ($query) => $query->whereDate('fecha_registro', '<=', $to->toDateString()));
+    }
+
+    private function matchedRecordsQuery(?Carbon $from = null, ?Carbon $to = null)
+    {
+        $activityGroup = $this->activityGroupCaseExpression();
+        $employeeGroup = $this->employeeGroupCaseExpression();
+
+        return DB::table('vineta_registros')
+            ->leftJoin('empleados as empleados_dashboard', function ($join) {
+                $join->on('empleados_dashboard.id', '=', 'vineta_registros.empleado_id')
+                    ->orOn('empleados_dashboard.codigo', '=', 'vineta_registros.empleado_codigo');
+            })
+            ->where('vineta_registros.estado', VinetaRegistro::ESTADO_ACTIVO)
+            ->when($from, fn ($query) => $query->whereDate('vineta_registros.fecha_registro', '>=', $from->toDateString()))
+            ->when($to, fn ($query) => $query->whereDate('vineta_registros.fecha_registro', '<=', $to->toDateString()))
+            ->whereRaw("$activityGroup IN ('rezago', 'anillado', 'llenado')")
+            ->whereRaw("$activityGroup = $employeeGroup");
     }
 
     private function ordinaryMinutes(?Carbon $from, ?Carbon $to, bool $hasHorasOrdinarias): int
@@ -359,13 +604,37 @@ class DashboardController extends Controller
             ->all();
     }
 
-    private function activityExpression(bool $hasCantidadActividades): string
+    private function activityExpression(bool $hasCantidadActividades, string $table = 'vineta_registros'): string
     {
         if (! $hasCantidadActividades) {
-            return 'cantidad_puros';
+            return "$table.cantidad_puros";
         }
 
-        return 'cantidad_puros * CASE WHEN cantidad_actividades IS NULL OR cantidad_actividades < 1 THEN 1 ELSE cantidad_actividades END';
+        return "$table.cantidad_puros * CASE WHEN $table.cantidad_actividades IS NULL OR $table.cantidad_actividades < 1 THEN 1 ELSE $table.cantidad_actividades END";
+    }
+
+    private function activityGroupCaseExpression(): string
+    {
+        $text = "LOWER(CONCAT(COALESCE(vineta_registros.actividad_nombre, ''), ' ', COALESCE(vineta_registros.actividad_tipo_empaque, ''), ' ', COALESCE(vineta_registros.actividad_codigo, '')))";
+
+        return "CASE
+            WHEN $text LIKE '%rezag%' OR $text LIKE '%rezad%' OR $text LIKE '%resag%' THEN 'rezago'
+            WHEN $text LIKE '%llenad%' OR $text LIKE '%petaca%' OR $text LIKE '%sampler%' OR ($text LIKE '%paquete%' AND $text LIKE '%tubo%') THEN 'llenado'
+            WHEN $text LIKE '%anill%' OR $text LIKE '%anil%' OR $text LIKE '%celof%' OR $text LIKE '%sello%' OR $text LIKE '%sell%' OR $text LIKE '%esponj%' OR $text LIKE '%lamina%' OR $text LIKE '%lámina%' THEN 'anillado'
+            ELSE 'otros'
+        END";
+    }
+
+    private function employeeGroupCaseExpression(): string
+    {
+        $text = "LOWER(CONCAT(COALESCE(empleados_dashboard.cargo, ''), ' ', COALESCE(empleados_dashboard.area, ''), ' ', COALESCE(vineta_registros.empleado_nombre, '')))";
+
+        return "CASE
+            WHEN $text LIKE '%rezag%' OR $text LIKE '%rezad%' OR $text LIKE '%resag%' THEN 'rezago'
+            WHEN $text LIKE '%llenad%' OR ($text LIKE '%sell%' AND $text LIKE '%bolsa%') THEN 'llenado'
+            WHEN $text LIKE '%anill%' OR $text LIKE '%anil%' OR $text LIKE '%celof%' OR $text LIKE '%sello%' OR $text LIKE '%sell%' OR $text LIKE '%esponj%' OR $text LIKE '%lamina%' OR $text LIKE '%lámina%' OR $text LIKE '%brocha%' THEN 'anillado'
+            ELSE 'otros'
+        END";
     }
 
     private function processCaseExpression(): string
@@ -374,8 +643,8 @@ class DashboardController extends Controller
 
         return "CASE
             WHEN $text LIKE '%rezag%' OR $text LIKE '%rezad%' OR $text LIKE '%resag%' THEN 'Rezago'
-            WHEN $text LIKE '%llenad%' THEN 'Llenado'
-            WHEN $text LIKE '%anill%' OR $text LIKE '%anil%' OR $text LIKE '%celof%' OR $text LIKE '%sello%' OR $text LIKE '%sell%' THEN 'Anillado'
+            WHEN $text LIKE '%llenad%' OR $text LIKE '%petaca%' OR $text LIKE '%sampler%' OR ($text LIKE '%paquete%' AND $text LIKE '%tubo%') THEN 'Llenado'
+            WHEN $text LIKE '%anill%' OR $text LIKE '%anil%' OR $text LIKE '%celof%' OR $text LIKE '%sello%' OR $text LIKE '%sell%' OR $text LIKE '%esponj%' OR $text LIKE '%lamina%' OR $text LIKE '%lámina%' THEN 'Anillado'
             ELSE 'Otros'
         END";
     }

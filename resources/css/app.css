@@ -1904,6 +1904,17 @@ html.dark-navy #productosTableLoader .animate-spin {
    Productos - header sticky real
 ================================ */
 
+:root {
+    --app-topbar-height: 4rem;
+}
+
+.app-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-shrink: 0;
+}
+
 .productos-card {
     overflow: visible !important;
 }
@@ -1938,6 +1949,11 @@ html.dark-navy #productosTableLoader .animate-spin {
 
 .vinetas-table {
     min-width: 1720px;
+}
+
+/* Estas tablas usan una cabecera clonada para conservar el scroll horizontal. */
+.vinetas-table-scroll .productos-sticky-head th {
+    position: static !important;
 }
 
 body.vinetas-page {
@@ -2107,6 +2123,10 @@ html.dark-navy .vinetas-sticky-header-clone th {
 }
 
 @media (max-width: 767px) {
+    :root {
+        --app-topbar-height: 4.25rem;
+    }
+
     .vinetas-table-scroll {
         overflow-x: auto !important;
     }
@@ -2160,7 +2180,7 @@ html.dark-navy .catalogo-table-scroll::-webkit-scrollbar-thumb {
 /* Header fijo al bajar la página */
 .productos-sticky-head th {
     position: sticky !important;
-    top: 0;
+    top: var(--app-topbar-height);
     z-index: 80;
     background-color: #eff6ff !important;
     color: #0f172a !important;

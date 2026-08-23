@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" class="h-full">
 <head>
+    @include('layouts.favicon')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Viñetas | Sistema de Empaque</title>
@@ -52,10 +53,6 @@
                                     <div class="mt-3 flex flex-wrap gap-2">
                                         <span class="theme-badge inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold">
                                             Registros: <strong class="theme-title">{{ $vinetas->total() }}</strong>
-                                        </span>
-
-                                        <span class="theme-badge inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold">
-                                            Búsqueda principal: <strong class="theme-title">ID API</strong>
                                         </span>
                                     </div>
                                 </div>
@@ -139,64 +136,83 @@
                         <div class="theme-card bg-white rounded-2xl border theme-border theme-shadow p-3">
                             <form method="GET"
                                   action="{{ route('vinetas.index') }}"
-                                  class="vinetas-ajax-filter-form grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-2 items-end">
+                                  class="vinetas-ajax-filter-form">
+                                <div class="vinetas-filter-row grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-2 items-end">
+                                    <div>
+                                        <label class="theme-text block text-xs font-semibold mb-1 whitespace-nowrap">ID API</label>
+                                        <input type="text"
+                                               name="buscar"
+                                               value="{{ request('buscar') }}"
+                                               placeholder="ID API..."
+                                               class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
+                                    </div>
 
-                                <div class="xl:col-span-2">
-                                    <label class="theme-text block text-xs font-semibold mb-1">
-                                        ID API
-                                    </label>
+                                    <div>
+                                        <label class="theme-text block text-xs font-semibold mb-1 whitespace-nowrap">Marca</label>
+                                        <input type="text"
+                                               name="marca"
+                                               value="{{ request('marca') }}"
+                                               placeholder="Marca..."
+                                               class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
+                                    </div>
 
-                                    <input type="text"
-                                           name="buscar"
-                                           value="{{ request('buscar') }}"
-                                           placeholder="Buscar por ID API..."
-                                           class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
+                                    <div>
+                                        <label class="theme-text block text-xs font-semibold mb-1 whitespace-nowrap">Nombre</label>
+                                        <input type="text"
+                                               name="nombre"
+                                               value="{{ request('nombre') }}"
+                                               placeholder="Nombre..."
+                                               class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
+                                    </div>
+
+                                    <div>
+                                        <label class="theme-text block text-xs font-semibold mb-1 whitespace-nowrap">Código producto</label>
+                                        <input type="text"
+                                               name="codigo_producto"
+                                               value="{{ request('codigo_producto') }}"
+                                               placeholder="Código..."
+                                               class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
+                                    </div>
+
+                                    <div>
+                                        <label class="theme-text block text-xs font-semibold mb-1 whitespace-nowrap">Item</label>
+                                        <input type="text"
+                                               name="item"
+                                               value="{{ request('item') }}"
+                                               placeholder="Item..."
+                                               class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
+                                    </div>
+
+                                    <div>
+                                        <label class="theme-text block text-xs font-semibold mb-1 whitespace-nowrap">Orden sistema</label>
+                                        <input type="text"
+                                               name="orden_del_sistema"
+                                               value="{{ request('orden_del_sistema') }}"
+                                               placeholder="Orden sistema..."
+                                               class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
+                                    </div>
+
+                                    <div>
+                                        <label class="theme-text block text-xs font-semibold mb-1 whitespace-nowrap">Orden</label>
+                                        <input type="text"
+                                               name="orden_cliente"
+                                               value="{{ request('orden_cliente') }}"
+                                               placeholder="Orden..."
+                                               class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
+                                    </div>
                                 </div>
 
-                                <div>
-                                    <label class="theme-text block text-xs font-semibold mb-1">
-                                        Código producto
-                                    </label>
-
-                                    <input type="text"
-                                           name="codigo_producto"
-                                           value="{{ request('codigo_producto') }}"
-                                           placeholder="Código..."
-                                           class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
-                                </div>
-
-                                <div>
-                                    <label class="theme-text block text-xs font-semibold mb-1">
-                                        Item
-                                    </label>
-
-                                    <input type="text"
-                                           name="item"
-                                           value="{{ request('item') }}"
-                                           placeholder="Item..."
-                                           class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
-                                </div>
-
-                                <div>
-                                    <label class="theme-text block text-xs font-semibold mb-1">
-                                        Orden sistema
-                                    </label>
-
-                                    <input type="text"
-                                           name="orden_del_sistema"
-                                           value="{{ request('orden_del_sistema') }}"
-                                           placeholder="Orden..."
-                                           class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
-                                </div>
-
-                                <div class="sm:col-span-2 xl:col-span-1 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 pt-1">
+                                <div class="vinetas-filter-actions mt-3"
+                                     style="display: flex !important; grid-column: auto !important; justify-content: flex-end; gap: 0.5rem; padding-top: 0 !important;">
                                     <a href="{{ route('vinetas.index') }}"
-                                       class="vinetas-ajax-clear-filters gooey-action theme-button-secondary inline-flex items-center justify-center px-3 py-2 rounded-xl bg-white text-[#0b1220] text-sm font-semibold border theme-border hover:bg-[#f1f5f9] transition">
+                                       class="vinetas-ajax-clear-filters gooey-action theme-button-secondary inline-flex items-center justify-center px-3 py-2 rounded-xl bg-white text-[#0b1220] text-sm font-semibold border theme-border hover:bg-[#f1f5f9] transition"
+                                       style="width: auto !important; white-space: nowrap;">
                                         Limpiar
                                     </a>
 
                                     <button type="submit"
-                                            class="gooey-action inline-flex items-center justify-center px-3 py-2 rounded-xl bg-[#0f172a] text-white text-sm font-semibold hover:bg-[#1e293b] transition">
+                                            class="gooey-action inline-flex items-center justify-center px-3 py-2 rounded-xl bg-[#0f172a] text-white text-sm font-semibold hover:bg-[#1e293b] transition"
+                                            style="width: auto !important; white-space: nowrap;">
                                         Filtrar
                                     </button>
                                 </div>
@@ -264,6 +280,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const getTableContainer = () => document.getElementById('vinetasTableContainer');
             const getFilterForm = () => document.querySelector('.vinetas-ajax-filter-form');
+            const getTopbarBottom = () => document.querySelector('.app-topbar')?.getBoundingClientRect().bottom || 0;
 
             let stickyHeaderClone = null;
             let stickyHeaderEventsBound = false;
@@ -311,8 +328,11 @@
                 }
 
                 const rect = scroll.getBoundingClientRect();
-                const headerHeight = header.getBoundingClientRect().height;
-                const shouldShow = rect.top <= 0 && rect.bottom > headerHeight;
+                const headerRect = header.getBoundingClientRect();
+                const headerHeight = headerRect.height;
+                const topbarBottom = getTopbarBottom();
+                const shouldShow = headerRect.top < topbarBottom
+                    && rect.bottom > topbarBottom + headerHeight;
 
                 stickyHeaderClone.classList.toggle('is-visible', shouldShow);
 
@@ -322,6 +342,7 @@
 
                 stickyHeaderClone.style.left = `${rect.left}px`;
                 stickyHeaderClone.style.width = `${rect.width}px`;
+                stickyHeaderClone.style.top = `${topbarBottom}px`;
 
                 const cloneTable = stickyHeaderClone.querySelector('table');
 
@@ -467,7 +488,7 @@
 
                     if (header) {
                         const rect = header.getBoundingClientRect();
-                        const top = Math.max(rect.bottom + 12, 78);
+                        const top = Math.max(rect.bottom + 12, getTopbarBottom() + 12);
 
                         loader.style.top = `${top}px`;
                     }

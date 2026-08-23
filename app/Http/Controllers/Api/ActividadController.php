@@ -17,6 +17,7 @@ class ActividadController extends Controller
             'vitola' => ['nullable', 'string', 'max:120'],
             'tipo_empaque' => ['nullable', 'string', 'max:120'],
             'producto_nombre' => ['nullable', 'string', 'max:255'],
+            'scope' => ['nullable', 'in:general'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:80'],
         ]);
 
@@ -28,6 +29,13 @@ class ActividadController extends Controller
         $hasCaracteristicas = $capa !== '' && $vitola !== '' && $tipoEmpaque !== '';
         $limit = (int) ($data['limit'] ?? 30);
         $searchTerms = $this->searchTerms($term);
+
+        if (($data['scope'] ?? null) === 'general') {
+            return response()->json([
+                'message' => 'Actividades generales encontradas.',
+                'activities' => $this->generalActivities($term, $limit),
+            ]);
+        }
 
         if ($term !== '' && $productoNombre !== '') {
             $contextActivities = $this->contextActivities(
@@ -106,6 +114,48 @@ class ActividadController extends Controller
         ]);
     }
 
+    private function generalActivities(string $term, int $limit)
+    {
+        $query = DB::table('actividades')
+            ->select([
+                'id',
+                'api_id_actividad',
+                'codigo_actividad',
+                'nombre',
+            ]);
+
+        if ($term !== '') {
+            $query->where(function ($query) use ($term) {
+                $like = '%'.$term.'%';
+
+                $query->where('nombre', 'like', $like)
+                    ->orWhere('codigo_actividad', 'like', $like);
+
+                if (ctype_digit($term)) {
+                    $query->orWhere('api_id_actividad', (int) $term);
+                }
+            });
+        }
+
+        return $query
+            ->orderBy('nombre')
+            ->orderBy('codigo_actividad')
+            ->limit($limit)
+            ->get()
+            ->map(fn ($activity) => [
+                'id' => $activity->id,
+                'api_id_actividad' => $activity->api_id_actividad,
+                'codigo_actividad' => $activity->codigo_actividad,
+                'nombre' => $activity->nombre,
+                'tipo_empaque' => null,
+                'precio_mo' => null,
+                'producto_id' => null,
+                'codigo_producto' => null,
+                'item' => null,
+                'producto_nombre' => null,
+            ]);
+    }
+
     private function baseQuery()
     {
         return DB::table('actividad_producto')
@@ -160,13 +210,13 @@ class ActividadController extends Controller
             if ($attempt['producto'] === 'exact') {
                 $query->whereRaw('LOWER(TRIM(productos.nombre)) = ?', [$productoNombre]);
             } else {
-                $query->whereRaw('LOWER(productos.nombre) like ?', ['%' . $productoNombre . '%']);
+                $query->whereRaw('LOWER(productos.nombre) like ?', ['%'.$productoNombre.'%']);
             }
 
             if ($attempt['empaque'] === 'exact') {
                 $query->whereRaw('LOWER(TRIM(tipo_empaques.nombre)) = ?', [$tipoEmpaque]);
             } elseif ($attempt['empaque'] === 'familia') {
-                $query->whereRaw('LOWER(TRIM(tipo_empaques.nombre)) like ?', [$tipoFamilia . '%']);
+                $query->whereRaw('LOWER(TRIM(tipo_empaques.nombre)) like ?', [$tipoFamilia.'%']);
             }
 
             $activities = $this->activitiesFromQuery($query, $limit);
@@ -183,7 +233,7 @@ class ActividadController extends Controller
     {
         $query->where(function ($q) use ($searchTerms) {
             foreach ($searchTerms as $index => $searchTerm) {
-                $like = '%' . $searchTerm . '%';
+                $like = '%'.$searchTerm.'%';
                 $method = $index === 0 ? 'where' : 'orWhere';
 
                 $q->{$method}(function ($q) use ($like) {

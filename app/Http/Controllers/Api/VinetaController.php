@@ -242,10 +242,8 @@ class VinetaController extends Controller
         }
 
         return [
-            'puede_llenar' => $grupos['anillado'] !== null,
-            'mensaje_bloqueo_llenado' => $grupos['anillado'] === null
-                ? 'Para registrar llenado, primero debe existir una actividad de anillado, celofan o sello.'
-                : null,
+            'puede_llenar' => true,
+            'mensaje_bloqueo_llenado' => null,
             'pasos' => [
                 $this->pasoProcesoPayload('rezago', 'Rezago', $grupos['rezago'], true),
                 $this->pasoProcesoPayload('anillado', 'Anillado', $grupos['anillado'], false),
@@ -285,11 +283,19 @@ class VinetaController extends Controller
             || str_contains($texto, 'celof')
             || str_contains($texto, 'sello')
             || str_contains($texto, 'sell')
+            || str_contains($texto, 'esponj')
+            || str_contains($texto, 'lamina')
         ) {
             return 'anillado';
         }
 
-        if (str_contains($texto, 'llenad') || str_contains($texto, 'llenado')) {
+        if (
+            str_contains($texto, 'llenad')
+            || str_contains($texto, 'llenado')
+            || str_contains($texto, 'petaca')
+            || str_contains($texto, 'sampler')
+            || (str_contains($texto, 'paquete') && str_contains($texto, 'tubo'))
+        ) {
             return 'llenado';
         }
 

@@ -173,6 +173,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/vinetas-registradas/empleado', [VinetaRegistroController::class, 'empleado'])
         ->name('vineta-registros.empleado');
 
+    Route::get('/vinetas-registradas/seguimiento/{vineta}', [VinetaRegistroController::class, 'seguimiento'])
+        ->name('vineta-registros.seguimiento');
+
     Route::post('/vinetas-registradas/horas-ordinarias', [VinetaRegistroController::class, 'storeHoraOrdinaria'])
         ->name('vineta-registros.horas-ordinarias.store');
 

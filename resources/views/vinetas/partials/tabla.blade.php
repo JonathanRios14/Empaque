@@ -30,66 +30,66 @@
             <thead class="theme-table-head productos-sticky-head bg-[#eff6ff] text-[#0f172a]">
                 <tr>
                     <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
-                        <a href="{{ $sortLink('api_id') }}"
-                           class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
-                            ID API
-                            <span class="text-xs">{{ $sortIcon('api_id') }}</span>
-                        </a>
-                    </th>
-
-                    <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
                         <a href="{{ $sortLink('fecha') }}"
                            class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
-                            Fecha
-                            <span class="text-xs">{{ $sortIcon('fecha') }}</span>
+                             Fecha
+                             <span class="text-xs">{{ $sortIcon('fecha') }}</span>
                         </a>
                     </th>
 
                     <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
-                        <a href="{{ $sortLink('marca') }}"
+                        <a href="{{ $sortLink('api_id') }}"
                            class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
-                            Marca
-                            <span class="text-xs">{{ $sortIcon('marca') }}</span>
+                             ID API
+                             <span class="text-xs">{{ $sortIcon('api_id') }}</span>
                         </a>
                     </th>
 
                     <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
-                        <a href="{{ $sortLink('nombre') }}"
+                        <a href="{{ $sortLink('presentacion') }}"
                            class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
-                            Nombre
-                            <span class="text-xs">{{ $sortIcon('nombre') }}</span>
-                        </a>
-                    </th>
-
-                    <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
-                        <a href="{{ $sortLink('capa') }}"
-                           class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
-                            Capa
-                            <span class="text-xs">{{ $sortIcon('capa') }}</span>
-                        </a>
-                    </th>
-
-                    <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
-                        <a href="{{ $sortLink('vitola') }}"
-                           class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
-                            Vitola
-                            <span class="text-xs">{{ $sortIcon('vitola') }}</span>
-                        </a>
-                    </th>
-
-                    <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
-                        <a href="{{ $sortLink('tipo_empaque') }}"
-                           class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
-                            Tipo empaque
-                            <span class="text-xs">{{ $sortIcon('tipo_empaque') }}</span>
+                             Presentación
+                             <span class="text-xs">{{ $sortIcon('presentacion') }}</span>
                         </a>
                     </th>
 
                     <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
                         <a href="{{ $sortLink('codigo_producto') }}"
                            class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
-                            Código producto
-                            <span class="text-xs">{{ $sortIcon('codigo_producto') }}</span>
+                             Código de producto
+                             <span class="text-xs">{{ $sortIcon('codigo_producto') }}</span>
+                        </a>
+                    </th>
+
+                    <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
+                        <a href="{{ $sortLink('marca') }}"
+                           class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
+                             Marca
+                             <span class="text-xs">{{ $sortIcon('marca') }}</span>
+                        </a>
+                    </th>
+
+                    <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
+                        <a href="{{ $sortLink('nombre') }}"
+                           class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
+                             Nombre
+                             <span class="text-xs">{{ $sortIcon('nombre') }}</span>
+                        </a>
+                    </th>
+
+                    <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
+                        <a href="{{ $sortLink('vitola') }}"
+                           class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
+                             Vitola
+                             <span class="text-xs">{{ $sortIcon('vitola') }}</span>
+                        </a>
+                    </th>
+
+                    <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
+                        <a href="{{ $sortLink('capa') }}"
+                           class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
+                             Capa
+                             <span class="text-xs">{{ $sortIcon('capa') }}</span>
                         </a>
                     </th>
 
@@ -104,24 +104,32 @@
                     <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
                         <a href="{{ $sortLink('orden_del_sistema') }}"
                            class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
-                            Orden sistema
-                            <span class="text-xs">{{ $sortIcon('orden_del_sistema') }}</span>
-                        </a>
-                    </th>
-
-                    <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
-                        <a href="{{ $sortLink('mes') }}"
-                           class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
-                            Mes
-                            <span class="text-xs">{{ $sortIcon('mes') }}</span>
+                             Orden del sistema
+                             <span class="text-xs">{{ $sortIcon('orden_del_sistema') }}</span>
                         </a>
                     </th>
 
                     <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
                         <a href="{{ $sortLink('orden') }}"
                            class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
-                            Orden
-                            <span class="text-xs">{{ $sortIcon('orden') }}</span>
+                             Orden del cliente
+                             <span class="text-xs">{{ $sortIcon('orden') }}</span>
+                        </a>
+                    </th>
+
+                    <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
+                        <a href="{{ $sortLink('tipo_empaque') }}"
+                           class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
+                             Tipo de empaque
+                             <span class="text-xs">{{ $sortIcon('tipo_empaque') }}</span>
+                        </a>
+                    </th>
+
+                    <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
+                        <a href="{{ $sortLink('mes') }}"
+                           class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
+                             Mes
+                             <span class="text-xs">{{ $sortIcon('mes') }}</span>
                         </a>
                     </th>
 
@@ -154,14 +162,22 @@
             <tbody class="divide-y theme-divide">
                 @forelse ($vinetas as $vineta)
                     <tr class="vinetas-table-row theme-row transition">
+                        <td class="px-4 py-3 whitespace-nowrap theme-text">
+                            {{ $vineta->fecha ? date('d/m/Y', strtotime((string) $vineta->fecha)) : 'Sin fecha' }}
+                        </td>
+
                         <td class="px-4 py-3 whitespace-nowrap">
                             <span class="theme-badge vinetas-id-badge inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border">
                                 #{{ $vineta->api_id }}
                             </span>
                         </td>
 
+                        <td class="px-4 py-3 whitespace-nowrap theme-title font-semibold">
+                            {{ $vineta->presentacion ?? 'N/A' }}
+                        </td>
+
                         <td class="px-4 py-3 whitespace-nowrap theme-text">
-                            {{ $vineta->fecha ? $vineta->fecha->format('d/m/Y') : 'Sin fecha' }}
+                            {{ $vineta->codigo_producto ?? 'N/A' }}
                         </td>
 
                         <td class="px-4 py-3 whitespace-nowrap theme-title font-semibold">
@@ -173,19 +189,11 @@
                         </td>
 
                         <td class="px-4 py-3 whitespace-nowrap theme-text">
-                            {{ $vineta->capa ?? 'Sin capa' }}
-                        </td>
-
-                        <td class="px-4 py-3 whitespace-nowrap theme-text">
                             {{ $vineta->vitola ?? 'Sin vitola' }}
                         </td>
 
                         <td class="px-4 py-3 whitespace-nowrap theme-text">
-                            {{ $vineta->tipo_empaque ?? 'Sin empaque' }}
-                        </td>
-
-                        <td class="px-4 py-3 whitespace-nowrap theme-text">
-                            {{ $vineta->codigo_producto ?? 'N/A' }}
+                            {{ $vineta->capa ?? 'Sin capa' }}
                         </td>
 
                         <td class="px-4 py-3 whitespace-nowrap theme-text">
@@ -197,11 +205,15 @@
                         </td>
 
                         <td class="px-4 py-3 whitespace-nowrap theme-text">
-                            {{ $vineta->mes ?? 'N/A' }}
+                            {{ $vineta->orden ?? 'N/A' }}
                         </td>
 
                         <td class="px-4 py-3 whitespace-nowrap theme-text">
-                            {{ $vineta->orden ?? 'N/A' }}
+                            {{ $vineta->tipo_empaque ?? 'Sin empaque' }}
+                        </td>
+
+                        <td class="px-4 py-3 whitespace-nowrap theme-text">
+                            {{ $vineta->mes ?? 'N/A' }}
                         </td>
 
                         <td class="px-4 py-3 whitespace-nowrap theme-title font-semibold">
@@ -228,7 +240,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="15" class="px-4 py-12 text-center">
+                        <td colspan="16" class="px-4 py-12 text-center">
                             <p class="theme-title font-bold">
                                 No hay viñetas para mostrar
                             </p>
@@ -281,11 +293,10 @@
                 <select name="per_page"
                         onchange="this.form.requestSubmit()"
                         class="per-page-select">
-                    <option value="10" @selected(request('per_page', 10) == 10)>10</option>
-                    <option value="25" @selected(request('per_page') == 25)>25</option>
-                    <option value="50" @selected(request('per_page') == 50)>50</option>
-                    <option value="100" @selected(request('per_page') == 100)>100</option>
-                    <option value="all" @selected(request('per_page') === 'all')>Todos</option>
+                    @foreach ($perPageOptions as $option)
+                        <option value="{{ $option }}" @selected($perPageSelected === $option)>{{ $option }}</option>
+                    @endforeach
+                    <option value="all" @selected($perPageSelected === 'all')>Todos</option>
                 </select>
             </form>
         </div>

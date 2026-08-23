@@ -6,23 +6,116 @@ use App\Http\Controllers\Controller;
 use App\Models\Empleado;
 use App\Models\EmpleadoHoraOrdinaria;
 use App\Models\VinetaRegistro;
+use App\Support\EmployeeProductionGroup;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class EmpleadoHoraOrdinariaController extends Controller
 {
     private int $metaDiariaMinutos = 570;
 
-    public function index(Request $request, Empleado $empleado): JsonResponse
+    public function resumenEmpleados(Request $request): JsonResponse
     {
         $data = $request->validate([
             'fecha' => ['required', 'date_format:Y-m-d'],
         ]);
 
         $fecha = $data['fecha'];
+        $tablaDisponible = Schema::hasTable('empleado_horas_ordinarias');
+        $registros = collect();
+
+        if (Schema::hasTable('vineta_registros')) {
+            $registros = VinetaRegistro::query()
+                ->whereDate('fecha_registro', $fecha)
+                ->where('estado', VinetaRegistro::ESTADO_ACTIVO)
+                ->orderBy('hora_registro')
+                ->orderBy('id')
+                ->get()
+                ->filter(fn (VinetaRegistro $registro) => ! $registro->esPorHoraOrdinario())
+                ->values();
+        }
+
+        $codigos = $registros
+            ->map(fn (VinetaRegistro $registro) => trim((string) $registro->empleado_codigo))
+            ->filter()
+            ->unique()
+            ->values();
+        $empleados = Empleado::query()
+            ->whereIn('codigo', $codigos)
+            ->get()
+            ->keyBy(fn (Empleado $empleado) => trim((string) $empleado->codigo));
+        $gruposEmpleados = $this->gruposProduccionEmpleados($registros, $empleados);
+
+        $minutosOrdinarios = collect();
+
+        if ($tablaDisponible && $codigos->isNotEmpty()) {
+            $minutosOrdinarios = EmpleadoHoraOrdinaria::query()
+                ->whereIn('empleado_codigo', $codigos)
+                ->whereDate('fecha', $fecha)
+                ->selectRaw('empleado_codigo, COALESCE(SUM(minutos), 0) as minutos')
+                ->groupBy('empleado_codigo')
+                ->pluck('minutos', 'empleado_codigo');
+        }
+
+        $items = collect(['rezago', 'anillado', 'llenado'])
+            ->flatMap(function (string $grupo) use ($registros, $empleados, $gruposEmpleados, $minutosOrdinarios) {
+                return $registros
+                    ->filter(
+                        fn (VinetaRegistro $registro) => $gruposEmpleados->get(
+                            trim((string) $registro->empleado_codigo)
+                        ) === $grupo
+                    )
+                    ->groupBy(fn (VinetaRegistro $registro) => trim((string) $registro->empleado_codigo))
+                    ->map(function (Collection $registrosEmpleado, $codigo) use ($grupo, $empleados, $minutosOrdinarios) {
+                        /** @var Empleado|null $empleado */
+                        $empleado = $empleados->get($codigo);
+
+                        if (! $empleado) {
+                            return null;
+                        }
+
+                        return [
+                            'grupo' => $grupo,
+                            'empleado' => $this->empleadoPayload($empleado),
+                            'resumen' => $this->resumenRegistrosPayload(
+                                $registrosEmpleado,
+                                (int) ($minutosOrdinarios[$empleado->codigo] ?? 0)
+                            ),
+                        ];
+                    })
+                    ->filter()
+                    ->sortBy(fn (array $item) => Str::lower($item['empleado']['nombre']))
+                    ->values();
+            })
+            ->values();
+
+        return response()->json([
+            'message' => 'Resumen de horas ordinarias encontrado.',
+            'fecha' => $fecha,
+            'tabla_disponible' => $tablaDisponible,
+            'grupos' => [
+                'rezago' => $items->where('grupo', 'rezago')->count(),
+                'anillado' => $items->where('grupo', 'anillado')->count(),
+                'llenado' => $items->where('grupo', 'llenado')->count(),
+            ],
+            'empleados' => $items,
+        ]);
+    }
+
+    public function index(Request $request, Empleado $empleado): JsonResponse
+    {
+        $data = $request->validate([
+            'fecha' => ['required', 'date_format:Y-m-d'],
+            'grupo' => ['nullable', 'string', 'in:rezago,anillado,llenado'],
+        ]);
+
+        $fecha = $data['fecha'];
+        $grupo = $data['grupo'] ?? null;
         $tablaDisponible = Schema::hasTable('empleado_horas_ordinarias');
         $ordinarias = collect();
 
@@ -38,17 +131,14 @@ class EmpleadoHoraOrdinariaController extends Controller
         $cajones = collect();
 
         if (Schema::hasTable('vineta_registros') && Schema::hasColumn('vineta_registros', 'minutos_trabajados')) {
-            $cajones = VinetaRegistro::query()
-                ->where('empleado_codigo', $empleado->codigo)
-                ->whereDate('fecha_registro', $fecha)
-                ->where('estado', VinetaRegistro::ESTADO_ACTIVO)
-                ->orderBy('fecha_registro')
-                ->orderBy('hora_registro')
-                ->orderBy('id')
-                ->get();
+            $cajones = $this->registrosTareaEmpleado($empleado, $fecha);
+            $grupoEmpleado = $this->grupoProduccionEmpleado($empleado, $cajones);
+
+            if ($grupo !== null && $grupoEmpleado !== $grupo) {
+                $cajones = collect();
+            }
         }
 
-        $minutosCajones = (int) $cajones->sum(fn (VinetaRegistro $registro) => (int) ($registro->minutos_trabajados ?? 0));
         $minutosOrdinarios = (int) $ordinarias->sum('minutos');
 
         return response()->json([
@@ -56,9 +146,11 @@ class EmpleadoHoraOrdinariaController extends Controller
             'tabla_disponible' => $tablaDisponible,
             'empleado' => $this->empleadoPayload($empleado),
             'fecha' => $fecha,
-            'resumen' => $this->resumenPayload($minutosCajones, $minutosOrdinarios),
+            'grupo' => $grupo,
+            'resumen' => $this->resumenRegistrosPayload($cajones, $minutosOrdinarios),
             'cajones' => $cajones->map(fn (VinetaRegistro $registro) => $this->cajonPayload($registro))->values(),
             'horas_ordinarias' => $ordinarias->map(fn (EmpleadoHoraOrdinaria $hora) => $this->horaPayload($hora))->values(),
+            'jornada_laboral' => $this->jornadaLaboralPayload($cajones),
         ]);
     }
 
@@ -132,20 +224,20 @@ class EmpleadoHoraOrdinariaController extends Controller
 
         $data = $this->validatedJornadaData($request);
         $fecha = $data['fecha'];
+        $grupo = $data['grupo'] ?? null;
         $totalMinutes = $data['minutos_total'];
-        $registros = VinetaRegistro::query()
-            ->where('empleado_codigo', $empleado->codigo)
-            ->whereDate('fecha_registro', $fecha)
-            ->where('estado', VinetaRegistro::ESTADO_ACTIVO)
-            ->orderBy('hora_registro')
-            ->orderBy('id')
-            ->get()
-            ->filter(fn (VinetaRegistro $registro) => ! $registro->esPorHoraOrdinario())
-            ->values();
+        $registros = $this->registrosTareaEmpleado($empleado, $fecha);
+        $grupoEmpleado = $this->grupoProduccionEmpleado($empleado, $registros);
+
+        if ($grupo !== null && $grupoEmpleado !== $grupo) {
+            $registros = collect();
+        }
 
         if ($registros->isEmpty()) {
             throw ValidationException::withMessages([
-                'fecha' => 'Este empleado no tiene viñetas activas para distribuir jornada en la fecha seleccionada.',
+                'fecha' => $grupo === null
+                    ? 'Este empleado no tiene viñetas activas para distribuir jornada en la fecha seleccionada.'
+                    : 'Este empleado no tiene viñetas activas del grupo seleccionado para distribuir jornada en la fecha seleccionada.',
             ]);
         }
 
@@ -168,16 +260,140 @@ class EmpleadoHoraOrdinariaController extends Controller
         ]);
     }
 
-    private function resumenPayload(int $minutosCajones, int $minutosOrdinarios): array
+    public function destroyJornada(Request $request, Empleado $empleado): JsonResponse
     {
-        $total = $minutosCajones + $minutosOrdinarios;
+        if (! Schema::hasTable('vineta_registros') || ! Schema::hasColumn('vineta_registros', 'minutos_trabajados')) {
+            return response()->json([
+                'message' => 'La tabla de registros no permite eliminar la jornada laboral.',
+            ], 409);
+        }
+
+        $data = $request->validate([
+            'fecha' => ['required', 'date_format:Y-m-d'],
+            'grupo' => ['required', 'string', 'in:rezago,anillado,llenado'],
+        ]);
+        $registros = $this->registrosTareaEmpleado($empleado, $data['fecha']);
+        $grupoEmpleado = $this->grupoProduccionEmpleado($empleado, $registros);
+
+        if ($grupoEmpleado !== $data['grupo']) {
+            $registros = collect();
+        }
+
+        if ($registros->isEmpty()) {
+            throw ValidationException::withMessages([
+                'fecha' => 'Este empleado no tiene una jornada distribuida en el grupo y fecha seleccionados.',
+            ]);
+        }
+
+        DB::transaction(function () use ($registros) {
+            foreach ($registros as $registro) {
+                $registro->update(['minutos_trabajados' => null]);
+            }
+        });
+
+        return response()->json([
+            'message' => 'Distribucion de jornada laboral eliminada correctamente.',
+            'registros_actualizados' => $registros->count(),
+        ]);
+    }
+
+    /** @return Collection<int, VinetaRegistro> */
+    private function registrosTareaEmpleado(Empleado $empleado, string $fecha): Collection
+    {
+        return VinetaRegistro::query()
+            ->where('empleado_codigo', $empleado->codigo)
+            ->whereDate('fecha_registro', $fecha)
+            ->where('estado', VinetaRegistro::ESTADO_ACTIVO)
+            ->orderBy('fecha_registro')
+            ->orderBy('hora_registro')
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (VinetaRegistro $registro) => ! $registro->esPorHoraOrdinario())
+            ->values();
+    }
+
+    private function grupoProduccionEmpleado(Empleado $empleado, Collection $registros): ?string
+    {
+        return EmployeeProductionGroup::fromCargo($empleado->cargo)
+            ?? $registros
+                ->map(fn (VinetaRegistro $registro) => $this->grupoActividadRegistro($registro))
+                ->first(fn (?string $grupo) => $grupo !== null);
+    }
+
+    /**
+     * @param  Collection<int, VinetaRegistro>  $registros
+     * @param  Collection<string, Empleado>  $empleados
+     * @return Collection<string, string>
+     */
+    private function gruposProduccionEmpleados(Collection $registros, Collection $empleados): Collection
+    {
+        return $registros
+            ->groupBy(fn (VinetaRegistro $registro) => trim((string) $registro->empleado_codigo))
+            ->map(function (Collection $items, string $codigo) use ($empleados) {
+                $empleado = $empleados->get($codigo);
+
+                return $empleado instanceof Empleado
+                    ? $this->grupoProduccionEmpleado($empleado, $items)
+                    : null;
+            })
+            ->filter();
+    }
+
+    /** @param Collection<int, VinetaRegistro> $registros */
+    private function jornadaLaboralPayload(Collection $registros): ?array
+    {
+        $minutos = (int) $registros->sum(fn (VinetaRegistro $registro) => (int) ($registro->minutos_trabajados ?? 0));
+
+        if ($minutos <= 0) {
+            return null;
+        }
+
+        return [
+            'message' => 'Jornada laboral distribuida.',
+            'registros_actualizados' => $registros->count(),
+            'minutos_distribuidos' => $minutos,
+            'tiempo_distribuido_texto' => VinetaRegistro::minutosATiempoTexto($minutos),
+        ];
+    }
+
+    /** @param Collection<int, VinetaRegistro> $registros */
+    private function resumenRegistrosPayload(Collection $registros, int $minutosOrdinarios): array
+    {
+        $minutosVinetas = (int) $registros->sum(
+            fn (VinetaRegistro $registro) => $registro->esPorHoraOrdinario()
+                ? 0
+                : (int) ($registro->minutos_trabajados ?? 0)
+        );
+
+        return $this->resumenPayload(
+            $minutosVinetas,
+            $minutosOrdinarios,
+            $registros->count(),
+            (int) $registros->sum('cantidad_puros'),
+            (int) $registros->sum(fn (VinetaRegistro $registro) => $registro->total_actividades)
+        );
+    }
+
+    private function resumenPayload(
+        int $minutosVinetas,
+        int $minutosOrdinarios,
+        int $totalVinetas,
+        int $totalPuros,
+        int $totalActividades
+    ): array {
+        $total = $minutosVinetas + $minutosOrdinarios;
         $faltante = max($this->metaDiariaMinutos - $total, 0);
 
         return [
             'meta_minutos' => $this->metaDiariaMinutos,
             'meta_texto' => VinetaRegistro::minutosATiempoTexto($this->metaDiariaMinutos),
-            'minutos_cajones' => $minutosCajones,
-            'tiempo_cajones_texto' => VinetaRegistro::minutosATiempoTexto($minutosCajones),
+            'total_vinetas' => $totalVinetas,
+            'total_puros' => $totalPuros,
+            'total_actividades' => $totalActividades,
+            'minutos_vinetas' => $minutosVinetas,
+            'tiempo_vinetas_texto' => VinetaRegistro::minutosATiempoTexto($minutosVinetas),
+            'minutos_cajones' => $minutosVinetas,
+            'tiempo_cajones_texto' => VinetaRegistro::minutosATiempoTexto($minutosVinetas),
             'minutos_ordinarios' => $minutosOrdinarios,
             'tiempo_ordinario_texto' => VinetaRegistro::minutosATiempoTexto($minutosOrdinarios),
             'total_minutos' => $total,
@@ -189,6 +405,44 @@ class EmpleadoHoraOrdinariaController extends Controller
                 ? min(round(($total / $this->metaDiariaMinutos) * 100, 1), 100)
                 : 0,
         ];
+    }
+
+    private function grupoActividadRegistro(VinetaRegistro $registro): ?string
+    {
+        $texto = implode(' ', array_filter([
+            $registro->actividad_nombre,
+            $registro->actividad_tipo_empaque,
+            $registro->actividad_codigo,
+        ], fn ($valor) => trim((string) $valor) !== ''));
+        $texto = Str::ascii(Str::lower(trim($texto)));
+        $texto = preg_replace('/[^a-z0-9]+/', ' ', $texto) ?? $texto;
+
+        if (str_contains($texto, 'rezag') || str_contains($texto, 'rezad') || str_contains($texto, 'resag')) {
+            return 'rezago';
+        }
+
+        if (
+            str_contains($texto, 'anill')
+            || str_contains($texto, 'anil')
+            || str_contains($texto, 'celof')
+            || str_contains($texto, 'sello')
+            || str_contains($texto, 'sell')
+            || str_contains($texto, 'esponj')
+            || str_contains($texto, 'lamina')
+        ) {
+            return 'anillado';
+        }
+
+        if (
+            str_contains($texto, 'llenad')
+            || str_contains($texto, 'petaca')
+            || str_contains($texto, 'sampler')
+            || (str_contains($texto, 'paquete') && str_contains($texto, 'tubo'))
+        ) {
+            return 'llenado';
+        }
+
+        return null;
     }
 
     private function validatedHoraData(Request $request): array
@@ -229,6 +483,7 @@ class EmpleadoHoraOrdinariaController extends Controller
     {
         $data = $request->validate([
             'fecha' => ['required', 'date_format:Y-m-d'],
+            'grupo' => ['nullable', 'string', 'in:rezago,anillado,llenado'],
             'horas' => ['nullable', 'integer', 'min:0', 'max:9'],
             'minutos' => ['nullable', 'integer', 'min:0', 'max:570'],
         ]);
@@ -264,10 +519,13 @@ class EmpleadoHoraOrdinariaController extends Controller
 
         return [
             'id' => $registro->id,
-            'vineta' => $registro->vineta_api_id ? 'ID ' . $registro->vineta_api_id : $registro->codigo_vineta,
+            'vineta' => $registro->vineta_api_id ? 'ID '.$registro->vineta_api_id : $registro->codigo_vineta,
             'actividad' => $registro->actividad_nombre,
+            'grupo' => $this->grupoActividadRegistro($registro),
             'producto' => $registro->producto_nombre,
             'cantidad_puros' => $registro->cantidad_puros,
+            'cantidad_actividades' => $registro->cantidadActividadesValor(),
+            'total_actividades' => $registro->total_actividades,
             'modo_registro' => $registro->modoRegistro(),
             'por_hora' => $porHora,
             'minutos' => $porHora ? null : (int) ($registro->minutos_trabajados ?? 0),

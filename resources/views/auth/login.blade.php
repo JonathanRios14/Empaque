@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    @include('layouts.favicon')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | Sistema de Empaque</title>
@@ -18,14 +19,14 @@
 
     <style>
         /* ================================
-           Login tema claro navy elegante
+           Login tema claro
         ================================ */
 
         .login-bg {
             background:
-                radial-gradient(circle at top left, rgba(56, 189, 248, 0.10), transparent 30%),
-                radial-gradient(circle at bottom right, rgba(15, 23, 42, 0.24), transparent 36%),
-                linear-gradient(135deg, #0b1220 0%, #0f172a 52%, #111c33 100%);
+                radial-gradient(circle at 12% 8%, rgba(56, 189, 248, 0.18), transparent 32%),
+                radial-gradient(circle at 88% 92%, rgba(37, 99, 235, 0.08), transparent 34%),
+                linear-gradient(135deg, #ffffff 0%, #f8fafc 52%, #eff6ff 100%);
         }
 
         .login-wrapper {
@@ -39,8 +40,9 @@
         }
 
         .login-logo-box {
-            background: #f8fafc;
-            border-color: #e2e8f0;
+            background: transparent;
+            border: 0;
+            box-shadow: none;
         }
 
         .login-title {
@@ -93,11 +95,15 @@
         }
 
         .login-image-panel {
-            background: #0b1220;
+            background: #f8fafc;
         }
 
         .login-image-bg {
-            background: linear-gradient(to bottom right, #0b1220, #0f172a, #111c33);
+            background: linear-gradient(to bottom right, #ffffff, #f8fafc, #e0f2fe);
+        }
+
+        .login-image-overlay {
+            background: linear-gradient(to left, transparent, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.34));
         }
 
         .login-logo-light {
@@ -130,8 +136,8 @@
         }
 
         html.login-dark .login-logo-box {
-            background: #111827;
-            border-color: rgba(255, 255, 255, 0.10);
+            background: transparent;
+            border: 0;
         }
 
         html.login-dark .login-title {
@@ -193,6 +199,10 @@
             background: linear-gradient(to bottom right, #111827, #0f172a, #020617);
         }
 
+        html.login-dark .login-image-overlay {
+            background: linear-gradient(to left, transparent, rgba(15, 23, 42, 0.05), rgba(15, 23, 42, 0.34));
+        }
+
         html.login-dark .login-logo-light {
             display: none !important;
         }
@@ -207,22 +217,23 @@
 
         .intro-overlay {
             background:
-                radial-gradient(circle at top left, rgba(56, 189, 248, 0.10), transparent 30%),
-                radial-gradient(circle at bottom right, rgba(15, 23, 42, 0.24), transparent 36%),
-                linear-gradient(135deg, #0b1220 0%, #0f172a 52%, #111c33 100%);
+                radial-gradient(circle at 12% 8%, rgba(56, 189, 248, 0.18), transparent 32%),
+                radial-gradient(circle at 88% 92%, rgba(37, 99, 235, 0.08), transparent 34%),
+                linear-gradient(135deg, #ffffff 0%, #f8fafc 52%, #eff6ff 100%);
         }
 
         .intro-logo-box {
-            background: #ffffff;
-            border: 1px solid rgba(226, 232, 240, 0.90);
+            background: transparent;
+            border: 0;
+            box-shadow: none;
         }
 
         .intro-title {
-            color: #ffffff;
+            color: #0b1220;
         }
 
         .intro-subtitle {
-            color: rgba(255, 255, 255, 0.70);
+            color: #64748b;
         }
 
         .intro-logo-light {
@@ -241,8 +252,8 @@
         }
 
         html.login-dark .intro-logo-box {
-            background: #111827;
-            border-color: rgba(255, 255, 255, 0.10);
+            background: transparent;
+            border: 0;
         }
 
         html.login-dark .intro-logo-light {
@@ -268,7 +279,7 @@
             width: 240px;
             height: 240px;
             border-radius: 9999px;
-            background: radial-gradient(circle, rgba(255,255,255,0.20), rgba(255,255,255,0.05), transparent 70%);
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.18), rgba(37, 99, 235, 0.05), transparent 70%);
             filter: blur(18px);
             opacity: 0;
             animation: smokeMove 4s ease-in-out infinite;
@@ -278,6 +289,10 @@
         .smoke-2 { left: 38%; width: 310px; height: 310px; animation-delay: 0.6s; }
         .smoke-3 { left: 56%; width: 270px; height: 270px; animation-delay: 1.1s; }
         .smoke-4 { left: 70%; width: 230px; height: 230px; animation-delay: 1.7s; }
+
+        html.login-dark .smoke {
+            background: radial-gradient(circle, rgba(255,255,255,0.20), rgba(255,255,255,0.05), transparent 70%);
+        }
 
         @keyframes smokeMove {
             0% {
@@ -329,14 +344,14 @@
         <div class="smoke smoke-4"></div>
 
         <div class="relative z-10 text-center">
-            <div class="intro-logo-box mx-auto w-32 h-32 rounded-3xl flex items-center justify-center shadow-2xl mb-5 intro-logo">
+            <div class="intro-logo-box mx-auto w-44 h-36 flex items-center justify-center mb-5 intro-logo">
                 <img src="{{ asset('img/plasencia-logocafe.png') }}"
                      alt="Plasencia Logo"
-                     class="intro-logo-light h-24 w-auto object-contain">
+                     class="intro-logo-light h-32 w-auto object-contain">
 
                 <img src="{{ asset('img/plasencia-logo.png') }}"
                      alt="Plasencia Logo"
-                     class="intro-logo-dark h-24 w-auto object-contain">
+                     class="intro-logo-dark h-32 w-auto object-contain">
             </div>
 
             <h1 class="intro-title text-2xl font-bold tracking-wide">
@@ -359,14 +374,14 @@
         <div class="login-form-panel w-full p-5 lg:p-6 flex flex-col justify-center min-h-[440px]">
 
             <div class="text-center mb-5">
-                <div class="login-logo-box mx-auto mb-4 w-20 h-20 rounded-3xl border flex items-center justify-center shadow-sm">
+                <div class="login-logo-box mx-auto mb-4 w-36 h-24 flex items-center justify-center">
                     <img src="{{ asset('img/plasencia-logocafe.png') }}"
                          alt="Plasencia Logo"
-                         class="login-logo-light h-14 w-auto object-contain">
+                         class="login-logo-light h-24 w-auto object-contain">
 
                     <img src="{{ asset('img/plasencia-logo.png') }}"
                          alt="Plasencia Logo"
-                         class="login-logo-dark h-14 w-auto object-contain">
+                         class="login-logo-dark h-24 w-auto object-contain">
                 </div>
 
                 <h1 class="login-title text-2xl font-extrabold">
@@ -474,7 +489,7 @@
                  alt="Imagen de tabaco"
                  class="relative z-10 w-full h-full object-cover object-center opacity-95">
 
-            <div class="absolute inset-0 bg-gradient-to-l from-transparent via-[#0f172a]/5 to-[#0f172a]/30"></div>
+            <div class="login-image-overlay absolute inset-0"></div>
         </div>
 
     </div>

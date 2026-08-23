@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class VinetaRegistro extends Model
 {
     public const ESTADO_ACTIVO = 'activo';
+
     public const ESTADO_ANULADO = 'anulado';
 
     protected $fillable = [
@@ -70,7 +72,67 @@ class VinetaRegistro extends Model
 
     public function getTotalMoAttribute(): float
     {
-        return (float) $this->cantidad_puros * (float) ($this->precio_mo ?? 0);
+        return (float) $this->cantidad_puros * (float) ($this->precioMoEfectivo() ?? 0);
+    }
+
+    public function productoNombreReporte(): string
+    {
+        return $this->textoReportePreferido(
+            $this->vineta?->nombre,
+            $this->producto_nombre,
+            'Sin producto'
+        );
+    }
+
+    public function tipoEmpaqueReporte(): string
+    {
+        return $this->textoReportePreferido(
+            $this->vineta?->tipo_empaque,
+            $this->tipo_empaque,
+            'N/A'
+        );
+    }
+
+    private function textoReportePreferido(?string $principal, ?string $secundario, string $fallback): string
+    {
+        foreach ([$principal, $secundario] as $value) {
+            $text = trim((string) $value);
+
+            if ($text !== '' && ! in_array(strtolower($text), ['ninguna', 'ninguno', 'n/a', 'na', 'null'], true)) {
+                return $text;
+            }
+        }
+
+        return $fallback;
+    }
+
+    public function precioMoEfectivo(): ?float
+    {
+        if (array_key_exists('precio_actividad_catalogo', $this->attributes)) {
+            $precioCatalogo = $this->attributes['precio_actividad_catalogo'];
+
+            return $precioCatalogo !== null && (float) $precioCatalogo > 0
+                ? (float) $precioCatalogo
+                : ($this->precio_mo === null ? null : (float) $this->precio_mo);
+        }
+
+        return self::precioMoActividadCatalogo($this->actividad_id)
+            ?? ($this->precio_mo === null ? null : (float) $this->precio_mo);
+    }
+
+    public static function precioMoActividadCatalogo(?int $actividadId): ?float
+    {
+        if (! $actividadId) {
+            return null;
+        }
+
+        $precio = DB::table('actividad_producto')
+            ->where('actividad_id', $actividadId)
+            ->whereNotNull('precio_mo')
+            ->where('precio_mo', '>', 0)
+            ->min('precio_mo');
+
+        return $precio === null ? null : (float) $precio;
     }
 
     public function getTotalActividadesAttribute(): int
@@ -133,14 +195,14 @@ class VinetaRegistro extends Model
         $resto = $minutos % 60;
 
         if ($horas === 0) {
-            return $resto . ' min';
+            return $resto.' min';
         }
 
         if ($resto === 0) {
-            return $horas . ' h';
+            return $horas.' h';
         }
 
-        return $horas . ' h ' . $resto . ' min';
+        return $horas.' h '.$resto.' min';
     }
 
     public static function cantidadActividadesDesdeNombre(?string $nombre): int
@@ -163,6 +225,7 @@ class VinetaRegistro extends Model
 
             if (preg_match('/^(\d+)\s+/', $parte, $matches)) {
                 $total += max((int) $matches[1], 1);
+
                 continue;
             }
 
@@ -187,11 +250,11 @@ class VinetaRegistro extends Model
         try {
             return Carbon::createFromFormat(
                 'Y-m-d H:i:s',
-                $this->fecha_registro->format('Y-m-d') . ' ' . $hora,
+                $this->fecha_registro->format('Y-m-d').' '.$hora,
                 'America/Tegucigalpa'
             )->format('d/m/Y h:i A');
         } catch (\Throwable) {
-            return $this->fecha_registro->format('d/m/Y') . ' ' . $this->hora_registro;
+            return $this->fecha_registro->format('d/m/Y').' '.$this->hora_registro;
         }
     }
 
