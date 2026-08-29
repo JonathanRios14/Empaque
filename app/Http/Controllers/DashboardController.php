@@ -687,10 +687,26 @@ class DashboardController extends Controller
         return "$table.cantidad_puros * CASE WHEN $table.cantidad_actividades IS NULL OR $table.cantidad_actividades < 1 THEN 1 ELSE $table.cantidad_actividades END";
     }
 
+    private function concatExpression(array $columns, string $separator = ' '): string
+    {
+        $isSqlite = DB::connection()->getDriverName() === 'sqlite';
+        $coalesced = array_map(fn ($col) => "COALESCE({$col}, '')", $columns);
+
+        if ($isSqlite) {
+            return '(' . implode(" || '{$separator}' || ", $coalesced) . ')';
+        }
+
+        return 'CONCAT(' . implode(", '{$separator}', ", $coalesced) . ')';
+    }
+
     private function activityGroupCaseExpression(): string
     {
         $nombre = "LOWER(COALESCE(vineta_registros.actividad_nombre, ''))";
-        $text = "LOWER(CONCAT(COALESCE(vineta_registros.actividad_nombre, ''), ' ', COALESCE(vineta_registros.actividad_tipo_empaque, ''), ' ', COALESCE(vineta_registros.actividad_codigo, '')))";
+        $text = "LOWER(" . $this->concatExpression([
+            'vineta_registros.actividad_nombre',
+            'vineta_registros.actividad_tipo_empaque',
+            'vineta_registros.actividad_codigo',
+        ]) . ")";
 
         return "CASE
             WHEN $nombre LIKE '%rezag%' OR $nombre LIKE '%rezad%' OR $nombre LIKE '%resag%' THEN 'rezago'
@@ -705,7 +721,11 @@ class DashboardController extends Controller
 
     private function employeeGroupCaseExpression(): string
     {
-        $text = "LOWER(CONCAT(COALESCE(empleados_dashboard.cargo, ''), ' ', COALESCE(empleados_dashboard.area, ''), ' ', COALESCE(vineta_registros.empleado_nombre, '')))";
+        $text = "LOWER(" . $this->concatExpression([
+            'empleados_dashboard.cargo',
+            'empleados_dashboard.area',
+            'vineta_registros.empleado_nombre',
+        ]) . ")";
 
         return "CASE
             WHEN $text LIKE '%rezag%' OR $text LIKE '%rezad%' OR $text LIKE '%resag%' THEN 'rezago'
@@ -718,7 +738,11 @@ class DashboardController extends Controller
     private function processCaseExpression(): string
     {
         $nombre = "LOWER(COALESCE(actividad_nombre, ''))";
-        $text = "LOWER(CONCAT(COALESCE(actividad_nombre, ''), ' ', COALESCE(actividad_tipo_empaque, ''), ' ', COALESCE(actividad_codigo, '')))";
+        $text = "LOWER(" . $this->concatExpression([
+            'actividad_nombre',
+            'actividad_tipo_empaque',
+            'actividad_codigo',
+        ]) . ")";
 
         return "CASE
             WHEN $nombre LIKE '%rezag%' OR $nombre LIKE '%rezad%' OR $nombre LIKE '%resag%' THEN 'Rezago'

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ActividadController as ApiActividadController;
+use App\Http\Controllers\Api\AppUpdateController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmpleadoController as ApiEmpleadoController;
 use App\Http\Controllers\Api\EmpleadoHoraOrdinariaController as ApiEmpleadoHoraOrdinariaController;
@@ -22,6 +23,10 @@ use Illuminate\Support\Facades\Route;
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/vinetas-registradas', [ApiVinetaRegistroController::class, 'feed'])
     ->name('api.vinetas-registradas');
+
+Route::get('/app-update', [AppUpdateController::class, 'check'])->name('api.app.update');
+Route::get('/app/latest', [AppUpdateController::class, 'check']);
+Route::get('/app/download/{file?}', [AppUpdateController::class, 'download'])->name('api.app.download');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
