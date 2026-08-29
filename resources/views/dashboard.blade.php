@@ -142,9 +142,9 @@
         }
 
         .process-date-input {
-            background: #eff6ff;
-            border: 1px solid #dbeafe;
-            color: #0f172a;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            color: #0b1220;
             color-scheme: light;
             cursor: pointer;
             font-size: .75rem;
@@ -157,7 +157,7 @@
 
         .process-date-input:hover,
         .process-date-input:focus {
-            border-color: #60a5fa;
+            border-color: #2563eb;
             box-shadow: 0 0 0 3px rgba(37, 99, 235, .09);
         }
 
@@ -181,6 +181,28 @@
         html.dark-navy .process-date-input:focus {
             border-color: #38bdf8;
             box-shadow: 0 0 0 3px rgba(56, 189, 248, .08);
+        }
+
+        .area-date-range-container {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+        }
+
+        html.dark-navy .area-date-range-container {
+            background: #16233d;
+            border-color: #263650;
+        }
+
+        .area-date-range-container input[type="date"] {
+            color: #0b1220;
+            background: transparent;
+            color-scheme: light;
+        }
+
+        html.dark-navy .area-date-range-container input[type="date"] {
+            color: #f8fafc;
+            background: transparent;
+            color-scheme: dark;
         }
 
         .process-chart-wrap {
@@ -440,8 +462,8 @@
         }
 
         .dashboard-tabs {
-            background: #eff6ff;
-            border: 1px solid #dbeafe;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
         }
 
         .dashboard-tab {
@@ -454,9 +476,14 @@
         }
 
         .dashboard-tab.is-active {
-            background: #0f172a;
-            color: #fff;
-            box-shadow: 0 5px 16px rgba(15, 23, 42, .16);
+            background: #0b1220;
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px rgba(11, 18, 32, .18);
+        }
+
+        .dashboard-tab.is-active:hover {
+            background: #111c33;
+            color: #ffffff !important;
         }
 
         html.dark-navy .dashboard-tabs {
@@ -474,8 +501,13 @@
 
         html.dark-navy .dashboard-tab.is-active {
             background: #38bdf8;
-            color: #0b1220;
+            color: #0b1220 !important;
             box-shadow: none;
+        }
+
+        html.dark-navy .dashboard-tab.is-active:hover {
+            background: #7dd3fc;
+            color: #0b1220 !important;
         }
 
         .ranking-row {
@@ -718,15 +750,72 @@
                 @endunless
 
                 <section class="reveal-on-scroll space-y-3" style="--reveal-delay: 40ms">
-                    <div class="flex items-center justify-between gap-4 px-1">
-                        <h2 class="theme-title text-lg font-black">Resumen mensual</h2>
-                        <span class="theme-text text-xs font-black uppercase tracking-[.12em]">{{ $periodLabels['dia'] }}</span>
+                    <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 px-1">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <h2 class="theme-title text-lg font-black">Resumen por área</h2>
+                            <span id="areaSummaryPeriodBadge" class="theme-badge inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-black uppercase tracking-wider text-[#2563eb] bg-[#eff6ff] border-[#bfdbfe]">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span id="areaSummaryPeriodLabel">{{ $periodLabels['dia'] }}</span>
+                            </span>
+                        </div>
+
+                        {{-- Selector de Rango de Fecha --}}
+                        <div class="flex flex-wrap items-center gap-2">
+                            <div class="area-date-range-container inline-flex items-center gap-2 rounded-2xl border px-3 py-1.5 shadow-sm">
+                                <div class="flex items-center gap-1.5">
+                                    <label for="areaRangeFrom" class="theme-text text-[10px] font-black uppercase tracking-wider opacity-70">Desde</label>
+                                    <input
+                                        type="date"
+                                        id="areaRangeFrom"
+                                        value="{{ $selectedMonth->copy()->startOfMonth()->format('Y-m-d') }}"
+                                        max="{{ $today->format('Y-m-d') }}"
+                                        class="rounded-xl text-xs py-1 px-2 border-0 cursor-pointer font-bold outline-none"
+                                        title="Fecha inicial"
+                                    >
+                                </div>
+                                <span class="theme-text text-xs opacity-40 font-black">—</span>
+                                <div class="flex items-center gap-1.5">
+                                    <label for="areaRangeTo" class="theme-text text-[10px] font-black uppercase tracking-wider opacity-70">Hasta</label>
+                                    <input
+                                        type="date"
+                                        id="areaRangeTo"
+                                        value="{{ $selectedMonth->copy()->endOfMonth()->min($today)->format('Y-m-d') }}"
+                                        max="{{ $today->format('Y-m-d') }}"
+                                        class="rounded-xl text-xs py-1 px-2 border-0 cursor-pointer font-bold outline-none"
+                                        title="Fecha final"
+                                    >
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                id="areaRangeCurrentMonthBtn"
+                                data-month-start="{{ $selectedMonth->copy()->startOfMonth()->format('Y-m-d') }}"
+                                data-month-end="{{ $selectedMonth->copy()->endOfMonth()->min($today)->format('Y-m-d') }}"
+                                class="dashboard-tab is-active rounded-xl px-3 py-2 text-xs font-black transition border theme-border"
+                                title="Mes actual"
+                            >
+                                Mes actual
+                            </button>
+
+                            <button
+                                type="button"
+                                id="areaRangeTodayBtn"
+                                data-today="{{ $today->format('Y-m-d') }}"
+                                class="dashboard-tab rounded-xl px-3 py-2 text-xs font-black transition border theme-border"
+                                title="Solo hoy"
+                            >
+                                Hoy
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-5">
+                    <div id="areaSummaryCardsContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-5 transition-opacity duration-200">
                         @foreach($areasMes as $area)
                             @php($share = round(($area['actividades'] / $totalMesAreas) * 100))
-                            <article class="area-card area-card-{{ $area['key'] }} reveal-item dashboard-panel rounded-[1.6rem] p-5 lg:p-6" style="--item-delay: {{ 80 + ($loop->index * 70) }}ms">
+                            <article id="areaCard_{{ $area['key'] }}" class="area-card area-card-{{ $area['key'] }} reveal-item dashboard-panel rounded-[1.6rem] p-5 lg:p-6" style="--item-delay: {{ 80 + ($loop->index * 70) }}ms">
                                 <div class="relative z-10">
                                     <div class="flex items-center justify-between">
                                         <h3 class="theme-title text-xl lg:text-2xl font-black tracking-tight">{{ $area['label'] }}</h3>
@@ -734,7 +823,7 @@
 
                                     <div class="mt-5 flex items-end justify-between gap-4">
                                         <div>
-                                            <p class="theme-title text-4xl xl:text-[2.7rem] leading-none font-black metric-number-reveal">{{ number_format($area['actividades']) }}</p>
+                                            <p data-area-metric="actividades" class="theme-title text-4xl xl:text-[2.7rem] leading-none font-black metric-number-reveal">{{ number_format($area['actividades']) }}</p>
                                             <p class="theme-text mt-2 text-xs font-bold">Actividades</p>
                                         </div>
                                         <div class="area-icon area-icon-animated flex items-center justify-center" data-area="{{ $area['key'] }}" data-area-index="{{ $loop->index }}">
@@ -844,21 +933,21 @@
                                     </div>
 
                                     <div class="area-progress-track mt-5 h-1.5 overflow-hidden rounded-full bg-slate-200/70" role="progressbar" aria-label="Participación de {{ $area['label'] }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $share }}">
-                                        <div class="area-progress h-full rounded-full" style="width: {{ $share }}%; background: var(--area-color)"></div>
+                                        <div data-area-metric="progress" class="area-progress h-full rounded-full transition-all duration-500" style="width: {{ $share }}%; background: var(--area-color)"></div>
                                     </div>
 
                                     <dl class="area-metrics mt-5 grid grid-cols-3 divide-x theme-border">
                                         <div class="pr-3">
                                             <dt class="theme-text text-[10px] font-black uppercase tracking-wider">Empleados</dt>
-                                            <dd class="theme-title mt-1 text-base font-black">{{ number_format($area['empleados']) }}</dd>
+                                            <dd data-area-metric="empleados" class="theme-title mt-1 text-base font-black">{{ number_format($area['empleados']) }}</dd>
                                         </div>
                                         <div class="px-3">
                                             <dt class="theme-text text-[10px] font-black uppercase tracking-wider">Registros</dt>
-                                            <dd class="theme-title mt-1 text-base font-black">{{ number_format($area['registros']) }}</dd>
+                                            <dd data-area-metric="registros" class="theme-title mt-1 text-base font-black">{{ number_format($area['registros']) }}</dd>
                                         </div>
                                         <div class="pl-3">
                                             <dt class="theme-text text-[10px] font-black uppercase tracking-wider">Puros</dt>
-                                            <dd class="theme-title mt-1 text-base font-black">{{ number_format($area['puros']) }}</dd>
+                                            <dd data-area-metric="puros" class="theme-title mt-1 text-base font-black">{{ number_format($area['puros']) }}</dd>
                                         </div>
                                     </dl>
                                 </div>
@@ -1059,12 +1148,12 @@
 
         function processState(period) {
             const rows = processRows(period);
-            const total = rows.reduce((sum, row) => sum + Number(row.actividades || 0), 0);
+            const total = rows.reduce((sum, row) => sum + Number(row.puros || 0), 0);
 
             return {
                 rows,
                 total,
-                series: total > 0 ? rows.map(row => Number(row.actividades || 0)) : [1],
+                series: total > 0 ? rows.map(row => Number(row.puros || 0)) : [1],
                 labels: total > 0 ? rows.map(row => row.label) : ['Sin producción'],
                 colors: total > 0 ? rows.map(row => areaColor(row.key)) : [chartTheme().empty]
             };
@@ -1085,14 +1174,14 @@
             }
 
             container.innerHTML = state.rows.map(row => {
-                const percentage = state.total > 0 ? Math.round((Number(row.actividades || 0) / state.total) * 100) : 0;
+                const percentage = state.total > 0 ? Math.round((Number(row.puros || 0) / state.total) * 100) : 0;
 
                 return `
                     <div class="flex items-center gap-3 px-2 py-3">
                         <span class="h-2.5 w-2.5 shrink-0 rounded-full" style="background:${areaColor(row.key)}"></span>
                         <span class="theme-title flex-1 text-sm font-bold">${row.label}</span>
                         <span class="theme-text text-xs font-black">${percentage}%</span>
-                        <span class="theme-title min-w-[84px] text-right text-sm font-black">${Number(row.actividades || 0).toLocaleString('es-HN')}</span>
+                        <span class="theme-title min-w-[84px] text-right text-sm font-black">${Number(row.puros || 0).toLocaleString('es-HN')}</span>
                     </div>
                 `;
             }).join('');
@@ -1193,7 +1282,7 @@
                     tooltip: {
                         enabled: state.total > 0,
                         theme: theme.tooltip,
-                        y: { formatter: value => Number(value).toLocaleString('es-HN') + ' actividades' }
+                        y: { formatter: value => Number(value).toLocaleString('es-HN') + ' puros' }
                     }
                 });
 
@@ -1212,7 +1301,7 @@
                 tooltip: {
                     enabled: state.total > 0,
                     theme: theme.tooltip,
-                    y: { formatter: value => Number(value).toLocaleString('es-HN') + ' actividades' }
+                    y: { formatter: value => Number(value).toLocaleString('es-HN') + ' puros' }
                 },
                 plotOptions: {
                     pie: {
@@ -1392,6 +1481,132 @@
             }
 
             loadProcessDate(date);
+        });
+
+        // ── Resumen de áreas por rango de fecha en vivo ──
+        const areaRangeFrom = document.getElementById('areaRangeFrom');
+        const areaRangeTo = document.getElementById('areaRangeTo');
+        const areaRangeCurrentMonthBtn = document.getElementById('areaRangeCurrentMonthBtn');
+        const areaRangeTodayBtn = document.getElementById('areaRangeTodayBtn');
+        const areaSummaryPeriodLabel = document.getElementById('areaSummaryPeriodLabel');
+        const areaSummaryCardsContainer = document.getElementById('areaSummaryCardsContainer');
+
+        let loadingAreaRange = false;
+
+        async function loadAreaRangeSummary(desde, hasta, isResetMonth = false, isToday = false) {
+            if (loadingAreaRange) return;
+            loadingAreaRange = true;
+
+            if (areaRangeFrom) areaRangeFrom.disabled = true;
+            if (areaRangeTo) areaRangeTo.disabled = true;
+            if (areaSummaryCardsContainer) {
+                areaSummaryCardsContainer.style.opacity = '0.45';
+                areaSummaryCardsContainer.style.pointerEvents = 'none';
+            }
+
+            try {
+                const endpoint = new URL(dashboardDataUrl, window.location.origin);
+                endpoint.searchParams.set('resumen_rango', '1');
+                if (!isResetMonth && desde && hasta) {
+                    endpoint.searchParams.set('fecha_desde', desde);
+                    endpoint.searchParams.set('fecha_hasta', hasta);
+                }
+
+                const response = await fetch(endpoint.toString(), {
+                    credentials: 'same-origin',
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.ok && data.areas) {
+                    if (areaSummaryPeriodLabel && data.label) {
+                        areaSummaryPeriodLabel.textContent = data.label;
+                    }
+
+                    if (data.fecha_desde && areaRangeFrom) {
+                        areaRangeFrom.value = data.fecha_desde;
+                    }
+                    if (data.fecha_hasta && areaRangeTo) {
+                        areaRangeTo.value = data.fecha_hasta;
+                    }
+
+                    if (areaRangeCurrentMonthBtn) {
+                        areaRangeCurrentMonthBtn.classList.toggle('is-active', !data.is_custom_range || isResetMonth);
+                    }
+                    if (areaRangeTodayBtn) {
+                        areaRangeTodayBtn.classList.toggle('is-active', isToday);
+                    }
+
+                    Object.keys(data.areas).forEach(key => {
+                        const area = data.areas[key];
+                        const card = document.getElementById(`areaCard_${key}`);
+                        if (!card) return;
+
+                        const actEl = card.querySelector('[data-area-metric="actividades"]');
+                        if (actEl) actEl.textContent = area.actividades_formatted;
+
+                        const progEl = card.querySelector('[data-area-metric="progress"]');
+                        if (progEl) {
+                            progEl.style.width = `${area.share}%`;
+                            progEl.closest('[role="progressbar"]')?.setAttribute('aria-valuenow', area.share);
+                        }
+
+                        const empEl = card.querySelector('[data-area-metric="empleados"]');
+                        if (empEl) empEl.textContent = area.empleados_formatted;
+
+                        const regEl = card.querySelector('[data-area-metric="registros"]');
+                        if (regEl) regEl.textContent = area.registros_formatted;
+
+                        const purEl = card.querySelector('[data-area-metric="puros"]');
+                        if (purEl) purEl.textContent = area.puros_formatted;
+                    });
+                }
+            } catch (err) {
+                console.error('Error al actualizar resumen de áreas:', err);
+            } finally {
+                loadingAreaRange = false;
+                if (areaRangeFrom) areaRangeFrom.disabled = false;
+                if (areaRangeTo) areaRangeTo.disabled = false;
+                if (areaSummaryCardsContainer) {
+                    areaSummaryCardsContainer.style.opacity = '1';
+                    areaSummaryCardsContainer.style.pointerEvents = 'auto';
+                }
+            }
+        }
+
+        areaRangeFrom?.addEventListener('change', () => {
+            const desde = areaRangeFrom.value;
+            const hasta = areaRangeTo.value;
+            if (desde && hasta) {
+                loadAreaRangeSummary(desde, hasta);
+            }
+        });
+
+        areaRangeTo?.addEventListener('change', () => {
+            const desde = areaRangeFrom.value;
+            const hasta = areaRangeTo.value;
+            if (desde && hasta) {
+                loadAreaRangeSummary(desde, hasta);
+            }
+        });
+
+        areaRangeCurrentMonthBtn?.addEventListener('click', () => {
+            const start = areaRangeCurrentMonthBtn.dataset.monthStart;
+            const end = areaRangeCurrentMonthBtn.dataset.monthEnd;
+            loadAreaRangeSummary(start, end, true, false);
+        });
+
+        areaRangeTodayBtn?.addEventListener('click', () => {
+            const today = areaRangeTodayBtn.dataset.today;
+            loadAreaRangeSummary(today, today, false, true);
         });
 
         revealDashboard();

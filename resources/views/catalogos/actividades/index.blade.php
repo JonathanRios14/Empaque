@@ -43,28 +43,42 @@
                                 </p>
                             </div>
 
-                            <form method="GET" action="{{ route('catalogos.actividades.index') }}" class="catalogo-ajax-filter-form flex gap-2">
-                                <div class="relative">
-                                    <input type="text"
-                                           name="buscar"
-                                           value="{{ request('buscar') }}"
-                                           placeholder="Buscar actividad o código"
-                                           class="theme-input w-72 rounded-xl border-gray-300 text-sm pr-10 focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <form method="POST" action="{{ route('catalogos.actividades.sincronizar') }}">
+                                    @csrf
+                                    <button type="submit"
+                                            class="gooey-action px-4 py-2 rounded-xl bg-[#2e5c38] text-white text-sm font-semibold hover:bg-[#23472b] transition inline-flex items-center gap-1.5 shadow-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                        </svg>
+                                        Sincronizar actividades
+                                    </button>
+                                </form>
 
-                                    <a href="{{ route('catalogos.actividades.index') }}"
-                                       class="catalogo-ajax-clear {{ request('buscar') ? '' : 'hidden' }} absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-gray-400 hover:text-[#5b3a1e] hover:bg-[#f3efe7] transition"
-                                       title="Limpiar búsqueda">
-                                        ×
-                                    </a>
-                                </div>
+                                <form method="GET" action="{{ route('catalogos.actividades.index') }}" class="catalogo-ajax-filter-form flex gap-2">
+                                    <div class="relative">
+                                        <input type="text"
+                                               name="buscar"
+                                               value="{{ request('buscar') }}"
+                                               placeholder="Buscar actividad o código"
+                                               class="theme-input w-72 rounded-xl border-gray-300 text-sm pr-10 focus:border-[#5b3a1e] focus:ring-[#5b3a1e]">
 
-                                <button type="submit"
-                                        class="gooey-action px-4 py-2 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
-                                    Buscar
-                                </button>
-                            </form>
+                                        <a href="{{ route('catalogos.actividades.index') }}"
+                                           class="catalogo-ajax-clear {{ request('buscar') ? '' : 'hidden' }} absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-gray-400 hover:text-[#5b3a1e] hover:bg-[#f3efe7] transition"
+                                           title="Limpiar búsqueda">
+                                            ×
+                                        </a>
+                                    </div>
+
+                                    <button type="submit"
+                                            class="gooey-action px-4 py-2 rounded-xl bg-[#5b3a1e] text-white text-sm font-semibold hover:bg-[#3b2818] transition">
+                                        Buscar
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
+
 
                     <div id="catalogoTableContainer">
                     @php
@@ -169,22 +183,22 @@
                                              </span>
                                          </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            @if ($actividad->precio_min === null)
-                                                <span class="theme-text text-gray-400 text-sm">Sin precio</span>
-                                            @elseif ((float) $actividad->precio_min === (float) $actividad->precio_max)
+                                            @php
+                                                $precioBase = (float) ($actividad->precio_mo ?? 0);
+                                                if ($precioBase <= 0 && $actividad->precio_min !== null) {
+                                                    $precioBase = (float) $actividad->precio_min;
+                                                }
+                                            @endphp
+                                            @if ($precioBase > 0)
                                                 <span class="theme-title font-semibold text-[#3b2818]">
-                                                    {{ number_format((float) $actividad->precio_min, 7) }}
+                                                    {{ number_format($precioBase, 7) }}
                                                 </span>
                                             @else
-                                                <span class="theme-title font-semibold text-[#3b2818]">
-                                                    {{ number_format((float) $actividad->precio_min, 7) }} - {{ number_format((float) $actividad->precio_max, 7) }}
-                                                </span>
-
-                                                <p class="theme-text text-[11px] text-gray-400 mt-0.5">
-                                                    {{ $actividad->precios_count }} precios
-                                                </p>
+                                                <span class="theme-text text-gray-400 text-sm">Sin precio</span>
                                             @endif
                                         </td>
+
+
                                          <td class="px-6 py-4 text-right">
     <a href="{{ route('catalogos.productos.index', ['actividad_id' => $actividad->id]) }}"
        class="theme-button-secondary inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#f3efe7] text-[#5b3a1e] text-xs font-semibold border border-[#e5d8c7] hover:bg-[#e5d8c7] transition">

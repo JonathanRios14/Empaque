@@ -75,9 +75,10 @@ class Producto extends Model
     public function actividades()
     {
         return $this->belongsToMany(Actividad::class, 'actividad_producto')
-            ->withPivot('tipo_empaque_id', 'precio_mo')
+            ->withPivot('tipo_empaque_id', 'precio_mo', 'activo', 'origen', 'ultimo_escaneo_en')
             ->withTimestamps();
     }
+
 
     public function vinetaRegistros()
     {

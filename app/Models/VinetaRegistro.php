@@ -283,8 +283,16 @@ class VinetaRegistro extends Model
         return $this->belongsTo(User::class, 'registrado_por_user_id');
     }
 
+    public function responsableTexto(): string
+    {
+        $nombre = trim((string) ($this->registrado_por_nombre ?: $this->registradoPor?->name));
+
+        return $nombre !== '' ? $nombre : 'N/A';
+    }
+
     public function anuladoPor()
     {
         return $this->belongsTo(User::class, 'anulado_por_user_id');
     }
 }
+

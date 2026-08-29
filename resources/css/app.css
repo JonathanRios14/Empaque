@@ -2145,7 +2145,7 @@ html.dark-navy .vinetas-notification-icon {
 .vinetas-sticky-header-clone {
     position: fixed;
     top: 0;
-    z-index: 140;
+    z-index: 45;
     overflow: hidden;
     opacity: 0;
     visibility: hidden;
@@ -2168,7 +2168,6 @@ html.dark-navy .vinetas-notification-icon {
 
 .vinetas-sticky-header-clone table {
     border-collapse: collapse;
-    transition: transform 0.05s linear;
 }
 
 .vinetas-floating-scrollbar {
@@ -2671,7 +2670,7 @@ html.dark-navy .productos-table-loader-icon span {
     max-height: 100dvh !important;
     align-self: flex-start !important;
     overflow: hidden !important;
-    z-index: 60;
+    z-index: 150;
     width: 18rem;
 
     contain: layout paint style;

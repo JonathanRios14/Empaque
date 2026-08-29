@@ -61,6 +61,21 @@ class VinetaRegistroExportTest extends TestCase
 
             $this->assertStringContainsString('name="Resumen agrupado"', $workbook);
             $this->assertStringContainsString('name="Detalle"', $workbook);
+            $this->assertStringContainsString('name="Resumen Anillado"', $workbook);
+            $this->assertStringContainsString('name="Resumen Rezago"', $workbook);
+            $this->assertStringContainsString('name="Resumen Llenado"', $workbook);
+            $this->assertStringNotContainsString('name="Resumen tiempo diario"', $workbook);
+
+            $anilladoRows = $this->xlsxRows((string) $zip->getFromName('xl/worksheets/sheet3.xml'));
+            $rezagoRows = $this->xlsxRows((string) $zip->getFromName('xl/worksheets/sheet4.xml'));
+
+            $this->assertSame('Empleado', $anilladoRows[0][0] ?? null);
+            $this->assertSame('Horas de tarea', $anilladoRows[0][3] ?? null);
+
+            $this->assertStringContainsString('REPORTE DE REZAGO', (string) ($rezagoRows[0][0] ?? ''));
+            $this->assertSame('Etiquetas de fila', $rezagoRows[2][0] ?? null);
+            $this->assertSame('Suma de Cantidad Procesada', $rezagoRows[2][1] ?? null);
+            $this->assertSame('Suma de Horas Trabajadas', $rezagoRows[2][2] ?? null);
 
             $subtotal = collect($rows)->first(fn (array $row) => ($row[3] ?? null) === 'Subtotal producto'
                 && ($row[1] ?? null) === 'AGUILAR VALLADARES NALLELY MARIBEL'

@@ -26,6 +26,7 @@
 
         $watch('sidebarOpen', value => {
             localStorage.setItem('sidebarOpen', value);
+            window.dispatchEvent(new CustomEvent('sidebar-toggled', { detail: { open: value } }));
         });
 
         requestAnimationFrame(() => {
@@ -262,6 +263,21 @@
             <span class="sidebar-label">Viñetas</span>
         </a>
 
+        {{-- Viñetas por orden --}}
+        <a href="{{ route('vinetas-por-orden.index') }}"
+           data-sidebar-tooltip="Viñetas por orden"
+           class="sidebar-nav-item w-full flex items-center gap-3 px-4 py-3 rounded-l-2xl transition
+           {{ request()->routeIs('vinetas-por-orden.*') ? 'sidebar-active' : 'sidebar-link' }}">
+
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 min-w-5" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            </svg>
+
+            <span class="sidebar-label">Viñetas por orden</span>
+        </a>
+
         <a href="{{ route('vineta-registros.index') }}"
            data-sidebar-tooltip="Viñetas registradas"
            class="sidebar-nav-item w-full flex items-center gap-3 px-4 py-3 rounded-l-2xl transition
@@ -274,6 +290,21 @@
             </svg>
 
             <span class="sidebar-label">Viñetas registradas</span>
+        </a>
+
+        {{-- Costos empaque --}}
+        <a href="{{ route('costos-empaque.index') }}"
+           data-sidebar-tooltip="Costos empaque"
+           class="sidebar-nav-item w-full flex items-center gap-3 px-4 py-3 rounded-l-2xl transition
+           {{ request()->routeIs('costos-empaque.*') ? 'sidebar-active' : 'sidebar-link' }}">
+
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 min-w-5" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+
+            <span class="sidebar-label">Costos empaque</span>
         </a>
 
         {{-- Mi perfil --}}

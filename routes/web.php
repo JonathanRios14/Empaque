@@ -6,9 +6,11 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CatalogoController;
+use App\Http\Controllers\CostosEmpaqueController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmpleadoController;
 use App\Http\Controllers\VinetaController;
+use App\Http\Controllers\VinetaPorOrdenController;
 use App\Http\Controllers\VinetaRegistroController;
 
 /*
@@ -122,6 +124,9 @@ Route::post('/catalogos/productos/sincronizar', [CatalogoController::class, 'sin
     ->middleware('permission:productos.ver')
     ->name('catalogos.productos.show');
 
+Route::post('/catalogos/productos/{producto}/actividades/{actividad}/toggle', [CatalogoController::class, 'toggleActividadProducto'])
+    ->name('catalogos.productos.actividades.toggle');
+
     Route::get('/catalogos/marcas', [CatalogoController::class, 'marcas'])
     ->middleware('permission:marcas.ver')
     ->name('catalogos.marcas.index');
@@ -137,6 +142,10 @@ Route::get('/catalogos/capas', [CatalogoController::class, 'capas'])
 Route::get('/catalogos/actividades', [CatalogoController::class, 'actividades'])
     ->middleware('permission:actividades.ver')
     ->name('catalogos.actividades.index');
+
+Route::post('/catalogos/actividades/sincronizar', [CatalogoController::class, 'sincronizarActividades'])
+    ->name('catalogos.actividades.sincronizar');
+
 
     Route::get('/catalogos/empresas', [CatalogoController::class, 'empresas'])
     ->middleware('permission:catalogos.ver')
@@ -160,6 +169,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/vinetas', [VinetaController::class, 'index'])
         ->name('vinetas.index');
+
+    Route::get('/vinetas-por-orden', [VinetaPorOrdenController::class, 'index'])
+        ->name('vinetas-por-orden.index');
 
     Route::get('/vinetas-registradas', [VinetaRegistroController::class, 'index'])
         ->name('vineta-registros.index');
@@ -190,6 +202,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::delete('/vinetas-registradas/{vinetaRegistro}', [VinetaRegistroController::class, 'destroy'])
         ->name('vineta-registros.destroy');
+
+    Route::get('/costos-empaque', [CostosEmpaqueController::class, 'index'])
+        ->name('costos-empaque.index');
 
     Route::get('/vinetas/notificaciones', [VinetaController::class, 'notificaciones'])
         ->name('vinetas.notificaciones');

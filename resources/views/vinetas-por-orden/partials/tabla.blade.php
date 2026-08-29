@@ -1,11 +1,11 @@
 @php
     $sortLink = function ($campo) {
-        $ordenActual = request('orden', 'api_id');
+        $ordenActual = request('orden', 'id');
         $direccionActual = request('direccion', 'desc');
 
         $nuevaDireccion = ($ordenActual === $campo && $direccionActual === 'asc') ? 'desc' : 'asc';
 
-        return route('vinetas.index', array_merge(request()->query(), [
+        return route('vinetas-por-orden.index', array_merge(request()->query(), [
             'orden' => $campo,
             'direccion' => $nuevaDireccion,
             'page' => null,
@@ -13,7 +13,7 @@
     };
 
     $sortIcon = function ($campo) {
-        $ordenActual = request('orden', 'api_id');
+        $ordenActual = request('orden', 'id');
         $direccionActual = request('direccion', 'desc');
 
         if ($ordenActual !== $campo) {
@@ -24,7 +24,7 @@
     };
 @endphp
 
-<div id="vinetasTableInner" class="productos-table-inner relative">
+<div id="vinetasPorOrdenTableInner" class="productos-table-inner relative">
     <div class="productos-table-scroll catalogo-table-scroll vinetas-table-scroll">
         <table class="vinetas-table w-full text-sm">
             <thead class="theme-table-head productos-sticky-head bg-[#eff6ff] text-[#0f172a]">
@@ -38,10 +38,18 @@
                     </th>
 
                     <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
-                        <a href="{{ $sortLink('api_id') }}"
+                        <a href="{{ $sortLink('id') }}"
                            class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
-                             ID API
-                             <span class="text-xs">{{ $sortIcon('api_id') }}</span>
+                             ID
+                             <span class="text-xs">{{ $sortIcon('id') }}</span>
+                        </a>
+                    </th>
+
+                    <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
+                        <a href="{{ $sortLink('codigo_qr') }}"
+                           class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
+                             Código QR
+                             <span class="text-xs">{{ $sortIcon('codigo_qr') }}</span>
                         </a>
                     </th>
 
@@ -148,19 +156,11 @@
                             <span class="text-xs">{{ $sortIcon('estado') }}</span>
                         </a>
                     </th>
-
-                    <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
-                        <a href="{{ $sortLink('impreso') }}"
-                           class="vinetas-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
-                            Impreso
-                            <span class="text-xs">{{ $sortIcon('impreso') }}</span>
-                        </a>
-                    </th>
                 </tr>
             </thead>
 
             <tbody class="divide-y theme-divide">
-                @forelse ($vinetas as $vineta)
+                @forelse ($vinetasPorOrden as $vineta)
                     <tr class="vinetas-table-row theme-row transition">
                         <td class="px-4 py-3 whitespace-nowrap theme-text">
                             {{ $vineta->fecha ? date('d/m/Y', strtotime((string) $vineta->fecha)) : 'Sin fecha' }}
@@ -168,7 +168,13 @@
 
                         <td class="px-4 py-3 whitespace-nowrap">
                             <span class="theme-badge vinetas-id-badge inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border">
-                                #{{ $vineta->api_id }}
+                                #{{ $vineta->id }}
+                            </span>
+                        </td>
+
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="theme-badge inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border text-[#2563eb] bg-[#eff6ff]">
+                                {{ $vineta->codigo_qr ?? 'N/A' }}
                             </span>
                         </td>
 
@@ -225,37 +231,26 @@
                                 {{ $vineta->estado ?? 'N/A' }}
                             </span>
                         </td>
-
-                        <td class="px-4 py-3 whitespace-nowrap">
-                            @if ($vineta->impreso)
-                                <span class="theme-badge vinetas-print-badge is-printed inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border">
-                                    Sí
-                                </span>
-                            @else
-                                <span class="theme-badge vinetas-print-badge is-not-printed inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border">
-                                    No
-                                </span>
-                            @endif
-                        </td>
                     </tr>
                 @empty
                     <tr>
                         <td colspan="16" class="px-4 py-12 text-center">
                             <p class="theme-title font-bold">
-                                No hay viñetas para mostrar
+                                No hay viñetas por orden para mostrar
                             </p>
 
                             <p class="theme-text text-sm mt-1">
-                                Sincroniza la API o cambia los filtros de búsqueda.
+                                No se encontraron registros con los filtros actuales.
                             </p>
                         </td>
                     </tr>
                 @endforelse
+
             </tbody>
         </table>
     </div>
 
-    <div id="vinetasFloatingScroll"
+    <div id="vinetasPorOrdenFloatingScroll"
          class="vinetas-floating-scrollbar"
          aria-hidden="true">
         <div class="vinetas-floating-scrollbar-inner"></div>
@@ -265,16 +260,16 @@
         <div class="flex flex-col sm:flex-row sm:items-center gap-3">
             <p class="theme-text text-sm text-gray-500">
                 Mostrando
-                <span class="theme-title font-semibold text-[#3b2818]">{{ $vinetas->firstItem() ?? 0 }}</span>
+                <span class="theme-title font-semibold text-[#3b2818]">{{ $vinetasPorOrden->firstItem() ?? 0 }}</span>
                 a
-                <span class="theme-title font-semibold text-[#3b2818]">{{ $vinetas->lastItem() ?? 0 }}</span>
+                <span class="theme-title font-semibold text-[#3b2818]">{{ $vinetasPorOrden->lastItem() ?? 0 }}</span>
                 de
-                <span class="theme-title font-semibold text-[#3b2818]">{{ $vinetas->total() }}</span>
-                viñeta(s)
+                <span class="theme-title font-semibold text-[#3b2818]">{{ $vinetasPorOrden->total() }}</span>
+                viñeta(s) por orden
             </p>
 
             <form method="GET"
-                  action="{{ route('vinetas.index') }}"
+                  action="{{ route('vinetas-por-orden.index') }}"
                   class="per-page-control vinetas-ajax-per-page-form">
                 @foreach(request()->except('per_page', 'page') as $key => $value)
                     @if(is_array($value))
@@ -302,7 +297,7 @@
         </div>
 
         <div class="pagination-cafe vinetas-ajax-pagination">
-            {{ $vinetas->onEachSide(1)->links('pagination.cafe') }}
+            {{ $vinetasPorOrden->onEachSide(1)->links('pagination.cafe') }}
         </div>
     </div>
 </div>

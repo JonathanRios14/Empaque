@@ -12,14 +12,17 @@ class Actividad extends Model
         'api_id_actividad',
         'codigo_actividad',
         'nombre',
+        'precio_mo',
     ];
+
 
     public function productos()
     {
         return $this->belongsToMany(Producto::class, 'actividad_producto')
-            ->withPivot('tipo_empaque_id', 'precio_mo')
+            ->withPivot('tipo_empaque_id', 'precio_mo', 'activo', 'origen', 'ultimo_escaneo_en')
             ->withTimestamps();
     }
+
 
     public function vinetaRegistros()
     {

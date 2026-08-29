@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Actividad;
 use App\Models\Empleado;
 use App\Models\Producto;
+use App\Models\TipoEmpaque;
 use App\Models\Vineta;
+use App\Models\VinetaPorOrden;
 use App\Models\VinetaRegistro;
 use App\Support\EmployeeProductionGroup;
 use Carbon\Carbon;
@@ -289,31 +291,46 @@ class VinetaRegistroController extends Controller
             ]);
         }
 
-        $grupoActividad = $this->grupoActividadProceso($actividadNombre, $actividadTipoEmpaque, $actividadCodigo);
+        $isVinetaPorOrden = $this->isVinetaPorOrden($vineta);
 
-        if ($grupoActividad && $this->vinetaTieneGrupoProceso($vineta, $grupoActividad)) {
-            throw ValidationException::withMessages([
-                'actividad_nombre' => 'Esta viñeta ya tiene '.$this->grupoActividadProcesoLabel($grupoActividad).' registrado.',
-            ]);
+        if (! $isVinetaPorOrden) {
+            $grupoActividad = $this->grupoActividadProceso($actividadNombre, $actividadTipoEmpaque, $actividadCodigo);
+
+            if ($grupoActividad && $grupoActividad !== 'llenado' && $this->vinetaTieneGrupoProceso($vineta, $grupoActividad)) {
+                throw ValidationException::withMessages([
+                    'actividad_nombre' => 'Esta viñeta ya tiene '.$this->grupoActividadProcesoLabel($grupoActividad).' registrado.',
+                ]);
+            }
+
+            $duplicado = $this->registroActivoExistente(
+                $vineta,
+                $registradoEn,
+                $actividad,
+                $actividadApiId,
+                $actividadCodigo,
+                $actividadNombre
+            );
+
+            if ($duplicado) {
+                return response()->json([
+                    'message' => 'Ya existe un registro activo para esta viñeta, actividad y fecha.',
+                    'registro' => $this->registroPayload($duplicado),
+                    'resumen_diario' => $this->resumenDiarioPayload($duplicado),
+                ], 409);
+            }
+
+            if ($this->vinetaTieneActividadProceso($vineta, $actividad, $actividadApiId, $actividadCodigo, $actividadNombre)) {
+                throw ValidationException::withMessages([
+                    'actividad_nombre' => 'Esta viñeta ya tiene la actividad '.$actividadNombre.' registrada.',
+                ]);
+            }
         }
 
         $cantidadActividades = $this->resolveCantidadActividades($data, $actividadNombre);
-        $duplicado = $this->registroActivoExistente(
-            $vineta,
-            $registradoEn,
-            $actividad,
-            $actividadApiId,
-            $actividadCodigo,
-            $actividadNombre
-        );
 
-        if ($duplicado) {
-            return response()->json([
-                'message' => 'Ya existe un registro activo para esta viñeta, actividad y fecha.',
-                'registro' => $this->registroPayload($duplicado),
-                'resumen_diario' => $this->resumenDiarioPayload($duplicado),
-            ], 409);
-        }
+        $codigoVinetaGenerado = $isVinetaPorOrden
+            ? $this->generarSiguienteIdOrden()
+            : $this->codigoVineta($vineta);
 
         $registro = DB::transaction(function () use (
             $request,
@@ -328,7 +345,9 @@ class VinetaRegistroController extends Controller
             $actividadNombre,
             $actividadTipoEmpaque,
             $precioMo,
-            $cantidadActividades
+            $cantidadActividades,
+            $isVinetaPorOrden,
+            $codigoVinetaGenerado
         ) {
             $payload = [
                 'vineta_id' => $vineta->id,
@@ -336,8 +355,8 @@ class VinetaRegistroController extends Controller
                 'actividad_id' => $actividad?->id,
                 'empleado_id' => $empleado->id,
                 'registrado_por_user_id' => $request->user()?->id,
-                'codigo_vineta' => $this->codigoVineta($vineta),
-                'vineta_api_id' => $vineta->api_id,
+                'codigo_vineta' => $codigoVinetaGenerado,
+                'vineta_api_id' => $isVinetaPorOrden ? null : $vineta->api_id,
                 'id_pendiente_empaque' => $vineta->id_pendiente_empaque,
                 'id_detalle_programacion' => $vineta->id_detalle_programacion,
                 'vineta_fecha' => $vineta->fecha,
@@ -375,10 +394,28 @@ class VinetaRegistroController extends Controller
                     : ($this->inputInt($data, 'minutos_trabajados') ?? 0);
             }
 
-            return VinetaRegistro::create($payload);
+            $registro = VinetaRegistro::create($payload);
+
+            if ($producto && $actividad) {
+                $tipoEmpaqueModel = null;
+                if ($actividadTipoEmpaque) {
+                    $tipoEmpaqueModel = TipoEmpaque::whereRaw('LOWER(TRIM(nombre)) = ?', [strtolower(trim($actividadTipoEmpaque))])->first();
+                }
+
+                app(\App\Services\ActividadApiService::class)->asociarActividadDeEscaneo(
+                    $producto,
+                    $actividad,
+                    $tipoEmpaqueModel?->id ?? $producto->tipo_empaque_id,
+                    (float) $precioMo,
+                    $registradoEn
+                );
+            }
+
+            return $registro;
         });
 
         return response()->json([
+
             'message' => 'Registro de viñeta guardado correctamente.',
             'registro' => $this->registroPayload($registro),
             'resumen_diario' => $this->resumenDiarioPayload($registro),
@@ -536,44 +573,63 @@ class VinetaRegistroController extends Controller
             ]);
         }
 
-        if ($actualizaActividad) {
-            $grupoActividad = $this->grupoActividadProceso(
-                $actividadNombre,
-                $actividadTipoEmpaque,
-                $actividadCodigo
-            );
-
-            if (
-                $grupoActividad
-                && $this->vinetaTieneGrupoProceso($vinetaRegistro->vineta, $grupoActividad, $vinetaRegistro->id)
-            ) {
-                throw ValidationException::withMessages([
-                    'actividad_nombre' => 'Esta viñeta ya tiene '.$this->grupoActividadProcesoLabel($grupoActividad).' registrado.',
-                ]);
-            }
-        }
-
         $hora = $this->normalizeTime($data['hora_registro']);
         $registradoEn = Carbon::createFromFormat(
             'Y-m-d H:i:s',
             $data['fecha_registro'].' '.$hora,
             $this->timezone
         );
-        $duplicado = $this->registroActivoExistente(
-            $vinetaRegistro->vineta,
-            $registradoEn,
-            $actividad,
-            $actividadApiId,
-            $actividadCodigo,
-            $actividadNombre,
-            $vinetaRegistro->id
-        );
+        $isVinetaPorOrden = $vinetaRegistro->vineta ? $this->isVinetaPorOrden($vinetaRegistro->vineta) : false;
 
-        if ($duplicado) {
-            return response()->json([
-                'message' => 'Ya existe otro registro activo para esta viñeta, actividad y fecha.',
-                'registro' => $this->registroPayload($duplicado),
-            ], 409);
+        if (! $isVinetaPorOrden) {
+            $duplicado = $this->registroActivoExistente(
+                $vinetaRegistro->vineta,
+                $registradoEn,
+                $actividad,
+                $actividadApiId,
+                $actividadCodigo,
+                $actividadNombre,
+                $vinetaRegistro->id
+            );
+
+            if ($duplicado) {
+                return response()->json([
+                    'message' => 'Ya existe otro registro activo para esta viñeta, actividad y fecha.',
+                    'registro' => $this->registroPayload($duplicado),
+                    'resumen_diario' => $this->resumenDiarioPayload($duplicado),
+                ], 409);
+            }
+
+            if ($actualizaActividad) {
+                $grupoActividad = $this->grupoActividadProceso(
+                    $actividadNombre,
+                    $actividadTipoEmpaque,
+                    $actividadCodigo
+                );
+
+                if (
+                    $grupoActividad
+                    && $grupoActividad !== 'llenado'
+                    && $this->vinetaTieneGrupoProceso($vinetaRegistro->vineta, $grupoActividad, $vinetaRegistro->id)
+                ) {
+                    throw ValidationException::withMessages([
+                        'actividad_nombre' => 'Esta viñeta ya tiene '.$this->grupoActividadProcesoLabel($grupoActividad).' registrado.',
+                    ]);
+                }
+
+                if ($this->vinetaTieneActividadProceso(
+                    $vinetaRegistro->vineta,
+                    $actividad,
+                    $actividadApiId,
+                    $actividadCodigo,
+                    $actividadNombre,
+                    $vinetaRegistro->id
+                )) {
+                    throw ValidationException::withMessages([
+                        'actividad_nombre' => 'Esta viñeta ya tiene la actividad '.$actividadNombre.' registrada.',
+                    ]);
+                }
+            }
         }
 
         $payload = [
@@ -857,6 +913,12 @@ class VinetaRegistroController extends Controller
             'anillado' => null,
             'llenado' => null,
         ];
+        $actividadesPorGrupo = [
+            'rezago' => [],
+            'anillado' => [],
+            'llenado' => [],
+        ];
+        $registrosPayload = [];
 
         foreach ($registros as $registro) {
             $grupo = $this->grupoActividadProceso(
@@ -865,23 +927,39 @@ class VinetaRegistroController extends Controller
                 $registro->actividad_codigo
             );
 
+            $payload = [
+                'id' => $registro->id,
+                'actividad_id' => $registro->actividad_id,
+                'actividad_api_id' => $registro->actividad_api_id,
+                'actividad_codigo' => $registro->actividad_codigo,
+                'actividad_nombre' => $registro->actividad_nombre,
+                'grupo' => $grupo,
+                'empleado' => $registro->empleado_nombre,
+                'empleado_codigo' => $registro->empleado_codigo,
+                'fecha' => $registro->fechaHoraRegistroTexto(),
+            ];
+
             if ($grupo && array_key_exists($grupo, $grupos)) {
                 $grupos[$grupo] = $registro;
+                $actividadesPorGrupo[$grupo][] = $payload;
             }
+
+            $registrosPayload[] = $payload;
         }
 
         return [
             'puede_llenar' => true,
             'mensaje_bloqueo_llenado' => null,
             'pasos' => [
-                $this->pasoProcesoPayload('rezago', 'Rezago', $grupos['rezago'], true),
-                $this->pasoProcesoPayload('anillado', 'Anillado', $grupos['anillado'], false),
-                $this->pasoProcesoPayload('llenado', 'Llenado', $grupos['llenado'], false),
+                $this->pasoProcesoPayload('rezago', 'Rezago', $grupos['rezago'], true, $actividadesPorGrupo['rezago']),
+                $this->pasoProcesoPayload('anillado', 'Anillado', $grupos['anillado'], false, $actividadesPorGrupo['anillado']),
+                $this->pasoProcesoPayload('llenado', 'Llenado', $grupos['llenado'], false, $actividadesPorGrupo['llenado']),
             ],
+            'registros' => $registrosPayload,
         ];
     }
 
-    private function pasoProcesoPayload(string $key, string $label, ?VinetaRegistro $registro, bool $opcional): array
+    private function pasoProcesoPayload(string $key, string $label, ?VinetaRegistro $registro, bool $opcional, array $actividades = []): array
     {
         return [
             'key' => $key,
@@ -891,7 +969,47 @@ class VinetaRegistroController extends Controller
             'actividad' => $registro?->actividad_nombre,
             'empleado' => $registro?->empleado_nombre,
             'fecha' => $registro?->fechaHoraRegistroTexto(),
+            'actividades' => $actividades,
         ];
+    }
+
+    private function vinetaTieneActividadProceso(
+        Vineta $vineta,
+        ?Actividad $actividad,
+        ?int $actividadApiId,
+        ?string $actividadCodigo,
+        ?string $actividadNombre,
+        ?int $exceptRegistroId = null
+    ): ?VinetaRegistro {
+        return $this->registrosProcesoVineta($vineta)
+            ->filter(fn (VinetaRegistro $r) => ! $exceptRegistroId || $r->id !== $exceptRegistroId)
+            ->first(function (VinetaRegistro $r) use ($actividad, $actividadApiId, $actividadCodigo, $actividadNombre) {
+                if ($actividad?->id && $r->actividad_id === $actividad->id) {
+                    return true;
+                }
+
+                if ($actividadApiId && $r->actividad_api_id === $actividadApiId) {
+                    return true;
+                }
+
+                if (
+                    $actividadCodigo
+                    && $r->actividad_codigo
+                    && strtolower(trim((string) $r->actividad_codigo)) === strtolower(trim((string) $actividadCodigo))
+                ) {
+                    return true;
+                }
+
+                if (
+                    $actividadNombre
+                    && $r->actividad_nombre
+                    && strtolower(trim((string) $r->actividad_nombre)) === strtolower(trim((string) $actividadNombre))
+                ) {
+                    return true;
+                }
+
+                return false;
+            });
     }
 
     private function vinetaTieneGrupoProceso(
@@ -927,6 +1045,7 @@ class VinetaRegistroController extends Controller
             default => 'este proceso',
         };
     }
+
 
     private function registrosProcesoVineta(Vineta $vineta)
     {
@@ -1158,29 +1277,35 @@ class VinetaRegistroController extends Controller
         }
 
         if (
+            str_contains($texto, 'llenad')
+            || str_contains($texto, 'llenado')
+            || str_contains($texto, 'kretek')
+            || str_contains($texto, 'petaca')
+            || str_contains($texto, 'sampler')
+            || str_contains($texto, 'display')
+            || str_contains($texto, 'bolsa')
+            || str_contains($texto, 'sellado')
+            || (str_contains($texto, 'sell') && ! str_contains($texto, 'celof') && ! str_contains($texto, 'anill'))
+            || (str_contains($texto, 'paquete') && str_contains($texto, 'tubo'))
+        ) {
+            return 'llenado';
+        }
+
+        if (
             str_contains($texto, 'anill')
             || str_contains($texto, 'anil')
             || str_contains($texto, 'celof')
             || str_contains($texto, 'sello')
-            || str_contains($texto, 'sell')
             || str_contains($texto, 'esponj')
             || str_contains($texto, 'lamina')
         ) {
             return 'anillado';
         }
 
-        if (
-            str_contains($texto, 'llenad')
-            || str_contains($texto, 'llenado')
-            || str_contains($texto, 'petaca')
-            || str_contains($texto, 'sampler')
-            || (str_contains($texto, 'paquete') && str_contains($texto, 'tubo'))
-        ) {
-            return 'llenado';
-        }
-
         return null;
     }
+
+
 
     private function normalizarTextoProceso(string $value): string
     {
@@ -1437,4 +1562,41 @@ class VinetaRegistroController extends Controller
 
         return null;
     }
+
+    private function isVinetaPorOrden(Vineta $vineta): bool
+    {
+        $idPendiente = strtolower(trim((string) $vineta->id_pendiente_empaque));
+        if (str_starts_with($idPendiente, 'or-') || str_starts_with($idPendiente, 'o-')) {
+            return true;
+        }
+
+        return VinetaPorOrden::query()
+            ->whereRaw('LOWER(codigo_qr) = ?', [$idPendiente])
+            ->exists();
+    }
+
+    private function generarSiguienteIdOrden(): string
+    {
+        $codigos = DB::table('vineta_registros')
+            ->where(function ($q) {
+                $q->where('codigo_vineta', 'like', 'o-%')
+                  ->orWhere('codigo_vineta', 'like', 'O-%')
+                  ->orWhere('codigo_vineta', 'like', 'or-%')
+                  ->orWhere('codigo_vineta', 'like', 'OR-%');
+            })
+            ->pluck('codigo_vineta');
+
+        $maxNum = 0;
+        foreach ($codigos as $cod) {
+            if (preg_match('/^o(?:r)?-(\d+)$/i', trim((string) $cod), $m)) {
+                $num = (int) $m[1];
+                if ($num > $maxNum) {
+                    $maxNum = $num;
+                }
+            }
+        }
+
+        return 'o-' . ($maxNum + 1);
+    }
 }
+

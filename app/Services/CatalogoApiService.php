@@ -243,8 +243,6 @@ class CatalogoApiService
 
     private function sincronizarActividades(Producto $producto, array $actividades): void
     {
-        $producto->actividades()->detach();
-        $pivotes = [];
         $now = now();
 
         foreach ($actividades as $actividadItem) {
@@ -259,20 +257,37 @@ class CatalogoApiService
                 $actividadItem['tipo_empaque'] ?? null
             );
 
-            $pivotes[] = [
-                'producto_id' => $producto->id,
-                'actividad_id' => $actividad->id,
-                'tipo_empaque_id' => $tipoEmpaqueActividad?->id,
-                'precio_mo' => $actividadItem['precio_mo'] ?? 0,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ];
-        }
+            $tipoEmpaqueId = $tipoEmpaqueActividad?->id;
+            $precioMo = $actividadItem['precio_mo'] ?? 0;
 
-        if ($pivotes !== []) {
-            DB::table('actividad_producto')->insertOrIgnore($pivotes);
+            $existente = DB::table('actividad_producto')
+                ->where('producto_id', $producto->id)
+                ->where('actividad_id', $actividad->id)
+                ->when($tipoEmpaqueId !== null, fn ($q) => $q->where('tipo_empaque_id', $tipoEmpaqueId))
+                ->first();
+
+            if ($existente) {
+                DB::table('actividad_producto')
+                    ->where('id', $existente->id)
+                    ->update([
+                        'precio_mo' => $precioMo,
+                        'updated_at' => $now,
+                    ]);
+            } else {
+                DB::table('actividad_producto')->insertOrIgnore([
+                    'producto_id' => $producto->id,
+                    'actividad_id' => $actividad->id,
+                    'tipo_empaque_id' => $tipoEmpaqueId,
+                    'precio_mo' => $precioMo,
+                    'activo' => true,
+                    'origen' => 'api',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
         }
     }
+
 
     private function guardarActividad(array $actividadItem): Actividad
     {

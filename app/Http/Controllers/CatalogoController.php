@@ -94,27 +94,48 @@ class CatalogoController extends Controller
         $query->where('productos.item', 'like', "%{$request->item}%");
     }
 
-    if ($request->filled('marca_id')) {
+    if ($request->filled('marca')) {
+        $marca = trim((string) $request->marca);
+        $query->whereHas('marca', function ($q) use ($marca) {
+            $q->where('nombre', 'like', "%{$marca}%");
+        });
+    } elseif ($request->filled('marca_id')) {
         $query->where('productos.marca_id', $request->marca_id);
     }
+
     if ($request->filled('empresa_id')) {
         $query->where('productos.empresa_id', $request->empresa_id);
     }
 
-    if ($request->filled('vitola_id')) {
+    if ($request->filled('vitola')) {
+        $vitola = trim((string) $request->vitola);
+        $query->whereHas('vitola', function ($q) use ($vitola) {
+            $q->where('nombre', 'like', "%{$vitola}%");
+        });
+    } elseif ($request->filled('vitola_id')) {
         $query->where('productos.vitola_id', $request->vitola_id);
     }
 
-    if ($request->filled('capa_id')) {
+    if ($request->filled('capa')) {
+        $capa = trim((string) $request->capa);
+        $query->whereHas('capa', function ($q) use ($capa) {
+            $q->where('nombre', 'like', "%{$capa}%");
+        });
+    } elseif ($request->filled('capa_id')) {
         $query->where('productos.capa_id', $request->capa_id);
     }
 
-    if ($request->filled('tipo_empaque_id')) {
+    if ($request->filled('tipo_empaque')) {
+        $tipoEmpaque = trim((string) $request->tipo_empaque);
+        $query->whereHas('tipoEmpaque', function ($q) use ($tipoEmpaque) {
+            $q->where('nombre', 'like', "%{$tipoEmpaque}%");
+        });
+    } elseif ($request->filled('tipo_empaque_id')) {
         $query->where('productos.tipo_empaque_id', $request->tipo_empaque_id);
     }
 
     if ($request->filled('presentacion')) {
-        $presentacion = $request->presentacion;
+        $presentacion = trim((string) $request->presentacion);
         $query->whereHas('presentacion', function ($q) use ($presentacion) {
             $q->where('nombre', 'like', "%{$presentacion}%");
         });
@@ -122,7 +143,13 @@ class CatalogoController extends Controller
         $query->where('productos.presentacion_id', $request->presentacion_id);
     }
 
-    if ($request->filled('actividad_id')) {
+    if ($request->filled('actividad')) {
+        $actividad = trim((string) $request->actividad);
+        $query->whereHas('actividades', function ($q) use ($actividad) {
+            $q->where('actividades.nombre', 'like', "%{$actividad}%")
+              ->orWhere('actividades.codigo_actividad', 'like', "%{$actividad}%");
+        });
+    } elseif ($request->filled('actividad_id')) {
         $query->whereHas('actividades', function ($q) use ($request) {
             $q->where('actividades.id', $request->actividad_id);
         });
@@ -208,11 +235,17 @@ public function showProducto(Producto $producto)
         'capa',
         'presentacion',
         'tipoEmpaque',
-        'actividades',
+        'actividades' => function ($query) {
+            $query->orderByRaw('actividad_producto.activo DESC')
+                ->orderByRaw('actividad_producto.ultimo_escaneo_en DESC')
+                ->orderByRaw('actividad_producto.updated_at DESC')
+                ->orderBy('actividades.nombre', 'asc');
+        },
     ]);
 
     return view('catalogos.productos.show', compact('producto'));
 }
+
 
 public function marcas(Request $request)
 {
@@ -325,6 +358,7 @@ public function actividades(Request $request)
     }
 
     $preciosSubquery = DB::table('actividad_producto')
+        ->where('precio_mo', '>', 0)
         ->select([
             'actividad_id',
             DB::raw('MIN(precio_mo) as precio_min'),
@@ -348,6 +382,7 @@ public function actividades(Request $request)
                 $query->select(DB::raw('COUNT(DISTINCT productos.id)'));
             }
         ]);
+
 
     if ($request->filled('buscar')) {
         $buscar = $request->buscar;
@@ -479,5 +514,76 @@ public function tipoEmpaques(Request $request)
             ));
     }
 
-    
+    public function sincronizarActividades(\App\Services\ActividadApiService $actividadApiService)
+    {
+        $resultado = $actividadApiService->sincronizar();
+
+        if (! $resultado['ok']) {
+            return redirect()
+                ->route('catalogos.actividades.index')
+                ->with('error', $resultado['mensaje']);
+        }
+
+        return redirect()
+            ->route('catalogos.actividades.index')
+            ->with('success', sprintf(
+                '%s Total: %s. Nuevos: %s. Actualizados: %s. Sin cambios: %s. Vinculados de escaneos: %s.',
+                $resultado['mensaje'],
+                $resultado['total'] ?? 0,
+                $resultado['nuevos'] ?? 0,
+                $resultado['actualizados'] ?? 0,
+                $resultado['sin_cambios'] ?? 0,
+                $resultado['vinculados_escaneos'] ?? 0,
+            ));
+    }
+
+    public function toggleActividadProducto(Producto $producto, Actividad $actividad, Request $request)
+    {
+        $tipoEmpaqueId = $request->input('tipo_empaque_id');
+
+        $query = DB::table('actividad_producto')
+            ->where('producto_id', $producto->id)
+            ->where('actividad_id', $actividad->id);
+
+        if ($tipoEmpaqueId) {
+            $query->where('tipo_empaque_id', $tipoEmpaqueId);
+        }
+
+        $pivote = $query->first();
+
+        if (! $pivote) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => 'No se encontró la actividad asociada a este producto.',
+                ], 404);
+            }
+
+            return redirect()->back()->with('error', 'No se encontró la actividad asociada.');
+        }
+
+        $nuevoEstado = ! (bool) $pivote->activo;
+
+        DB::table('actividad_producto')
+            ->where('id', $pivote->id)
+            ->update([
+                'activo' => $nuevoEstado,
+                'updated_at' => now(),
+            ]);
+
+        $mensaje = $nuevoEstado
+            ? "Actividad '{$actividad->nombre}' activada para este producto."
+            : "Actividad '{$actividad->nombre}' desactivada para este producto.";
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'ok' => true,
+                'activo' => $nuevoEstado,
+                'message' => $mensaje,
+            ]);
+        }
+
+        return redirect()->back()->with('success', $mensaje);
+    }
 }
+

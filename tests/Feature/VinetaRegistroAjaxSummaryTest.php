@@ -74,6 +74,7 @@ class VinetaRegistroAjaxSummaryTest extends TestCase
             ->assertSee('Empleado Uno')
             ->assertDontSee('Empleado Dos')
             ->assertSeeInOrder([
+                'Item',
                 'Presentación',
                 'Código de producto',
                 'Marca',
@@ -81,7 +82,6 @@ class VinetaRegistroAjaxSummaryTest extends TestCase
                 'Vitola',
                 'Capa',
                 'Tipo de empaque',
-                'Item',
                 'Orden del sistema',
                 'Orden del cliente',
             ])
@@ -424,8 +424,64 @@ class VinetaRegistroAjaxSummaryTest extends TestCase
         }
     }
 
+    public function test_it_displays_and_sorts_by_responsable_column(): void
+    {
+        $user = User::factory()->create(['name' => 'Supervisor Principal']);
+        $vinetaA = Vineta::create(['api_id' => 4001, 'tipo_empaque' => 'Caja', 'impreso' => true]);
+        $vinetaZ = Vineta::create(['api_id' => 4002, 'tipo_empaque' => 'Caja', 'impreso' => true]);
+
+        $this->createRegistro($vinetaA, [
+            'empleado_codigo' => 'EMP-RESP-A',
+            'empleado_nombre' => 'Empleado A',
+            'registrado_por_nombre' => 'Ana Garcia',
+            'cantidad_puros' => 10,
+            'cantidad_cajones' => 1,
+            'cantidad_actividades' => 1,
+        ]);
+
+        $this->createRegistro($vinetaZ, [
+            'empleado_codigo' => 'EMP-RESP-Z',
+            'empleado_nombre' => 'Empleado Z',
+            'registrado_por_nombre' => 'Zulema Romero',
+            'cantidad_puros' => 10,
+            'cantidad_cajones' => 1,
+            'cantidad_actividades' => 1,
+        ]);
+
+        $response = $this->actingAs($user)->get('/vinetas-registradas');
+        $response->assertOk();
+        $response->assertSee('Responsable');
+        $response->assertSee('Ana Garcia');
+        $response->assertSee('Zulema Romero');
+
+        $ascResponse = $this->actingAs($user)->get(route('vineta-registros.index', [
+            'orden' => 'registrado_por_nombre',
+            'direccion' => 'asc',
+        ]));
+        $ascResponse->assertOk();
+        $ascBody = $this->tableBody($ascResponse->getContent());
+        $posA = strpos($ascBody, 'Ana Garcia');
+        $posZ = strpos($ascBody, 'Zulema Romero');
+        $this->assertNotFalse($posA);
+        $this->assertNotFalse($posZ);
+        $this->assertTrue($posA < $posZ);
+
+        $descResponse = $this->actingAs($user)->get(route('vineta-registros.index', [
+            'orden' => 'registrado_por_nombre',
+            'direccion' => 'desc',
+        ]));
+        $descResponse->assertOk();
+        $descBody = $this->tableBody($descResponse->getContent());
+        $posADesc = strpos($descBody, 'Ana Garcia');
+        $posZDesc = strpos($descBody, 'Zulema Romero');
+        $this->assertNotFalse($posADesc);
+        $this->assertNotFalse($posZDesc);
+        $this->assertTrue($posZDesc < $posADesc);
+    }
+
     private function createRegistro(Vineta $vineta, array $attributes): VinetaRegistro
     {
+
         return VinetaRegistro::create(array_merge([
             'vineta_id' => $vineta->id,
             'codigo_vineta' => 'VIN-'.$attributes['empleado_codigo'],

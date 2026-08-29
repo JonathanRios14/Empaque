@@ -141,4 +141,17 @@ class EmpleadoHoraOrdinaria extends Model
 
         return $hora ? $fecha . ' ' . $hora : $fecha;
     }
+
+    public function registradoPor()
+    {
+        return $this->belongsTo(User::class, 'registrado_por_user_id');
+    }
+
+    public function responsableTexto(): string
+    {
+        $nombre = trim((string) ($this->registrado_por_nombre ?: $this->registradoPor?->name));
+
+        return $nombre !== '' ? $nombre : 'N/A';
+    }
 }
+

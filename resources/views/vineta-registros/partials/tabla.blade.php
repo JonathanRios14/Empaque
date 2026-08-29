@@ -22,8 +22,9 @@
         return $direccionActual === 'asc' ? '↑' : '↓';
     };
 
-    $emptyColspan = ($hasMinutosTrabajados ?? false) ? 23 : 22;
+    $emptyColspan = ($hasMinutosTrabajados ?? false) ? 24 : 23;
 @endphp
+
 
 <script id="vinetaRegistrosSeguimientoData" type="application/json">@json([
     'timelines' => $seguimientoTimelineMap,
@@ -48,6 +49,14 @@
                        class="vineta-registros-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
                         Viñeta
                         <span class="text-xs">{{ $sortIcon('vineta_api_id') }}</span>
+                    </a>
+                </th>
+
+                <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
+                    <a href="{{ $sortLink('producto_item') }}"
+                       class="vineta-registros-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
+                        Item
+                        <span class="text-xs">{{ $sortIcon('producto_item') }}</span>
                     </a>
                 </th>
 
@@ -104,14 +113,6 @@
                        class="vineta-registros-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
                         Tipo de empaque
                         <span class="text-xs">{{ $sortIcon('tipo_empaque') }}</span>
-                    </a>
-                </th>
-
-                <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
-                    <a href="{{ $sortLink('producto_item') }}"
-                       class="vineta-registros-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
-                        Item
-                        <span class="text-xs">{{ $sortIcon('producto_item') }}</span>
                     </a>
                 </th>
 
@@ -193,8 +194,16 @@
 
                 <th class="px-4 py-3 text-right font-bold whitespace-nowrap">Total</th>
                 <th class="px-4 py-3 text-left font-bold whitespace-nowrap">Estado</th>
+                <th class="px-4 py-3 text-left font-bold whitespace-nowrap">
+                    <a href="{{ $sortLink('registrado_por_nombre') }}"
+                       class="vineta-registros-ajax-table-link inline-flex items-center gap-2 hover:text-[#2563eb]">
+                        Responsable
+                        <span class="text-xs">{{ $sortIcon('registrado_por_nombre') }}</span>
+                    </a>
+                </th>
                 <th class="px-4 py-3 text-right font-bold whitespace-nowrap">Acciones</th>
             </tr>
+
             </thead>
 
             <tbody class="divide-y theme-divide">
@@ -216,12 +225,20 @@
                             <span class="theme-badge inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border">Ordinaria</span>
                         @else
                             <span class="theme-badge vinetas-id-badge inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border">
-                                ID {{ $registro->vineta_api_id ?? $registro->vineta_id }}
+                                @if ($registro->codigo_vineta && (str_starts_with(strtolower($registro->codigo_vineta), 'o-') || str_starts_with(strtolower($registro->codigo_vineta), 'or-')))
+                                    ID {{ $registro->codigo_vineta }}
+                                @else
+                                    ID {{ $registro->vineta_api_id ?? $registro->vineta_id }}
+                                @endif
                             </span>
                             @if ($isRegistroPorHora)
                                 <span class="theme-badge mt-1 inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-black border">Por hora</span>
                             @endif
                         @endif
+                    </td>
+
+                    <td class="px-4 py-3 whitespace-nowrap theme-title font-semibold">
+                        {{ $isHoraOrdinaria ? 'N/A' : ($registro->producto_item ?? 'N/A') }}
                     </td>
 
                     <td class="px-4 py-3 whitespace-nowrap theme-text">
@@ -255,10 +272,6 @@
 
                     <td class="px-4 py-3 whitespace-nowrap theme-text">
                         {{ $isHoraOrdinaria ? 'N/A' : $registro->tipoEmpaqueReporte() }}
-                    </td>
-
-                    <td class="px-4 py-3 whitespace-nowrap theme-title font-semibold">
-                        {{ $isHoraOrdinaria ? 'N/A' : ($registro->producto_item ?? 'N/A') }}
                     </td>
 
                     <td class="px-4 py-3 whitespace-nowrap theme-title font-semibold">
@@ -314,7 +327,12 @@
                         </span>
                     </td>
 
+                    <td class="px-4 py-3 whitespace-nowrap theme-text">
+                        {{ $registro->responsableTexto() }}
+                    </td>
+
                     <td class="px-3 py-3 text-right whitespace-nowrap">
+
                         @if ($isHoraOrdinaria)
                             <div class="vineta-actions inline-flex items-center justify-end overflow-hidden rounded-xl border theme-border">
                                 <button type="button"

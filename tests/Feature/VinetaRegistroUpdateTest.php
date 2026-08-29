@@ -265,12 +265,13 @@ class VinetaRegistroUpdateTest extends TestCase
 
         $this->patchJson("/api/vineta-registros/{$registro->id}", $this->updateProcessPayload(
             $empleado,
-            'Sellado especial',
+            'Celofanado especial',
             '2026-08-22',
             '08:00'
         ))->assertUnprocessable()
             ->assertJsonValidationErrors('actividad_nombre')
             ->assertJsonPath('errors.actividad_nombre.0', 'Esta viñeta ya tiene anillado registrado.');
+
 
         $this->assertSame('Control de calidad', $registro->refresh()->actividad_nombre);
         $this->assertDatabaseCount('vineta_registros', 2);
@@ -318,7 +319,68 @@ class VinetaRegistroUpdateTest extends TestCase
         $this->assertDatabaseCount('vineta_registros', 2);
     }
 
+    public function test_store_allows_multiple_distinct_llenado_activities_on_same_vineta_and_rejects_exact_activity_duplicate(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+
+        $empleado = $this->createProcessEmpleado();
+        $vineta = $this->createProcessVineta(5006);
+
+        // 1. First filling activity: Sellado de bolsas
+        $this->postJson("/api/vinetas/{$vineta->id}/registros", $this->storeProcessPayload(
+            $empleado,
+            'Sellado de bolsas',
+            '2026-08-24',
+            '08:00'
+        ))->assertCreated()
+            ->assertJsonPath('proceso.pasos.2.completado', true)
+            ->assertJsonCount(1, 'proceso.pasos.2.actividades');
+
+        // 2. Second distinct filling activity on same vineta: Displays
+        $this->postJson("/api/vinetas/{$vineta->id}/registros", $this->storeProcessPayload(
+            $empleado,
+            'Displays',
+            '2026-08-24',
+            '09:00'
+        ))->assertCreated()
+            ->assertJsonPath('proceso.pasos.2.completado', true)
+            ->assertJsonCount(2, 'proceso.pasos.2.actividades');
+
+        // 3. Third distinct filling activity on same vineta: Llenado de cajas
+        $this->postJson("/api/vinetas/{$vineta->id}/registros", $this->storeProcessPayload(
+            $empleado,
+            'Llenado de cajas',
+            '2026-08-24',
+            '10:00'
+        ))->assertCreated()
+            ->assertJsonPath('proceso.pasos.2.completado', true)
+            ->assertJsonCount(3, 'proceso.pasos.2.actividades');
+
+        // 4. Repeating an already registered activity on this vineta on same date should return 409
+        $this->postJson("/api/vinetas/{$vineta->id}/registros", $this->storeProcessPayload(
+            $empleado,
+            'Sellado de bolsas',
+            '2026-08-24',
+            '11:00'
+        ))->assertConflict()
+            ->assertJsonPath('message', 'Ya existe un registro activo para esta viñeta, actividad y fecha.');
+
+        // 5. Repeating an already registered activity on this vineta on a different date should return 422
+        $this->postJson("/api/vinetas/{$vineta->id}/registros", $this->storeProcessPayload(
+            $empleado,
+            'Sellado de bolsas',
+            '2026-08-25',
+            '08:00'
+        ))->assertUnprocessable()
+            ->assertJsonValidationErrors('actividad_nombre')
+            ->assertJsonPath('errors.actividad_nombre.0', 'Esta viñeta ya tiene la actividad Sellado de bolsas registrada.');
+
+        $this->assertDatabaseCount('vineta_registros', 3);
+
+    }
+
     private function createProcessEmpleado(): Empleado
+
     {
         return Empleado::create([
             'codigo' => 'EMP-PROCESO',

@@ -261,7 +261,36 @@
                 </div>
 
                 {{-- ACTIVIDADES --}}
-                <div class="theme-card theme-shadow bg-white rounded-2xl border border-[#e5d8c7] shadow-sm overflow-hidden">
+                <div class="theme-card theme-shadow bg-white rounded-2xl border border-[#e5d8c7] shadow-sm overflow-hidden" x-data="{
+                    loadingActivityId: null,
+                    async toggleActividad(actividadId, tipoEmpaqueId, buttonEl) {
+                        this.loadingActivityId = actividadId;
+                        try {
+                            const form = buttonEl.closest('form');
+                            const url = form.action;
+                            const csrf = form.querySelector('input[name=_token]').value;
+                            const response = await fetch(url, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': csrf,
+                                },
+                                body: JSON.stringify({ tipo_empaque_id: tipoEmpaqueId })
+                            });
+                            const data = await response.json();
+                            if (data.ok) {
+                                window.location.reload();
+                            } else {
+                                alert(data.message || 'Error al cambiar estado.');
+                            }
+                        } catch (err) {
+                            alert('Error de conexión.');
+                        } finally {
+                            this.loadingActivityId = null;
+                        }
+                    }
+                }">
 
                     <div class="p-6 border-b border-[#e5d8c7] theme-border flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <div>
@@ -270,13 +299,15 @@
                             </h3>
 
                             <p class="theme-text text-sm text-gray-500">
-                                Actividades asociadas desde la API.
+                                Actividades asociadas desde la API y viñetas escaneadas. Las más recientes y activas tienen prioridad al escanear.
                             </p>
                         </div>
 
-                        <span class="theme-badge px-3 py-1 rounded-full bg-[#f3efe7] text-[#5b3a1e] text-xs font-semibold border border-[#e5d8c7] w-fit">
-                            {{ $producto->actividades->count() }} actividad(es)
-                        </span>
+                        <div class="flex items-center gap-2">
+                            <span class="theme-badge px-3 py-1 rounded-full bg-[#f3efe7] text-[#5b3a1e] text-xs font-semibold border border-[#e5d8c7] w-fit">
+                                {{ $producto->actividades->count() }} actividad(es)
+                            </span>
+                        </div>
                     </div>
 
                     <div class="overflow-x-auto">
@@ -287,12 +318,20 @@
                                     <th class="px-6 py-4 text-left font-semibold">Actividad</th>
                                     <th class="px-6 py-4 text-left font-semibold">Tipo empaque</th>
                                     <th class="px-6 py-4 text-left font-semibold">Precio MO</th>
+                                    <th class="px-6 py-4 text-left font-semibold">Origen / Último escaneo</th>
+                                    <th class="px-6 py-4 text-right font-semibold">Estado / Acción</th>
                                 </tr>
                             </thead>
 
                             <tbody>
                                 @forelse ($producto->actividades as $actividad)
-                                    <tr class="theme-row border-b border-gray-100 theme-border hover:bg-[#faf7f2] transition">
+                                    @php
+                                        $tipo = \App\Models\TipoEmpaque::find($actividad->pivot->tipo_empaque_id);
+                                        $esActivo = (bool) ($actividad->pivot->activo ?? true);
+                                        $ultimoEscaneo = $actividad->pivot->ultimo_escaneo_en ? \Carbon\Carbon::parse($actividad->pivot->ultimo_escaneo_en) : null;
+                                        $esEscaneo = ($actividad->pivot->origen ?? 'api') === 'escaneo' || $ultimoEscaneo !== null;
+                                    @endphp
+                                    <tr class="theme-row border-b border-gray-100 theme-border transition {{ $esActivo ? 'hover:bg-[#faf7f2]' : 'bg-gray-50/70 opacity-60 hover:bg-gray-100/70' }}">
                                         <td class="px-6 py-4">
                                             <span class="theme-badge px-3 py-1 rounded-full bg-[#f3efe7] text-[#5b3a1e] text-xs font-semibold border border-[#e5d8c7]">
                                                 {{ $actividad->codigo_actividad ?? 'N/A' }}
@@ -300,7 +339,7 @@
                                         </td>
 
                                         <td class="px-6 py-4">
-                                            <p class="theme-title font-semibold text-[#3b2818]">
+                                            <p class="theme-title font-semibold text-[#3b2818] {{ ! $esActivo ? 'line-through text-gray-500' : '' }}">
                                                 {{ $actividad->nombre }}
                                             </p>
 
@@ -310,25 +349,58 @@
                                         </td>
 
                                         <td class="px-6 py-4">
-                                            @php
-                                                $tipo = \App\Models\TipoEmpaque::find($actividad->pivot->tipo_empaque_id);
-                                            @endphp
-
-                                            <span class="theme-text text-gray-700">
+                                            <span class="theme-text text-gray-700 font-medium">
                                                 {{ $tipo?->nombre ?? 'N/A' }}
                                             </span>
                                         </td>
 
                                         <td class="px-6 py-4">
                                             <span class="theme-title font-semibold text-[#3b2818]">
-                                                {{ number_format($actividad->pivot->precio_mo, 7) }}
+                                                {{ number_format((float) $actividad->pivot->precio_mo, 7) }}
                                             </span>
+                                        </td>
+
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            @if ($ultimoEscaneo)
+                                                <div class="flex items-center gap-1.5">
+                                                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+                                                    <span class="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                                        Escaneado: {{ $ultimoEscaneo->format('d/m/Y h:i A') }}
+                                                    </span>
+                                                </div>
+                                            @elseif ($esEscaneo)
+                                                <span class="text-xs font-semibold text-blue-800 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
+                                                    Viñeta escaneada
+                                                </span>
+                                            @else
+                                                <span class="text-xs text-gray-500 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full">
+                                                    Catálogo API
+                                                </span>
+                                            @endif
+                                        </td>
+
+                                        <td class="px-6 py-4 text-right whitespace-nowrap">
+                                            <form method="POST"
+                                                  action="{{ route('catalogos.productos.actividades.toggle', ['producto' => $producto->id, 'actividad' => $actividad->id]) }}"
+                                                  class="inline-block">
+                                                @csrf
+                                                <input type="hidden" name="tipo_empaque_id" value="{{ $actividad->pivot->tipo_empaque_id }}">
+
+                                                <button type="button"
+                                                        @click="toggleActividad({{ $actividad->id }}, {{ $actividad->pivot->tipo_empaque_id ?? 'null' }}, $el)"
+                                                        :disabled="loadingActivityId === {{ $actividad->id }}"
+                                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm {{ $esActivo ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-red-50 hover:text-red-700 hover:border-red-300' : 'bg-gray-200 text-gray-700 border border-gray-300 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300' }}"
+                                                        title="{{ $esActivo ? 'Clic para desactivar esta actividad en este producto' : 'Clic para activar esta actividad en este producto' }}">
+                                                    <span class="inline-block w-2 h-2 rounded-full {{ $esActivo ? 'bg-emerald-500' : 'bg-gray-400' }}"></span>
+                                                    <span>{{ $esActivo ? 'Activa (Desactivar)' : 'Inactiva (Activar)' }}</span>
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="theme-text px-6 py-10 text-center text-gray-500">
-                                            Este producto no tiene actividades registradas.
+                                        <td colspan="6" class="theme-text px-6 py-10 text-center text-gray-500">
+                                            Este producto no tiene actividades asociadas.
                                         </td>
                                     </tr>
                                 @endforelse
@@ -336,6 +408,7 @@
                         </table>
                     </div>
                 </div>
+
 
             </div>
         </section>

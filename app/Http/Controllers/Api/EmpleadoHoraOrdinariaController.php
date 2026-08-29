@@ -270,18 +270,19 @@ class EmpleadoHoraOrdinariaController extends Controller
 
         $data = $request->validate([
             'fecha' => ['required', 'date_format:Y-m-d'],
-            'grupo' => ['required', 'string', 'in:rezago,anillado,llenado'],
+            'grupo' => ['nullable', 'string', 'in:rezago,anillado,llenado'],
         ]);
         $registros = $this->registrosTareaEmpleado($empleado, $data['fecha']);
+        $grupo = $data['grupo'] ?? null;
         $grupoEmpleado = $this->grupoProduccionEmpleado($empleado, $registros);
 
-        if ($grupoEmpleado !== $data['grupo']) {
+        if ($grupo !== null && $grupoEmpleado !== $grupo) {
             $registros = collect();
         }
 
         if ($registros->isEmpty()) {
             throw ValidationException::withMessages([
-                'fecha' => 'Este empleado no tiene una jornada distribuida en el grupo y fecha seleccionados.',
+                'fecha' => 'Este empleado no tiene una jornada distribuida en la fecha seleccionada.',
             ]);
         }
 
@@ -296,6 +297,123 @@ class EmpleadoHoraOrdinariaController extends Controller
             'registros_actualizados' => $registros->count(),
         ]);
     }
+
+    public function distributeGlobal(Request $request): JsonResponse
+    {
+        if (! Schema::hasTable('vineta_registros') || ! Schema::hasColumn('vineta_registros', 'minutos_trabajados')) {
+            return response()->json([
+                'message' => 'La tabla de registros no permite distribuir minutos trabajados.',
+            ], 409);
+        }
+
+        $data = $this->validatedJornadaData($request);
+        $fecha = $data['fecha'];
+        $grupo = $data['grupo'] ?? null;
+        $totalMinutes = $data['minutos_total'];
+
+        $registros = VinetaRegistro::query()
+            ->whereDate('fecha_registro', $fecha)
+            ->where('estado', VinetaRegistro::ESTADO_ACTIVO)
+            ->orderBy('fecha_registro')
+            ->orderBy('hora_registro')
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (VinetaRegistro $registro) => ! $registro->esPorHoraOrdinario())
+            ->values();
+
+        $codigos = $registros->pluck('empleado_codigo')->filter()->unique()->values();
+        $empleados = Empleado::query()->whereIn('codigo', $codigos)->get()->keyBy('codigo');
+        $gruposEmpleados = $this->gruposProduccionEmpleados($registros, $empleados);
+
+        $empleadosActualizados = 0;
+        $registrosActualizados = 0;
+
+        DB::transaction(function () use ($registros, $gruposEmpleados, $grupo, $totalMinutes, &$empleadosActualizados, &$registrosActualizados) {
+            $porEmpleado = $registros->groupBy('empleado_codigo');
+
+            foreach ($porEmpleado as $codigo => $registrosEmpleado) {
+                if ($grupo !== null && $gruposEmpleados->get((string) $codigo) !== $grupo) {
+                    continue;
+                }
+
+                if ($registrosEmpleado->isEmpty()) {
+                    continue;
+                }
+
+                $count = $registrosEmpleado->count();
+                $baseMinutes = intdiv($totalMinutes, $count);
+                $extraMinutes = $totalMinutes % $count;
+
+                foreach ($registrosEmpleado->values() as $index => $registro) {
+                    $registro->update([
+                        'minutos_trabajados' => $baseMinutes + ($index < $extraMinutes ? 1 : 0),
+                    ]);
+                    $registrosActualizados++;
+                }
+
+                $empleadosActualizados++;
+            }
+        });
+
+        if ($empleadosActualizados === 0) {
+            throw ValidationException::withMessages([
+                'fecha' => 'No se encontraron registros activos para distribuir jornada en la fecha y grupo seleccionados.',
+            ]);
+        }
+
+        return response()->json([
+            'message' => "Jornada distribuida correctamente a {$empleadosActualizados} empleado(s).",
+            'empleados_actualizados' => $empleadosActualizados,
+            'registros_actualizados' => $registrosActualizados,
+            'minutos_distribuidos' => $totalMinutes,
+            'tiempo_distribuido_texto' => VinetaRegistro::minutosATiempoTexto($totalMinutes),
+        ]);
+    }
+
+    public function destroyGlobal(Request $request): JsonResponse
+    {
+        if (! Schema::hasTable('vineta_registros') || ! Schema::hasColumn('vineta_registros', 'minutos_trabajados')) {
+            return response()->json([
+                'message' => 'La tabla de registros no permite eliminar la jornada laboral.',
+            ], 409);
+        }
+
+        $data = $request->validate([
+            'fecha' => ['required', 'date_format:Y-m-d'],
+            'grupo' => ['nullable', 'string', 'in:rezago,anillado,llenado'],
+        ]);
+        $fecha = $data['fecha'];
+        $grupo = $data['grupo'] ?? null;
+
+        $registros = VinetaRegistro::query()
+            ->whereDate('fecha_registro', $fecha)
+            ->where('estado', VinetaRegistro::ESTADO_ACTIVO)
+            ->whereNotNull('minutos_trabajados')
+            ->get();
+
+        $codigos = $registros->pluck('empleado_codigo')->filter()->unique()->values();
+        $empleados = Empleado::query()->whereIn('codigo', $codigos)->get()->keyBy('codigo');
+        $gruposEmpleados = $this->gruposProduccionEmpleados($registros, $empleados);
+
+        $eliminados = 0;
+
+        DB::transaction(function () use ($registros, $gruposEmpleados, $grupo, &$eliminados) {
+            foreach ($registros as $registro) {
+                if ($grupo !== null && $gruposEmpleados->get((string) $registro->empleado_codigo) !== $grupo) {
+                    continue;
+                }
+
+                $registro->update(['minutos_trabajados' => null]);
+                $eliminados++;
+            }
+        });
+
+        return response()->json([
+            'message' => "Distribución de jornada eliminada correctamente ({$eliminados} registros actualizados).",
+            'registros_actualizados' => $eliminados,
+        ]);
+    }
+
 
     /** @return Collection<int, VinetaRegistro> */
     private function registrosTareaEmpleado(Empleado $empleado, string $fecha): Collection

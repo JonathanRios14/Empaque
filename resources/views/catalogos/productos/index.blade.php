@@ -70,7 +70,13 @@
                             ];
                         }
 
-                        if (request()->filled('marca_id')) {
+                        if (request()->filled('marca')) {
+                            $filtrosActivos[] = [
+                                'label' => 'Marca',
+                                'value' => request('marca'),
+                                'clear' => route('catalogos.productos.index', request()->except('marca', 'page')),
+                            ];
+                        } elseif (request()->filled('marca_id')) {
                             $marcaSeleccionada = $marcas->firstWhere('id', (int) request('marca_id'));
 
                             $filtrosActivos[] = [
@@ -80,7 +86,13 @@
                             ];
                         }
 
-                        if (request()->filled('actividad_id')) {
+                        if (request()->filled('actividad')) {
+                            $filtrosActivos[] = [
+                                'label' => 'Actividad',
+                                'value' => request('actividad'),
+                                'clear' => route('catalogos.productos.index', request()->except('actividad', 'page')),
+                            ];
+                        } elseif (request()->filled('actividad_id')) {
                             $actividadSeleccionada = $actividades->firstWhere('id', (int) request('actividad_id'));
 
                             $filtrosActivos[] = [
@@ -90,7 +102,13 @@
                             ];
                         }
 
-                        if (request()->filled('vitola_id')) {
+                        if (request()->filled('vitola')) {
+                            $filtrosActivos[] = [
+                                'label' => 'Vitola',
+                                'value' => request('vitola'),
+                                'clear' => route('catalogos.productos.index', request()->except('vitola', 'page')),
+                            ];
+                        } elseif (request()->filled('vitola_id')) {
                             $vitolaSeleccionada = $vitolas->firstWhere('id', (int) request('vitola_id'));
 
                             $filtrosActivos[] = [
@@ -100,7 +118,13 @@
                             ];
                         }
 
-                        if (request()->filled('capa_id')) {
+                        if (request()->filled('capa')) {
+                            $filtrosActivos[] = [
+                                'label' => 'Capa',
+                                'value' => request('capa'),
+                                'clear' => route('catalogos.productos.index', request()->except('capa', 'page')),
+                            ];
+                        } elseif (request()->filled('capa_id')) {
                             $capaSeleccionada = $capas->firstWhere('id', (int) request('capa_id'));
 
                             $filtrosActivos[] = [
@@ -110,7 +134,13 @@
                             ];
                         }
 
-                        if (request()->filled('tipo_empaque_id')) {
+                        if (request()->filled('tipo_empaque')) {
+                            $filtrosActivos[] = [
+                                'label' => 'Tipo empaque',
+                                'value' => request('tipo_empaque'),
+                                'clear' => route('catalogos.productos.index', request()->except('tipo_empaque', 'page')),
+                            ];
+                        } elseif (request()->filled('tipo_empaque_id')) {
                             $tipoEmpaqueSeleccionado = $tipoEmpaques->firstWhere('id', (int) request('tipo_empaque_id'));
 
                             $filtrosActivos[] = [
@@ -307,7 +337,7 @@
                                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-9 gap-2.5 items-end">
                                         {{-- BUSCADOR --}}
                                         <div>
-                                            <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
+                                            <label class="theme-title block text-[11px] font-bold mb-1 text-gray-500">
                                                 Buscar
                                             </label>
 
@@ -343,7 +373,7 @@
 
                                         {{-- CÓDIGO PRODUCTO --}}
                                         <div>
-                                            <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
+                                            <label class="theme-title block text-[11px] font-bold mb-1 text-gray-500">
                                                 Código
                                             </label>
 
@@ -356,7 +386,7 @@
 
                                         {{-- ITEM --}}
                                         <div>
-                                            <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
+                                            <label class="theme-title block text-[11px] font-bold mb-1 text-gray-500">
                                                 Item
                                             </label>
 
@@ -369,98 +399,80 @@
 
                                         {{-- MARCA --}}
                                         <div>
-                                            <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
+                                            <label class="theme-title block text-[11px] font-bold mb-1 text-gray-500">
                                                 Marca
                                             </label>
-                                            <select name="marca_id"
-                                                    class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm focus:border-[#0f172a] focus:ring-[#0f172a]">
-                                                <option value="">Todas</option>
-                                                @foreach ($marcas as $marca)
-                                                    <option value="{{ $marca->id }}" @selected(request('marca_id') == $marca->id)>
-                                                        {{ $marca->nombre }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
+
+                                            <input type="text"
+                                                   name="marca"
+                                                   value="{{ request('marca') }}"
+                                                   placeholder="Marca"
+                                                   class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm px-3 focus:border-[#0f172a] focus:ring-[#0f172a]">
                                         </div>
 
                                         {{-- ACTIVIDAD --}}
                                         <div>
-                                            <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
+                                            <label class="theme-title block text-[11px] font-bold mb-1 text-gray-500">
                                                 Actividad
                                             </label>
-                                            <select name="actividad_id"
-                                                    class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm focus:border-[#0f172a] focus:ring-[#0f172a]">
-                                                <option value="">Todas</option>
-                                                @foreach ($actividades as $actividad)
-                                                    <option value="{{ $actividad->id }}" @selected(request('actividad_id') == $actividad->id)>
-                                                        {{ $actividad->nombre }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
+
+                                            <input type="text"
+                                                   name="actividad"
+                                                   value="{{ request('actividad') }}"
+                                                   placeholder="Actividad"
+                                                   class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm px-3 focus:border-[#0f172a] focus:ring-[#0f172a]">
                                         </div>
 
                                         {{-- VITOLA --}}
                                         <div>
-                                            <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
+                                            <label class="theme-title block text-[11px] font-bold mb-1 text-gray-500">
                                                 Vitola
                                             </label>
-                                            <select name="vitola_id"
-                                                    class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm focus:border-[#0f172a] focus:ring-[#0f172a]">
-                                                <option value="">Todas</option>
-                                                @foreach ($vitolas as $vitola)
-                                                    <option value="{{ $vitola->id }}" @selected(request('vitola_id') == $vitola->id)>
-                                                        {{ $vitola->nombre }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
+
+                                            <input type="text"
+                                                   name="vitola"
+                                                   value="{{ request('vitola') }}"
+                                                   placeholder="Vitola"
+                                                   class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm px-3 focus:border-[#0f172a] focus:ring-[#0f172a]">
                                         </div>
 
                                         {{-- CAPA --}}
                                         <div>
-                                            <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
+                                            <label class="theme-title block text-[11px] font-bold mb-1 text-gray-500">
                                                 Capa
                                             </label>
-                                            <select name="capa_id"
-                                                    class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm focus:border-[#0f172a] focus:ring-[#0f172a]">
-                                                <option value="">Todas</option>
-                                                @foreach ($capas as $capa)
-                                                    <option value="{{ $capa->id }}" @selected(request('capa_id') == $capa->id)>
-                                                        {{ $capa->nombre }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
+
+                                            <input type="text"
+                                                   name="capa"
+                                                   value="{{ request('capa') }}"
+                                                   placeholder="Capa"
+                                                   class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm px-3 focus:border-[#0f172a] focus:ring-[#0f172a]">
                                         </div>
 
                                         {{-- TIPO EMPAQUE --}}
                                         <div>
-                                            <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
+                                            <label class="theme-title block text-[11px] font-bold mb-1 text-gray-500">
                                                 Tipo empaque
                                             </label>
-                                            <select name="tipo_empaque_id"
-                                                    class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm focus:border-[#0f172a] focus:ring-[#0f172a]">
-                                                <option value="">Todos</option>
-                                                @foreach ($tipoEmpaques as $tipoEmpaque)
-                                                    <option value="{{ $tipoEmpaque->id }}" @selected(request('tipo_empaque_id') == $tipoEmpaque->id)>
-                                                        {{ $tipoEmpaque->nombre }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
+
+                                            <input type="text"
+                                                   name="tipo_empaque"
+                                                   value="{{ request('tipo_empaque') }}"
+                                                   placeholder="Tipo empaque"
+                                                   class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm px-3 focus:border-[#0f172a] focus:ring-[#0f172a]">
                                         </div>
 
                                         {{-- PRESENTACIÓN --}}
                                         <div>
-                                            <label class="theme-title block text-[11px] font-bold mb-1 uppercase tracking-wide text-gray-500">
+                                            <label class="theme-title block text-[11px] font-bold mb-1 text-gray-500">
                                                 Presentación
                                             </label>
-                                            <select name="presentacion_id"
-                                                    class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm focus:border-[#0f172a] focus:ring-[#0f172a]">
-                                                <option value="">Todas</option>
-                                                @foreach ($presentaciones as $presentacion)
-                                                    <option value="{{ $presentacion->id }}" @selected(request('presentacion_id') == $presentacion->id)>
-                                                        {{ $presentacion->nombre }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
+
+                                            <input type="text"
+                                                   name="presentacion"
+                                                   value="{{ request('presentacion') }}"
+                                                   placeholder="Presentación"
+                                                   class="theme-input w-full h-10 rounded-xl border border-gray-300 text-sm px-3 focus:border-[#0f172a] focus:ring-[#0f172a]">
                                         </div>
                                     </div>
 
@@ -630,8 +642,9 @@ const hideTableLoader = () => {
                 return;
             }
 
-            const tableRect = scroll.getBoundingClientRect();
+            const tableRect = table.getBoundingClientRect();
             const headerRect = header.getBoundingClientRect();
+            const scrollRect = scroll.getBoundingClientRect();
             const topbarBottom = getTopbarBottom();
             const shouldShow = headerRect.top < topbarBottom
                 && tableRect.bottom > topbarBottom + headerRect.height;
@@ -643,15 +656,26 @@ const hideTableLoader = () => {
             }
 
             stickyHeaderClone.style.top = `${topbarBottom}px`;
-            stickyHeaderClone.style.left = `${tableRect.left}px`;
-            stickyHeaderClone.style.width = `${tableRect.width}px`;
+            stickyHeaderClone.style.left = `${scrollRect.left}px`;
+            stickyHeaderClone.style.width = `${scrollRect.width}px`;
 
             const cloneTable = stickyHeaderClone.querySelector('table');
-
             if (cloneTable) {
                 cloneTable.style.width = `${table.scrollWidth}px`;
+                cloneTable.style.minWidth = `${table.scrollWidth}px`;
                 cloneTable.style.transform = `translateX(${-scroll.scrollLeft}px)`;
             }
+
+            const originalHeaders = [...header.querySelectorAll('th')];
+            const cloneHeaders = [...stickyHeaderClone.querySelectorAll('th')];
+            cloneHeaders.forEach((th, index) => {
+                const width = originalHeaders[index]?.getBoundingClientRect().width;
+                if (width) {
+                    th.style.width = `${width}px`;
+                    th.style.minWidth = `${width}px`;
+                    th.style.maxWidth = `${width}px`;
+                }
+            });
         };
 
         const syncFloatingScrollFromTable = () => {
@@ -754,8 +778,44 @@ const hideTableLoader = () => {
                     syncStickyHeaderClone();
                     updateFloatingScroll();
                 }, { passive: true });
-                window.addEventListener('resize', () => requestAnimationFrame(initTableFeatures));
+
+                window.addEventListener('resize', () => {
+                    syncStickyHeaderClone();
+                    updateFloatingScroll();
+                });
+
+                let sidebarAnimFrame = null;
+                const animateStickyHeader = () => {
+                    const startTime = performance.now();
+                    const duration = 350;
+                    const step = (now) => {
+                        syncStickyHeaderClone();
+                        updateFloatingScroll();
+                        if (now - startTime < duration) {
+                            sidebarAnimFrame = requestAnimationFrame(step);
+                        }
+                    };
+                    if (sidebarAnimFrame) cancelAnimationFrame(sidebarAnimFrame);
+                    sidebarAnimFrame = requestAnimationFrame(step);
+                };
+
+                window.addEventListener('sidebar-toggled', animateStickyHeader);
+                window.addEventListener('open-mobile-sidebar', animateStickyHeader);
+                window.addEventListener('close-mobile-sidebar', animateStickyHeader);
                 windowEventsBound = true;
+            }
+
+            if (window.ResizeObserver) {
+                const ro = new ResizeObserver(() => {
+                    requestAnimationFrame(() => {
+                        syncStickyHeaderClone();
+                        updateFloatingScroll();
+                    });
+                });
+                const containerEl = getTableContainer();
+                if (containerEl) ro.observe(containerEl);
+                const mainEl = document.querySelector('main');
+                if (mainEl) ro.observe(mainEl);
             }
 
             requestAnimationFrame(() => {

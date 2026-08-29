@@ -46,6 +46,61 @@ class DashboardController extends Controller
             ]);
         }
 
+        if ($request->boolean('resumen_rango') || ($request->ajax() && $request->has('fecha_desde') && $request->has('fecha_hasta'))) {
+            $fechaDesdeStr = $request->get('fecha_desde');
+            $fechaHastaStr = $request->get('fecha_hasta');
+            $isCustomRange = ! empty($fechaDesdeStr) && ! empty($fechaHastaStr);
+
+            if ($isCustomRange) {
+                $rangeFrom = $this->dateParam($fechaDesdeStr, $monthStart)->startOfDay();
+                $rangeTo = $this->dateParam($fechaHastaStr, $monthEnd)->startOfDay();
+
+                if ($rangeFrom->gt($rangeTo)) {
+                    [$rangeFrom, $rangeTo] = [$rangeTo, $rangeFrom];
+                }
+
+                $labelPeriodo = $rangeFrom->format('d/m/Y') === $rangeTo->format('d/m/Y')
+                    ? $rangeFrom->format('d/m/Y')
+                    : $rangeFrom->format('d/m/Y').' - '.$rangeTo->format('d/m/Y');
+            } else {
+                $rangeFrom = $monthStart->copy();
+                $rangeTo = $monthEnd->copy();
+                $labelPeriodo = ucfirst($selectedMonth->locale('es')->translatedFormat('F Y'));
+            }
+
+            $areasSummary = $this->areaSummary($rangeFrom, $rangeTo, $context);
+            $totalActividades = max((int) collect($areasSummary)->sum('actividades'), 1);
+
+            $formattedAreas = [];
+            foreach ($areasSummary as $key => $area) {
+                $share = round(($area['actividades'] / $totalActividades) * 100);
+                $formattedAreas[$key] = [
+                    'key' => $area['key'],
+                    'label' => $area['label'],
+                    'color' => $area['color'],
+                    'actividades' => (int) $area['actividades'],
+                    'actividades_formatted' => number_format((int) $area['actividades']),
+                    'empleados' => (int) $area['empleados'],
+                    'empleados_formatted' => number_format((int) $area['empleados']),
+                    'registros' => (int) $area['registros'],
+                    'registros_formatted' => number_format((int) $area['registros']),
+                    'puros' => (int) $area['puros'],
+                    'puros_formatted' => number_format((int) $area['puros']),
+                    'share' => $share,
+                ];
+            }
+
+            return response()->json([
+                'ok' => true,
+                'is_custom_range' => $isCustomRange,
+                'label' => $labelPeriodo,
+                'fecha_desde' => $rangeFrom->format('Y-m-d'),
+                'fecha_hasta' => $rangeTo->format('Y-m-d'),
+                'total_actividades' => $totalActividades,
+                'areas' => $formattedAreas,
+            ]);
+        }
+
         $produccionHoy = $this->productionSummary($dayStart, $dayStart, $context);
         $produccionMes = $this->productionSummary($monthStart, $monthEnd, $context);
         $produccionAnio = $this->productionSummary($yearStart, $yearEnd, $context);
@@ -227,7 +282,7 @@ class DashboardController extends Controller
 
         return [
             'labels' => array_column($rows, 'grupo'),
-            'data' => array_column($rows, 'actividades'),
+            'data' => array_column($rows, 'puros'),
             'rows' => $rows,
         ];
     }
@@ -249,8 +304,9 @@ class DashboardController extends Controller
     {
         $keys = range(1, 12);
         $labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        $monthExpr = $this->monthExpression('vineta_registros.fecha_registro');
 
-        return $this->areaTrend($keys, $labels, 'MONTH(vineta_registros.fecha_registro)', $from, $to, $context);
+        return $this->areaTrend($keys, $labels, $monthExpr, $from, $to, $context);
     }
 
     private function areaTrendByYear(int $selectedYear, array $context): array
@@ -260,8 +316,9 @@ class DashboardController extends Controller
         $labels = array_map(fn (int $year) => (string) $year, $keys);
         $from = Carbon::create($startYear, 1, 1, 0, 0, 0, $this->timezone)->startOfDay();
         $to = Carbon::create($selectedYear, 12, 31, 23, 59, 59, $this->timezone)->startOfDay();
+        $yearExpr = $this->yearExpression('vineta_registros.fecha_registro');
 
-        return $this->areaTrend($keys, $labels, 'YEAR(vineta_registros.fecha_registro)', $from, $to, $context);
+        return $this->areaTrend($keys, $labels, $yearExpr, $from, $to, $context);
     }
 
     private function areaTrend(array $keys, array $labels, string $periodExpression, Carbon $from, Carbon $to, array $context): array
@@ -362,13 +419,14 @@ class DashboardController extends Controller
             $minutesExpression = $context['hasMinutosTrabajados']
                 ? 'COALESCE(SUM(minutos_trabajados), 0)'
                 : '0';
+            $monthExpr = $this->monthExpression('fecha_registro');
 
             $rows = $this->activeRecordsQuery($yearStart, $today)
-                ->selectRaw('MONTH(fecha_registro) as mes')
+                ->selectRaw("{$monthExpr} as mes")
                 ->selectRaw('COALESCE(SUM(cantidad_puros), 0) as puros')
                 ->selectRaw("COALESCE(SUM($activityExpression), 0) as actividades")
                 ->selectRaw("$minutesExpression as minutos")
-                ->groupByRaw('MONTH(fecha_registro)')
+                ->groupByRaw($monthExpr)
                 ->get()
                 ->keyBy(fn ($row) => (int) $row->mes);
         }
@@ -594,14 +652,30 @@ class DashboardController extends Controller
             return [];
         }
 
+        $monthExpr = $this->monthExpression('fecha');
+
         return DB::table('empleado_horas_ordinarias')
             ->whereDate('fecha', '>=', $from->toDateString())
             ->whereDate('fecha', '<=', $to->toDateString())
-            ->selectRaw('MONTH(fecha) as mes, COALESCE(SUM(minutos), 0) as minutos')
-            ->groupByRaw('MONTH(fecha)')
+            ->selectRaw("{$monthExpr} as mes, COALESCE(SUM(minutos), 0) as minutos")
+            ->groupByRaw($monthExpr)
             ->pluck('minutos', 'mes')
             ->map(fn ($minutes) => (int) $minutes)
             ->all();
+    }
+
+    private function monthExpression(string $column): string
+    {
+        return DB::connection()->getDriverName() === 'sqlite'
+            ? "CAST(strftime('%m', {$column}) AS INTEGER)"
+            : "MONTH({$column})";
+    }
+
+    private function yearExpression(string $column): string
+    {
+        return DB::connection()->getDriverName() === 'sqlite'
+            ? "CAST(strftime('%Y', {$column}) AS INTEGER)"
+            : "YEAR({$column})";
     }
 
     private function activityExpression(bool $hasCantidadActividades, string $table = 'vineta_registros'): string
@@ -615,12 +689,16 @@ class DashboardController extends Controller
 
     private function activityGroupCaseExpression(): string
     {
+        $nombre = "LOWER(COALESCE(vineta_registros.actividad_nombre, ''))";
         $text = "LOWER(CONCAT(COALESCE(vineta_registros.actividad_nombre, ''), ' ', COALESCE(vineta_registros.actividad_tipo_empaque, ''), ' ', COALESCE(vineta_registros.actividad_codigo, '')))";
 
         return "CASE
+            WHEN $nombre LIKE '%rezag%' OR $nombre LIKE '%rezad%' OR $nombre LIKE '%resag%' THEN 'rezago'
+            WHEN $nombre LIKE '%anill%' OR $nombre LIKE '%anil%' OR $nombre LIKE '%celof%' OR $nombre LIKE '%sello%' OR $nombre LIKE '%esponj%' OR $nombre LIKE '%lamina%' OR $nombre LIKE '%lámina%' THEN 'anillado'
+            WHEN $nombre LIKE '%llenad%' OR $nombre LIKE '%kretek%' OR $nombre LIKE '%display%' OR $nombre LIKE '%bolsa%' OR $nombre LIKE '%sellado%' OR ($nombre LIKE '%sell%' AND $nombre NOT LIKE '%celof%' AND $nombre NOT LIKE '%anill%') OR $nombre LIKE '%petaca%' OR $nombre LIKE '%sampler%' OR ($nombre LIKE '%paquete%' AND $nombre LIKE '%tubo%') THEN 'llenado'
             WHEN $text LIKE '%rezag%' OR $text LIKE '%rezad%' OR $text LIKE '%resag%' THEN 'rezago'
-            WHEN $text LIKE '%llenad%' OR $text LIKE '%petaca%' OR $text LIKE '%sampler%' OR ($text LIKE '%paquete%' AND $text LIKE '%tubo%') THEN 'llenado'
-            WHEN $text LIKE '%anill%' OR $text LIKE '%anil%' OR $text LIKE '%celof%' OR $text LIKE '%sello%' OR $text LIKE '%sell%' OR $text LIKE '%esponj%' OR $text LIKE '%lamina%' OR $text LIKE '%lámina%' THEN 'anillado'
+            WHEN $text LIKE '%anill%' OR $text LIKE '%anil%' OR $text LIKE '%celof%' OR $text LIKE '%sello%' OR $text LIKE '%esponj%' OR $text LIKE '%lamina%' OR $text LIKE '%lámina%' THEN 'anillado'
+            WHEN $text LIKE '%llenad%' OR $text LIKE '%kretek%' OR $text LIKE '%display%' OR $text LIKE '%bolsa%' OR $text LIKE '%sellado%' OR ($text LIKE '%sell%' AND $text NOT LIKE '%celof%' AND $text NOT LIKE '%anill%') OR $text LIKE '%petaca%' OR $text LIKE '%sampler%' OR ($text LIKE '%paquete%' AND $text LIKE '%tubo%') THEN 'llenado'
             ELSE 'otros'
         END";
     }
@@ -631,21 +709,27 @@ class DashboardController extends Controller
 
         return "CASE
             WHEN $text LIKE '%rezag%' OR $text LIKE '%rezad%' OR $text LIKE '%resag%' THEN 'rezago'
-            WHEN $text LIKE '%llenad%' OR ($text LIKE '%sell%' AND $text LIKE '%bolsa%') THEN 'llenado'
-            WHEN $text LIKE '%anill%' OR $text LIKE '%anil%' OR $text LIKE '%celof%' OR $text LIKE '%sello%' OR $text LIKE '%sell%' OR $text LIKE '%esponj%' OR $text LIKE '%lamina%' OR $text LIKE '%lámina%' OR $text LIKE '%brocha%' THEN 'anillado'
+            WHEN $text LIKE '%llenad%' OR $text LIKE '%sell%' OR $text LIKE '%display%' OR $text LIKE '%bolsa%' OR $text LIKE '%kretek%' OR $text LIKE '%petaca%' OR $text LIKE '%sampler%' THEN 'llenado'
+            WHEN $text LIKE '%anill%' OR $text LIKE '%anil%' OR $text LIKE '%celof%' OR $text LIKE '%sello%' OR $text LIKE '%esponj%' OR $text LIKE '%lamina%' OR $text LIKE '%lámina%' OR $text LIKE '%brocha%' THEN 'anillado'
             ELSE 'otros'
         END";
     }
 
     private function processCaseExpression(): string
     {
+        $nombre = "LOWER(COALESCE(actividad_nombre, ''))";
         $text = "LOWER(CONCAT(COALESCE(actividad_nombre, ''), ' ', COALESCE(actividad_tipo_empaque, ''), ' ', COALESCE(actividad_codigo, '')))";
 
         return "CASE
+            WHEN $nombre LIKE '%rezag%' OR $nombre LIKE '%rezad%' OR $nombre LIKE '%resag%' THEN 'Rezago'
+            WHEN $nombre LIKE '%anill%' OR $nombre LIKE '%anil%' OR $nombre LIKE '%celof%' OR $nombre LIKE '%sello%' OR $nombre LIKE '%esponj%' OR $nombre LIKE '%lamina%' OR $nombre LIKE '%lámina%' THEN 'Anillado'
+            WHEN $nombre LIKE '%llenad%' OR $nombre LIKE '%kretek%' OR $nombre LIKE '%display%' OR $nombre LIKE '%bolsa%' OR $nombre LIKE '%sellado%' OR ($nombre LIKE '%sell%' AND $nombre NOT LIKE '%celof%' AND $nombre NOT LIKE '%anill%') OR $nombre LIKE '%petaca%' OR $nombre LIKE '%sampler%' OR ($nombre LIKE '%paquete%' AND $nombre LIKE '%tubo%') THEN 'Llenado'
             WHEN $text LIKE '%rezag%' OR $text LIKE '%rezad%' OR $text LIKE '%resag%' THEN 'Rezago'
-            WHEN $text LIKE '%llenad%' OR $text LIKE '%petaca%' OR $text LIKE '%sampler%' OR ($text LIKE '%paquete%' AND $text LIKE '%tubo%') THEN 'Llenado'
-            WHEN $text LIKE '%anill%' OR $text LIKE '%anil%' OR $text LIKE '%celof%' OR $text LIKE '%sello%' OR $text LIKE '%sell%' OR $text LIKE '%esponj%' OR $text LIKE '%lamina%' OR $text LIKE '%lámina%' THEN 'Anillado'
+            WHEN $text LIKE '%anill%' OR $text LIKE '%anil%' OR $text LIKE '%celof%' OR $text LIKE '%sello%' OR $text LIKE '%esponj%' OR $text LIKE '%lamina%' OR $text LIKE '%lámina%' THEN 'Anillado'
+            WHEN $text LIKE '%llenad%' OR $text LIKE '%kretek%' OR $text LIKE '%display%' OR $text LIKE '%bolsa%' OR $text LIKE '%sellado%' OR ($text LIKE '%sell%' AND $text NOT LIKE '%celof%' AND $text NOT LIKE '%anill%') OR $text LIKE '%petaca%' OR $text LIKE '%sampler%' OR ($text LIKE '%paquete%' AND $text LIKE '%tubo%') THEN 'Llenado'
             ELSE 'Otros'
         END";
     }
+
+
 }

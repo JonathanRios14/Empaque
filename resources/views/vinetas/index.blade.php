@@ -327,12 +327,13 @@
                     return;
                 }
 
-                const rect = scroll.getBoundingClientRect();
+                const scrollRect = scroll.getBoundingClientRect();
+                const tableRect = table.getBoundingClientRect();
                 const headerRect = header.getBoundingClientRect();
                 const headerHeight = headerRect.height;
                 const topbarBottom = getTopbarBottom();
                 const shouldShow = headerRect.top < topbarBottom
-                    && rect.bottom > topbarBottom + headerHeight;
+                    && tableRect.bottom > topbarBottom + headerHeight;
 
                 stickyHeaderClone.classList.toggle('is-visible', shouldShow);
 
@@ -340,16 +341,27 @@
                     return;
                 }
 
-                stickyHeaderClone.style.left = `${rect.left}px`;
-                stickyHeaderClone.style.width = `${rect.width}px`;
+                stickyHeaderClone.style.left = `${scrollRect.left}px`;
+                stickyHeaderClone.style.width = `${scrollRect.width}px`;
                 stickyHeaderClone.style.top = `${topbarBottom}px`;
 
                 const cloneTable = stickyHeaderClone.querySelector('table');
-
                 if (cloneTable) {
                     cloneTable.style.width = `${table.scrollWidth}px`;
+                    cloneTable.style.minWidth = `${table.scrollWidth}px`;
                     cloneTable.style.transform = `translateX(${-scroll.scrollLeft}px)`;
                 }
+
+                const originalHeaders = [...header.querySelectorAll('th')];
+                const cloneHeaders = [...stickyHeaderClone.querySelectorAll('th')];
+                cloneHeaders.forEach((th, index) => {
+                    const width = originalHeaders[index]?.getBoundingClientRect().width;
+                    if (width) {
+                        th.style.width = `${width}px`;
+                        th.style.minWidth = `${width}px`;
+                        th.style.maxWidth = `${width}px`;
+                    }
+                });
             };
 
             const syncFloatingScrollFromTable = () => {
@@ -472,8 +484,43 @@
 
                 if (!stickyHeaderEventsBound) {
                     document.addEventListener('scroll', syncStickyHeaderClone, { passive: true, capture: true });
-                    window.addEventListener('resize', () => requestAnimationFrame(initStickyHeaderClone));
+                    window.addEventListener('resize', () => {
+                        syncStickyHeaderClone();
+                        updateFloatingScroll();
+                    });
+
+                    let sidebarAnimFrame = null;
+                    const animateStickyHeader = () => {
+                        const startTime = performance.now();
+                        const duration = 350;
+                        const step = (now) => {
+                            syncStickyHeaderClone();
+                            updateFloatingScroll();
+                            if (now - startTime < duration) {
+                                sidebarAnimFrame = requestAnimationFrame(step);
+                            }
+                        };
+                        if (sidebarAnimFrame) cancelAnimationFrame(sidebarAnimFrame);
+                        sidebarAnimFrame = requestAnimationFrame(step);
+                    };
+
+                    window.addEventListener('sidebar-toggled', animateStickyHeader);
+                    window.addEventListener('open-mobile-sidebar', animateStickyHeader);
+                    window.addEventListener('close-mobile-sidebar', animateStickyHeader);
                     stickyHeaderEventsBound = true;
+                }
+
+                if (window.ResizeObserver) {
+                    const ro = new ResizeObserver(() => {
+                        requestAnimationFrame(() => {
+                            syncStickyHeaderClone();
+                            updateFloatingScroll();
+                        });
+                    });
+                    const containerEl = getTableContainer();
+                    if (containerEl) ro.observe(containerEl);
+                    const mainEl = document.querySelector('main');
+                    if (mainEl) ro.observe(mainEl);
                 }
 
                 syncStickyHeaderClone();

@@ -653,8 +653,9 @@
                     return;
                 }
 
-                const tableRect = scroll.getBoundingClientRect();
+                const tableRect = table.getBoundingClientRect();
                 const headerRect = header.getBoundingClientRect();
+                const scrollRect = scroll.getBoundingClientRect();
                 const topbarBottom = getTopbarBottom();
                 const shouldShow = headerRect.top < topbarBottom
                     && tableRect.bottom > topbarBottom + headerRect.height;
@@ -666,15 +667,26 @@
                 }
 
                 stickyHeaderClone.style.top = `${topbarBottom}px`;
-                stickyHeaderClone.style.left = `${tableRect.left}px`;
-                stickyHeaderClone.style.width = `${tableRect.width}px`;
+                stickyHeaderClone.style.left = `${scrollRect.left}px`;
+                stickyHeaderClone.style.width = `${scrollRect.width}px`;
 
                 const cloneTable = stickyHeaderClone.querySelector('table');
-
                 if (cloneTable) {
                     cloneTable.style.width = `${table.scrollWidth}px`;
+                    cloneTable.style.minWidth = `${table.scrollWidth}px`;
                     cloneTable.style.transform = `translateX(${-scroll.scrollLeft}px)`;
                 }
+
+                const originalHeaders = [...header.querySelectorAll('th')];
+                const cloneHeaders = [...stickyHeaderClone.querySelectorAll('th')];
+                cloneHeaders.forEach((th, index) => {
+                    const width = originalHeaders[index]?.getBoundingClientRect().width;
+                    if (width) {
+                        th.style.width = `${width}px`;
+                        th.style.minWidth = `${width}px`;
+                        th.style.maxWidth = `${width}px`;
+                    }
+                });
             };
 
             const syncFloatingScrollFromTable = () => {
@@ -777,8 +789,44 @@
                         syncStickyHeaderClone();
                         updateFloatingScroll();
                     }, { passive: true });
-                    window.addEventListener('resize', () => requestAnimationFrame(initTableFeatures));
+
+                    window.addEventListener('resize', () => {
+                        syncStickyHeaderClone();
+                        updateFloatingScroll();
+                    });
+
+                    let sidebarAnimFrame = null;
+                    const animateStickyHeader = () => {
+                        const startTime = performance.now();
+                        const duration = 350;
+                        const step = (now) => {
+                            syncStickyHeaderClone();
+                            updateFloatingScroll();
+                            if (now - startTime < duration) {
+                                sidebarAnimFrame = requestAnimationFrame(step);
+                            }
+                        };
+                        if (sidebarAnimFrame) cancelAnimationFrame(sidebarAnimFrame);
+                        sidebarAnimFrame = requestAnimationFrame(step);
+                    };
+
+                    window.addEventListener('sidebar-toggled', animateStickyHeader);
+                    window.addEventListener('open-mobile-sidebar', animateStickyHeader);
+                    window.addEventListener('close-mobile-sidebar', animateStickyHeader);
                     windowEventsBound = true;
+                }
+
+                if (window.ResizeObserver) {
+                    const ro = new ResizeObserver(() => {
+                        requestAnimationFrame(() => {
+                            syncStickyHeaderClone();
+                            updateFloatingScroll();
+                        });
+                    });
+                    const containerEl = getTableContainer();
+                    if (containerEl) ro.observe(containerEl);
+                    const mainEl = document.querySelector('main');
+                    if (mainEl) ro.observe(mainEl);
                 }
 
                 requestAnimationFrame(() => {
@@ -1347,3 +1395,4 @@
     </script>
 </body>
 </html>
+

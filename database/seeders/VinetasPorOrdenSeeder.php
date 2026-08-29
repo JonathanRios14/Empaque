@@ -1,0 +1,195 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Vineta;
+use App\Models\VinetaPorOrden;
+use Illuminate\Database\Seeder;
+
+class VinetasPorOrdenSeeder extends Seeder
+{
+    public static function records(): array
+    {
+        return [
+            [
+                'codigo_qr' => 'or-1',
+                'api_id' => 1,
+                'item' => '151998',
+                'codigo_producto' => 'P-01942',
+                'orden_del_sistema' => '3586',
+                'mes' => 'MAYO 2026',
+                'orden' => 'RF/ 115398',
+                'marca' => 'Cuban Rounds',
+                'vitola' => '4-3/4X50',
+                'nombre' => 'Robusto',
+                'capa' => 'Maduro',
+                'tipo_empaque' => 'Display/24',
+                'estado' => 'activo',
+            ],
+            [
+                'codigo_qr' => 'or-2',
+                'api_id' => 2,
+                'item' => '151944',
+                'codigo_producto' => 'P-01945',
+                'orden_del_sistema' => '3586',
+                'mes' => 'MAYO 2026',
+                'orden' => 'RF/ 115398',
+                'marca' => 'Cuban Rounds',
+                'vitola' => '7X48',
+                'nombre' => 'Churchill',
+                'capa' => 'INDONESIA',
+                'tipo_empaque' => 'Display/24',
+                'estado' => 'activo',
+            ],
+            [
+                'codigo_qr' => 'or-3',
+                'api_id' => 3,
+                'item' => '151945',
+                'codigo_producto' => 'P-01946',
+                'orden_del_sistema' => '3586',
+                'mes' => 'MAYO 2026',
+                'orden' => 'RF/ 115398',
+                'marca' => 'Cuban Rounds',
+                'vitola' => '4-3/4X50',
+                'nombre' => 'Robusto',
+                'capa' => 'INDONESIA',
+                'tipo_empaque' => 'Display/24',
+                'estado' => 'activo',
+            ],
+            [
+                'codigo_qr' => 'or-4',
+                'api_id' => 4,
+                'item' => '151997',
+                'codigo_producto' => 'P-01947',
+                'orden_del_sistema' => '3586',
+                'mes' => 'MAYO 2026',
+                'orden' => 'RF/ 115398',
+                'marca' => 'Cuban Rounds',
+                'vitola' => '6-1/8X50',
+                'nombre' => 'Toro',
+                'capa' => 'INDONESIA',
+                'tipo_empaque' => 'Display/24',
+                'estado' => 'activo',
+            ],
+            [
+                'codigo_qr' => 'or-5',
+                'api_id' => 5,
+                'item' => '151962',
+                'codigo_producto' => 'P-15236',
+                'orden_del_sistema' => '3586',
+                'mes' => 'MAYO 2026',
+                'orden' => 'RF/ 115398',
+                'marca' => 'Cuban Rounds',
+                'vitola' => '4X40',
+                'nombre' => 'Petite Corona',
+                'capa' => 'INDONESIA',
+                'tipo_empaque' => 'Display/30',
+                'estado' => 'activo',
+            ],
+            [
+                'codigo_qr' => 'or-6',
+                'api_id' => 6,
+                'item' => '10104911',
+                'codigo_producto' => 'P-02024',
+                'orden_del_sistema' => '3556',
+                'mes' => 'DICIEMBRE 2025',
+                'orden' => 'HON-4295',
+                'marca' => 'The Edge Connecticut',
+                'vitola' => '5-1/2X50',
+                'nombre' => 'Robusto',
+                'capa' => 'Connecticut',
+                'tipo_empaque' => 'Display 5',
+                'estado' => 'activo',
+            ],
+            [
+                'codigo_qr' => 'or-7',
+                'api_id' => 7,
+                'item' => '00110276',
+                'codigo_producto' => 'P-23559',
+                'orden_del_sistema' => '3597',
+                'mes' => 'JUNIO 2026',
+                'orden' => 'HON-4343',
+                'marca' => 'Smoker Friendly',
+                'vitola' => '5-1/2X50',
+                'nombre' => 'Robusto',
+                'capa' => 'Connecticut',
+                'tipo_empaque' => 'Display 5',
+                'estado' => 'activo',
+            ],
+            [
+                'codigo_qr' => 'or-8',
+                'api_id' => 8,
+                'item' => '00110275',
+                'codigo_producto' => 'P-23560',
+                'orden_del_sistema' => '3597',
+                'mes' => 'JUNIO 2026',
+                'orden' => 'HON-4343',
+                'marca' => 'Smoker Friendly',
+                'vitola' => '5-1/2X50',
+                'nombre' => 'Robusto',
+                'capa' => 'Corojo',
+                'tipo_empaque' => 'Display 5',
+                'estado' => 'activo',
+            ],
+            [
+                'codigo_qr' => 'or-9',
+                'api_id' => 9,
+                'item' => '00110277',
+                'codigo_producto' => 'P-23561',
+                'orden_del_sistema' => '3597',
+                'mes' => 'JUNIO 2026',
+                'orden' => 'HON-4343',
+                'marca' => 'Smoker Friendly',
+                'vitola' => '5-1/2X50',
+                'nombre' => 'Robusto',
+                'capa' => 'Maduro',
+                'tipo_empaque' => 'Display 5',
+                'estado' => 'activo',
+            ],
+            [
+                'codigo_qr' => 'or-10',
+                'api_id' => 10,
+                'item' => '10104912',
+                'codigo_producto' => 'P-02004',
+                'orden_del_sistema' => '3601',
+                'mes' => 'JULIO 2026',
+                'orden' => 'HON-4344',
+                'marca' => 'The Edge',
+                'vitola' => '5-1/2X50',
+                'nombre' => 'Robusto',
+                'capa' => 'Corojo',
+                'tipo_empaque' => 'Display 5',
+                'estado' => 'activo',
+            ],
+        ];
+    }
+
+    public function run(): void
+    {
+        foreach (self::records() as $record) {
+            VinetaPorOrden::updateOrCreate(
+                ['codigo_qr' => $record['codigo_qr']],
+                $record
+            );
+
+            Vineta::updateOrCreate(
+                ['id_pendiente_empaque' => $record['codigo_qr']],
+                [
+                    'api_id' => $record['api_id'],
+                    'item' => $record['item'],
+                    'codigo_producto' => $record['codigo_producto'],
+                    'orden_del_sistema' => $record['orden_del_sistema'],
+                    'mes' => $record['mes'],
+                    'orden' => $record['orden'],
+                    'marca' => $record['marca'],
+                    'nombre' => $record['nombre'],
+                    'capa' => $record['capa'],
+                    'vitola' => $record['vitola'],
+                    'tipo_empaque' => $record['tipo_empaque'],
+                    'estado' => $record['estado'],
+                    'impreso' => true,
+                ]
+            );
+        }
+    }
+}

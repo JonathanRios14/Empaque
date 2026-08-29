@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Producto;
 use App\Models\TipoEmpaque;
 use App\Models\Vineta;
+use App\Models\VinetaPorOrden;
 use App\Models\VinetaRegistro;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -151,34 +152,178 @@ class VinetaController extends Controller
             ->all();
     }
 
+    private function isVinetaPorOrden(Vineta $vineta): bool
+    {
+        $idPendiente = strtolower(trim((string) $vineta->id_pendiente_empaque));
+        if (str_starts_with($idPendiente, 'or-') || str_starts_with($idPendiente, 'o-')) {
+            return true;
+        }
+
+        return VinetaPorOrden::query()
+            ->whereRaw('LOWER(codigo_qr) = ?', [$idPendiente])
+            ->exists();
+    }
+
     private function findVineta(string $candidate): ?Vineta
     {
-        return Vineta::query()
-            ->where(function ($query) use ($candidate) {
-                if (ctype_digit($candidate)) {
-                    $query->where('api_id', (int) $candidate);
-                }
+        $candidate = trim($candidate);
+        $candidateClean = ltrim($candidate, '#');
+        $candidateLower = strtolower($candidate);
 
-                $query->orWhere('id_pendiente_empaque', $candidate)
-                    ->orWhere('id_detalle_programacion', $candidate)
+        if ($candidate === '') {
+            return null;
+        }
+
+        // 1. Direct match by api_id (the primary unique identifier for individual viñetas)
+        if (ctype_digit($candidateClean)) {
+            $vineta = Vineta::query()->where('api_id', (int) $candidateClean)->first();
+            if ($vineta) {
+                return $vineta;
+            }
+        }
+
+        // 2. Viñeta por orden formats (OR-1, O-1, etc.)
+        if (preg_match('/^o(?:r)?-(\d+)$/i', $candidate, $m)) {
+            $vpo = VinetaPorOrden::query()
+                ->where(function ($query) use ($m) {
+                    $query->whereRaw('LOWER(codigo_qr) = ?', ['or-' . $m[1]])
+                        ->orWhereRaw('LOWER(codigo_qr) = ?', ['o-' . $m[1]])
+                        ->orWhere('id', (int) $m[1]);
+                })
+                ->first();
+
+            if ($vpo) {
+                return Vineta::updateOrCreate(
+                    ['id_pendiente_empaque' => $vpo->codigo_qr],
+                    [
+                        'api_id' => $vpo->api_id ?: (900000 + $vpo->id),
+                        'item' => $vpo->item,
+                        'codigo_producto' => $vpo->codigo_producto,
+                        'orden_del_sistema' => $vpo->orden_del_sistema,
+                        'mes' => $vpo->mes,
+                        'orden' => $vpo->orden,
+                        'marca' => $vpo->marca,
+                        'nombre' => $vpo->nombre,
+                        'capa' => $vpo->capa,
+                        'vitola' => $vpo->vitola,
+                        'tipo_empaque' => $vpo->tipo_empaque,
+                        'estado' => $vpo->estado ?: 'activo',
+                        'impreso' => true,
+                    ]
+                );
+            }
+
+            $vineta = Vineta::query()
+                ->where(function ($query) use ($m) {
+                    $query->whereRaw('LOWER(id_pendiente_empaque) = ?', ['or-' . $m[1]])
+                        ->orWhereRaw('LOWER(id_pendiente_empaque) = ?', ['o-' . $m[1]]);
+                })
+                ->first();
+
+            if ($vineta) {
+                return $vineta;
+            }
+        }
+
+        // 3. Exact match in VinetaPorOrden by codigo_qr
+        $vpo = VinetaPorOrden::query()
+            ->whereRaw('LOWER(codigo_qr) = ?', [$candidateLower])
+            ->first();
+
+        if ($vpo) {
+            return Vineta::updateOrCreate(
+                ['id_pendiente_empaque' => $vpo->codigo_qr],
+                [
+                    'api_id' => $vpo->api_id ?: (900000 + $vpo->id),
+                    'item' => $vpo->item,
+                    'codigo_producto' => $vpo->codigo_producto,
+                    'orden_del_sistema' => $vpo->orden_del_sistema,
+                    'mes' => $vpo->mes,
+                    'orden' => $vpo->orden,
+                    'marca' => $vpo->marca,
+                    'nombre' => $vpo->nombre,
+                    'capa' => $vpo->capa,
+                    'vitola' => $vpo->vitola,
+                    'tipo_empaque' => $vpo->tipo_empaque,
+                    'estado' => $vpo->estado ?: 'activo',
+                    'impreso' => true,
+                ]
+            );
+        }
+
+        // 4. Exact match by id_pendiente_empaque on Vineta
+        $vineta = Vineta::query()
+            ->where(function ($query) use ($candidate, $candidateLower) {
+                $query->where('id_pendiente_empaque', $candidate)
+                    ->orWhereRaw('LOWER(id_pendiente_empaque) = ?', [$candidateLower]);
+            })
+            ->first();
+
+        if ($vineta) {
+            return $vineta;
+        }
+
+        // 5. Fallback match by secondary fields (id_detalle_programacion, codigo_producto, item, orden, orden_del_sistema)
+        $vineta = Vineta::query()
+            ->where(function ($query) use ($candidate) {
+                $query->where('id_detalle_programacion', $candidate)
                     ->orWhere('codigo_producto', $candidate)
                     ->orWhere('item', $candidate)
                     ->orWhere('orden', $candidate)
                     ->orWhere('orden_del_sistema', $candidate);
             })
             ->first();
+
+        if ($vineta) {
+            return $vineta;
+        }
+
+        // 6. Fallback match in VinetaPorOrden by secondary fields
+        $vpo = VinetaPorOrden::query()
+            ->where(function ($query) use ($candidate) {
+                $query->where('id_pendiente_empaque', $candidate)
+                    ->orWhere('codigo_producto', $candidate)
+                    ->orWhere('item', $candidate);
+            })
+            ->first();
+
+        if ($vpo) {
+            return Vineta::updateOrCreate(
+                ['id_pendiente_empaque' => $vpo->codigo_qr],
+                [
+                    'api_id' => $vpo->api_id ?: (900000 + $vpo->id),
+                    'item' => $vpo->item,
+                    'codigo_producto' => $vpo->codigo_producto,
+                    'orden_del_sistema' => $vpo->orden_del_sistema,
+                    'mes' => $vpo->mes,
+                    'orden' => $vpo->orden,
+                    'marca' => $vpo->marca,
+                    'nombre' => $vpo->nombre,
+                    'capa' => $vpo->capa,
+                    'vitola' => $vpo->vitola,
+                    'tipo_empaque' => $vpo->tipo_empaque,
+                    'estado' => $vpo->estado ?: 'activo',
+                    'impreso' => true,
+                ]
+            );
+        }
+
+        return null;
     }
 
     private function vinetaPayload(Vineta $vineta, $scannedAt = null): array
     {
         $scannedAt ??= now('America/Tegucigalpa');
         $producto = $this->findProducto($vineta);
+        $isPorOrden = $this->isVinetaPorOrden($vineta);
 
         return [
             'id' => $vineta->id,
-            'api_id' => $vineta->api_id,
+            'api_id' => $vineta->api_id !== null ? (int) $vineta->api_id : null,
+            'codigo_qr' => $vineta->id_pendiente_empaque,
             'id_pendiente_empaque' => $vineta->id_pendiente_empaque,
             'id_detalle_programacion' => $vineta->id_detalle_programacion,
+            'es_por_orden' => $isPorOrden,
             'fecha' => $vineta->fecha?->format('Y-m-d'),
             'marca' => $vineta->marca,
             'nombre' => $vineta->nombre,
@@ -207,6 +352,7 @@ class VinetaController extends Controller
 
     private function procesoVinetaPayload(Vineta $vineta): array
     {
+        $isPorOrden = $this->isVinetaPorOrden($vineta);
         $registros = VinetaRegistro::query()
             ->where('estado', VinetaRegistro::ESTADO_ACTIVO)
             ->where(function ($query) use ($vineta) {
@@ -228,6 +374,12 @@ class VinetaController extends Controller
             'anillado' => null,
             'llenado' => null,
         ];
+        $actividadesPorGrupo = [
+            'rezago' => [],
+            'anillado' => [],
+            'llenado' => [],
+        ];
+        $registrosPayload = [];
 
         foreach ($registros as $registro) {
             $grupo = $this->grupoActividadProceso(
@@ -236,23 +388,53 @@ class VinetaController extends Controller
                 $registro->actividad_codigo
             );
 
+            $payload = [
+                'id' => $registro->id,
+                'actividad_id' => $registro->actividad_id,
+                'actividad_api_id' => $registro->actividad_api_id,
+                'actividad_codigo' => $registro->actividad_codigo,
+                'actividad_nombre' => $registro->actividad_nombre,
+                'grupo' => $grupo,
+                'empleado' => $registro->empleado_nombre,
+                'empleado_codigo' => $registro->empleado_codigo,
+                'fecha' => $registro->fechaHoraRegistroTexto(),
+            ];
+
             if ($grupo && array_key_exists($grupo, $grupos)) {
                 $grupos[$grupo] = $registro;
+                $actividadesPorGrupo[$grupo][] = $payload;
             }
+
+            $registrosPayload[] = $payload;
+        }
+
+        if ($isPorOrden) {
+            return [
+                'puede_llenar' => true,
+                'mensaje_bloqueo_llenado' => null,
+                'es_por_orden' => true,
+                'pasos' => [
+                    $this->pasoProcesoPayload('rezago', 'Rezago', null, false, $actividadesPorGrupo['rezago']),
+                    $this->pasoProcesoPayload('anillado', 'Anillado', null, false, $actividadesPorGrupo['anillado']),
+                    $this->pasoProcesoPayload('llenado', 'Llenado', null, false, $actividadesPorGrupo['llenado']),
+                ],
+                'registros' => $registrosPayload,
+            ];
         }
 
         return [
             'puede_llenar' => true,
             'mensaje_bloqueo_llenado' => null,
             'pasos' => [
-                $this->pasoProcesoPayload('rezago', 'Rezago', $grupos['rezago'], true),
-                $this->pasoProcesoPayload('anillado', 'Anillado', $grupos['anillado'], false),
-                $this->pasoProcesoPayload('llenado', 'Llenado', $grupos['llenado'], false),
+                $this->pasoProcesoPayload('rezago', 'Rezago', $grupos['rezago'], true, $actividadesPorGrupo['rezago']),
+                $this->pasoProcesoPayload('anillado', 'Anillado', $grupos['anillado'], false, $actividadesPorGrupo['anillado']),
+                $this->pasoProcesoPayload('llenado', 'Llenado', $grupos['llenado'], false, $actividadesPorGrupo['llenado']),
             ],
+            'registros' => $registrosPayload,
         ];
     }
 
-    private function pasoProcesoPayload(string $key, string $label, ?VinetaRegistro $registro, bool $opcional): array
+    private function pasoProcesoPayload(string $key, string $label, ?VinetaRegistro $registro, bool $opcional, array $actividades = []): array
     {
         return [
             'key' => $key,
@@ -262,15 +444,46 @@ class VinetaController extends Controller
             'actividad' => $registro?->actividad_nombre,
             'empleado' => $registro?->empleado_nombre,
             'fecha' => $registro?->fechaHoraRegistroTexto(),
+            'actividades' => $actividades,
         ];
     }
 
     private function grupoActividadProceso(?string $nombre, ?string $tipoEmpaque = null, ?string $codigo = null): ?string
     {
+        $nombreNorm = $this->normalizeMatchValue($nombre ?? '');
         $texto = $this->normalizeMatchValue(implode(' ', array_filter([$nombre, $tipoEmpaque, $codigo])));
 
         if ($texto === '') {
             return null;
+        }
+
+        if (str_contains($nombreNorm, 'rezag') || str_contains($nombreNorm, 'rezad') || str_contains($nombreNorm, 'resag')) {
+            return 'rezago';
+        }
+
+        if (
+            str_contains($nombreNorm, 'anill')
+            || str_contains($nombreNorm, 'anil')
+            || str_contains($nombreNorm, 'celof')
+            || str_contains($nombreNorm, 'sello')
+            || str_contains($nombreNorm, 'esponj')
+            || str_contains($nombreNorm, 'lamina')
+        ) {
+            return 'anillado';
+        }
+
+        if (
+            str_contains($nombreNorm, 'llenad')
+            || str_contains($nombreNorm, 'kretek')
+            || str_contains($nombreNorm, 'petaca')
+            || str_contains($nombreNorm, 'sampler')
+            || str_contains($nombreNorm, 'display')
+            || str_contains($nombreNorm, 'bolsa')
+            || str_contains($nombreNorm, 'sellado')
+            || (str_contains($nombreNorm, 'sell') && ! str_contains($nombreNorm, 'celof') && ! str_contains($nombreNorm, 'anill'))
+            || (str_contains($nombreNorm, 'paquete') && str_contains($nombreNorm, 'tubo'))
+        ) {
+            return 'llenado';
         }
 
         if (str_contains($texto, 'rezag') || str_contains($texto, 'rezad') || str_contains($texto, 'resag')) {
@@ -282,7 +495,6 @@ class VinetaController extends Controller
             || str_contains($texto, 'anil')
             || str_contains($texto, 'celof')
             || str_contains($texto, 'sello')
-            || str_contains($texto, 'sell')
             || str_contains($texto, 'esponj')
             || str_contains($texto, 'lamina')
         ) {
@@ -291,9 +503,13 @@ class VinetaController extends Controller
 
         if (
             str_contains($texto, 'llenad')
-            || str_contains($texto, 'llenado')
+            || str_contains($texto, 'kretek')
             || str_contains($texto, 'petaca')
             || str_contains($texto, 'sampler')
+            || str_contains($texto, 'display')
+            || str_contains($texto, 'bolsa')
+            || str_contains($texto, 'sellado')
+            || (str_contains($texto, 'sell') && ! str_contains($texto, 'celof') && ! str_contains($texto, 'anill'))
             || (str_contains($texto, 'paquete') && str_contains($texto, 'tubo'))
         ) {
             return 'llenado';
@@ -301,6 +517,9 @@ class VinetaController extends Controller
 
         return null;
     }
+
+
+
 
     private function findProducto(Vineta $vineta): ?Producto
     {
@@ -402,17 +621,52 @@ class VinetaController extends Controller
             ->pluck('nombre', 'id');
         $tipoEmpaqueFiltro = $this->lowerTrim($tipoEmpaqueFiltro);
 
-        return $producto->actividades
+        $actividades = $producto->actividades
             ->filter(function ($actividad) use ($tiposEmpaque, $tipoEmpaqueFiltro) {
+                // Solo actividades activas para este producto
+                $activo = $actividad->pivot?->activo;
+                if ($activo !== null && ($activo === false || $activo === 0 || $activo === '0')) {
+                    return false;
+                }
+
                 if ($tipoEmpaqueFiltro === '') {
                     return true;
                 }
 
                 $tipoEmpaqueId = $actividad->pivot?->tipo_empaque_id;
+                $tipoEmpaqueNombre = $tipoEmpaqueId ? $tiposEmpaque->get($tipoEmpaqueId) : null;
+                if (! $tipoEmpaqueNombre) {
+                    return true;
+                }
 
-                return $this->lowerTrim($tipoEmpaqueId ? $tiposEmpaque->get($tipoEmpaqueId) : null) === $tipoEmpaqueFiltro;
+                return $this->lowerTrim($tipoEmpaqueNombre) === $tipoEmpaqueFiltro;
+            });
+
+        if ($actividades->isEmpty() && $producto->actividades->isNotEmpty()) {
+            $actividades = $producto->actividades->filter(function ($actividad) {
+                $activo = $actividad->pivot?->activo;
+                return $activo === null || ($activo !== false && $activo !== 0 && $activo !== '0');
+            });
+        }
+
+        return $actividades
+            ->sort(function ($a, $b) {
+                $fechaA = $a->pivot?->ultimo_escaneo_en ? strtotime((string) $a->pivot->ultimo_escaneo_en) : 0;
+                $fechaB = $b->pivot?->ultimo_escaneo_en ? strtotime((string) $b->pivot->ultimo_escaneo_en) : 0;
+
+                if ($fechaA !== $fechaB) {
+                    return $fechaB <=> $fechaA; // Más reciente primero
+                }
+
+                $updA = $a->pivot?->updated_at ? strtotime((string) $a->pivot->updated_at) : 0;
+                $updB = $b->pivot?->updated_at ? strtotime((string) $b->pivot->updated_at) : 0;
+
+                if ($updA !== $updB) {
+                    return $updB <=> $updA;
+                }
+
+                return strnatcasecmp($a->nombre ?? '', $b->nombre ?? '');
             })
-            ->sortBy('nombre')
             ->values()
             ->map(function ($actividad) use ($tiposEmpaque) {
                 $tipoEmpaqueId = $actividad->pivot?->tipo_empaque_id;
@@ -428,6 +682,7 @@ class VinetaController extends Controller
             })
             ->all();
     }
+
 
     private function findExternalProduct(Vineta $vineta, array $items): ?array
     {
