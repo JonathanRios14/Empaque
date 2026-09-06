@@ -106,10 +106,44 @@
                                     <label class="theme-text block text-xs font-semibold mb-1">Grupo actividad</label>
                                     <select name="actividad_grupo"
                                             class="w-full rounded-xl border theme-border bg-white px-3 py-2 text-sm theme-title focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition">
-                                        <option value="" @selected($actividadGrupo === '')>Todos</option>
-                                        <option value="anillado" @selected($actividadGrupo === 'anillado')>Anillado</option>
-                                        <option value="rezago" @selected($actividadGrupo === 'rezago')>Rezago</option>
-                                        <option value="llenado" @selected($actividadGrupo === 'llenado')>Llenado</option>
+                                        <option value="" @selected($actividadGrupo === '')>Todos los grupos</option>
+
+                                        <optgroup label="Rezagadoras">
+                                            <option value="rezagadoras_rezago" @selected($actividadGrupo === 'rezagadoras_rezago')>Rezagadoras (Rezago)</option>
+                                            <option value="rezagadoras_anillado" @selected($actividadGrupo === 'rezagadoras_anillado')>Rezagadoras (Anillado)</option>
+                                            <option value="rezagadoras_llenado" @selected($actividadGrupo === 'rezagadoras_llenado')>Rezagadoras (Llenado)</option>
+                                            <option value="rezagadoras_hora" @selected($actividadGrupo === 'rezagadoras_hora')>Rezagadoras (Hora)</option>
+                                        </optgroup>
+
+                                        <optgroup label="Anilladoras">
+                                            <option value="anilladoras_anillado" @selected($actividadGrupo === 'anilladoras_anillado')>Anilladoras (Anillado)</option>
+                                            <option value="anilladoras_rezago" @selected($actividadGrupo === 'anilladoras_rezago')>Anilladoras (Rezago)</option>
+                                            <option value="anilladoras_llenado" @selected($actividadGrupo === 'anilladoras_llenado')>Anilladoras (Llenado)</option>
+                                            <option value="anilladoras_hora" @selected($actividadGrupo === 'anilladoras_hora')>Anilladoras (Hora)</option>
+                                        </optgroup>
+
+                                        <optgroup label="Llenadoras">
+                                            <option value="llenadoras_llenado" @selected($actividadGrupo === 'llenadoras_llenado')>Llenadoras (Llenado)</option>
+                                            <option value="llenadoras_rezago" @selected($actividadGrupo === 'llenadoras_rezago')>Llenadoras (Rezago)</option>
+                                            <option value="llenadoras_anillado" @selected($actividadGrupo === 'llenadoras_anillado')>Llenadoras (Anillado)</option>
+                                            <option value="llenadoras_hora" @selected($actividadGrupo === 'llenadoras_hora')>Llenadoras (Hora)</option>
+                                        </optgroup>
+
+                                        <optgroup label="Limpiadoras">
+                                            <option value="limpiadoras_limpieza" @selected($actividadGrupo === 'limpiadoras_limpieza')>Limpiadoras (Limpieza)</option>
+                                            <option value="limpiadoras_rezago" @selected($actividadGrupo === 'limpiadoras_rezago')>Limpiadoras (Rezago)</option>
+                                            <option value="limpiadoras_anillado" @selected($actividadGrupo === 'limpiadoras_anillado')>Limpiadoras (Anillado)</option>
+                                            <option value="limpiadoras_llenado" @selected($actividadGrupo === 'limpiadoras_llenado')>Limpiadoras (Llenado)</option>
+                                            <option value="limpiadoras_hora" @selected($actividadGrupo === 'limpiadoras_hora')>Limpiadoras (Hora)</option>
+                                        </optgroup>
+
+                                        <optgroup label="Actividades Generales">
+                                            <option value="rezago" @selected($actividadGrupo === 'rezago')>Rezago (General)</option>
+                                            <option value="anillado" @selected($actividadGrupo === 'anillado')>Anillado (General)</option>
+                                            <option value="llenado" @selected($actividadGrupo === 'llenado')>Llenado (General)</option>
+                                            <option value="limpieza" @selected($actividadGrupo === 'limpieza')>Limpieza (General)</option>
+                                            <option value="por_hora" @selected($actividadGrupo === 'por_hora')>Por hora (General)</option>
+                                        </optgroup>
                                     </select>
                                 </div>
 

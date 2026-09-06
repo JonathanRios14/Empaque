@@ -22,7 +22,8 @@ class DashboardController extends Controller
     {
         $today = Carbon::now($this->timezone)->startOfDay();
         $selectedDay = $this->dateParam($request->get('fecha'), $today);
-        $selectedDay = $selectedDay->gt($today) ? $today->copy() : $selectedDay;
+        $maxFutureDay = $today->copy()->addDays(14);
+        $selectedDay = $selectedDay->gt($maxFutureDay) ? $today->copy() : $selectedDay;
         $selectedMonth = $this->monthParam($request->get('mes'), $today);
         $selectedYear = $this->yearParam($request->get('anio'), $today);
         $dayStart = $selectedDay->copy()->startOfDay();
@@ -43,6 +44,22 @@ class DashboardController extends Controller
             return response()->json([
                 'fecha' => $selectedDay->format('Y-m-d'),
                 'areas' => array_values($dailyAreaSummary),
+            ]);
+        }
+
+        if ($request->boolean('ranking_mes') || ($request->ajax() && $request->has('ranking_mes'))) {
+            $rankingMonth = $this->monthParam($request->get('mes'), $today);
+            $from = $rankingMonth->copy()->startOfMonth();
+            $to = $rankingMonth->copy()->endOfMonth();
+
+            $ranking = $this->topEmployeesByArea($from, $to, $context);
+            $monthLabel = ucfirst($rankingMonth->locale('es')->translatedFormat('F Y'));
+
+            return response()->json([
+                'ok' => true,
+                'mes' => $rankingMonth->format('Y-m'),
+                'label' => $monthLabel,
+                'ranking' => $ranking,
             ]);
         }
 
@@ -709,12 +726,14 @@ class DashboardController extends Controller
         ]) . ")";
 
         return "CASE
-            WHEN $nombre LIKE '%rezag%' OR $nombre LIKE '%rezad%' OR $nombre LIKE '%resag%' THEN 'rezago'
-            WHEN $nombre LIKE '%anill%' OR $nombre LIKE '%anil%' OR $nombre LIKE '%celof%' OR $nombre LIKE '%sello%' OR $nombre LIKE '%esponj%' OR $nombre LIKE '%lamina%' OR $nombre LIKE '%lámina%' THEN 'anillado'
-            WHEN $nombre LIKE '%llenad%' OR $nombre LIKE '%kretek%' OR $nombre LIKE '%display%' OR $nombre LIKE '%bolsa%' OR $nombre LIKE '%sellado%' OR ($nombre LIKE '%sell%' AND $nombre NOT LIKE '%celof%' AND $nombre NOT LIKE '%anill%') OR $nombre LIKE '%petaca%' OR $nombre LIKE '%sampler%' OR ($nombre LIKE '%paquete%' AND $nombre LIKE '%tubo%') THEN 'llenado'
-            WHEN $text LIKE '%rezag%' OR $text LIKE '%rezad%' OR $text LIKE '%resag%' THEN 'rezago'
-            WHEN $text LIKE '%anill%' OR $text LIKE '%anil%' OR $text LIKE '%celof%' OR $text LIKE '%sello%' OR $text LIKE '%esponj%' OR $text LIKE '%lamina%' OR $text LIKE '%lámina%' THEN 'anillado'
-            WHEN $text LIKE '%llenad%' OR $text LIKE '%kretek%' OR $text LIKE '%display%' OR $text LIKE '%bolsa%' OR $text LIKE '%sellado%' OR ($text LIKE '%sell%' AND $text NOT LIKE '%celof%' AND $text NOT LIKE '%anill%') OR $text LIKE '%petaca%' OR $text LIKE '%sampler%' OR ($text LIKE '%paquete%' AND $text LIKE '%tubo%') THEN 'llenado'
+            WHEN $nombre LIKE '%rezag%' OR $nombre LIKE '%rezad%' OR $nombre LIKE '%resag%' OR $nombre LIKE '%rezurado%' OR $nombre LIKE '%rasurado%' THEN 'rezago'
+            WHEN $nombre LIKE '%anill%' OR $nombre LIKE '%anil%' OR $nombre LIKE '%celof%' OR $nombre LIKE '%cello%' OR $nombre LIKE '%sello%' OR $nombre LIKE '%esponj%' OR $nombre LIKE '%lamina%' OR $nombre LIKE '%lámina%' OR $nombre LIKE '%tapon%' OR $nombre LIKE '%tapón%' OR $nombre LIKE '%banda%' OR $nombre LIKE '%cinta%' OR $nombre LIKE '%rolado%' THEN 'anillado'
+            WHEN $nombre LIKE '%llenad%' OR $nombre LIKE '%kretek%' OR $nombre LIKE '%display%' OR $nombre LIKE '%bolsa%' OR $nombre LIKE '%bolsas%' OR $nombre LIKE '%sellado%' OR $nombre LIKE '%costura%' OR $nombre LIKE '%jarra%' OR $nombre LIKE '%petaca%' OR $nombre LIKE '%sampler%' OR ($nombre LIKE '%paquete%' AND $nombre LIKE '%tubo%') OR $nombre LIKE '%doblado de bolsa%' THEN 'llenado'
+            WHEN ($nombre LIKE '%limpieza%' OR $nombre LIKE '%limpiad%') AND $nombre NOT LIKE '%llenado de bolsa%' THEN 'limpieza'
+            WHEN $text LIKE '%rezag%' OR $text LIKE '%rezad%' OR $text LIKE '%resag%' OR $text LIKE '%rezurado%' OR $text LIKE '%rasurado%' THEN 'rezago'
+            WHEN $text LIKE '%anill%' OR $text LIKE '%anil%' OR $text LIKE '%celof%' OR $text LIKE '%cello%' OR $text LIKE '%sello%' OR $text LIKE '%esponj%' OR $text LIKE '%lamina%' OR $text LIKE '%lámina%' OR $text LIKE '%tapon%' OR $text LIKE '%tapón%' OR $text LIKE '%banda%' OR $text LIKE '%cinta%' OR $text LIKE '%rolado%' THEN 'anillado'
+            WHEN $text LIKE '%llenad%' OR $text LIKE '%kretek%' OR $text LIKE '%display%' OR $text LIKE '%bolsa%' OR $text LIKE '%bolsas%' OR $text LIKE '%sellado%' OR $text LIKE '%costura%' OR $text LIKE '%jarra%' OR $text LIKE '%petaca%' OR $text LIKE '%sampler%' OR ($text LIKE '%paquete%' AND $text LIKE '%tubo%') OR $text LIKE '%doblado de bolsa%' THEN 'llenado'
+            WHEN ($text LIKE '%limpieza%' OR $text LIKE '%limpiad%') AND $text NOT LIKE '%llenado de bolsa%' THEN 'limpieza'
             ELSE 'otros'
         END";
     }
@@ -728,9 +747,11 @@ class DashboardController extends Controller
         ]) . ")";
 
         return "CASE
+            WHEN vineta_registros.empleado_codigo IN ('8219', '8217') OR empleados_dashboard.codigo IN ('8219', '8217') THEN 'rezago'
             WHEN $text LIKE '%rezag%' OR $text LIKE '%rezad%' OR $text LIKE '%resag%' THEN 'rezago'
-            WHEN $text LIKE '%llenad%' OR $text LIKE '%sell%' OR $text LIKE '%display%' OR $text LIKE '%bolsa%' OR $text LIKE '%kretek%' OR $text LIKE '%petaca%' OR $text LIKE '%sampler%' THEN 'llenado'
-            WHEN $text LIKE '%anill%' OR $text LIKE '%anil%' OR $text LIKE '%celof%' OR $text LIKE '%sello%' OR $text LIKE '%esponj%' OR $text LIKE '%lamina%' OR $text LIKE '%lámina%' OR $text LIKE '%brocha%' THEN 'anillado'
+            WHEN $text LIKE '%limpia%' OR $text LIKE '%limpi%' THEN 'limpieza'
+            WHEN $text LIKE '%anill%' OR $text LIKE '%anil%' OR $text LIKE '%celof%' OR $text LIKE '%sello%' OR $text LIKE '%esponj%' OR $text LIKE '%lamina%' OR $text LIKE '%lámina%' OR $text LIKE '%pega%' OR $text LIKE '%etiquet%' THEN 'anillado'
+            WHEN $text LIKE '%llenad%' OR $text LIKE '%embasad%' OR $text LIKE '%paquet%' OR $text LIKE '%sellado%' OR $text LIKE '%display%' OR $text LIKE '%bolsa%' OR $text LIKE '%kretek%' OR $text LIKE '%petaca%' OR $text LIKE '%sampler%' THEN 'llenado'
             ELSE 'otros'
         END";
     }
@@ -745,12 +766,14 @@ class DashboardController extends Controller
         ]) . ")";
 
         return "CASE
-            WHEN $nombre LIKE '%rezag%' OR $nombre LIKE '%rezad%' OR $nombre LIKE '%resag%' THEN 'Rezago'
-            WHEN $nombre LIKE '%anill%' OR $nombre LIKE '%anil%' OR $nombre LIKE '%celof%' OR $nombre LIKE '%sello%' OR $nombre LIKE '%esponj%' OR $nombre LIKE '%lamina%' OR $nombre LIKE '%lámina%' THEN 'Anillado'
-            WHEN $nombre LIKE '%llenad%' OR $nombre LIKE '%kretek%' OR $nombre LIKE '%display%' OR $nombre LIKE '%bolsa%' OR $nombre LIKE '%sellado%' OR ($nombre LIKE '%sell%' AND $nombre NOT LIKE '%celof%' AND $nombre NOT LIKE '%anill%') OR $nombre LIKE '%petaca%' OR $nombre LIKE '%sampler%' OR ($nombre LIKE '%paquete%' AND $nombre LIKE '%tubo%') THEN 'Llenado'
-            WHEN $text LIKE '%rezag%' OR $text LIKE '%rezad%' OR $text LIKE '%resag%' THEN 'Rezago'
-            WHEN $text LIKE '%anill%' OR $text LIKE '%anil%' OR $text LIKE '%celof%' OR $text LIKE '%sello%' OR $text LIKE '%esponj%' OR $text LIKE '%lamina%' OR $text LIKE '%lámina%' THEN 'Anillado'
-            WHEN $text LIKE '%llenad%' OR $text LIKE '%kretek%' OR $text LIKE '%display%' OR $text LIKE '%bolsa%' OR $text LIKE '%sellado%' OR ($text LIKE '%sell%' AND $text NOT LIKE '%celof%' AND $text NOT LIKE '%anill%') OR $text LIKE '%petaca%' OR $text LIKE '%sampler%' OR ($text LIKE '%paquete%' AND $text LIKE '%tubo%') THEN 'Llenado'
+            WHEN $nombre LIKE '%rezag%' OR $nombre LIKE '%rezad%' OR $nombre LIKE '%resag%' OR $nombre LIKE '%rezurado%' OR $nombre LIKE '%rasurado%' THEN 'Rezago'
+            WHEN $nombre LIKE '%anill%' OR $nombre LIKE '%anil%' OR $nombre LIKE '%celof%' OR $nombre LIKE '%cello%' OR $nombre LIKE '%sello%' OR $nombre LIKE '%esponj%' OR $nombre LIKE '%lamina%' OR $nombre LIKE '%lámina%' OR $nombre LIKE '%tapon%' OR $nombre LIKE '%tapón%' OR $nombre LIKE '%banda%' OR $nombre LIKE '%cinta%' OR $nombre LIKE '%rolado%' THEN 'Anillado'
+            WHEN $nombre LIKE '%llenad%' OR $nombre LIKE '%kretek%' OR $nombre LIKE '%display%' OR $nombre LIKE '%bolsa%' OR $nombre LIKE '%bolsas%' OR $nombre LIKE '%sellado%' OR $nombre LIKE '%costura%' OR $nombre LIKE '%jarra%' OR $nombre LIKE '%petaca%' OR $nombre LIKE '%sampler%' OR ($nombre LIKE '%paquete%' AND $nombre LIKE '%tubo%') OR $nombre LIKE '%doblado de bolsa%' THEN 'Llenado'
+            WHEN ($nombre LIKE '%limpieza%' OR $nombre LIKE '%limpiad%') AND $nombre NOT LIKE '%llenado de bolsa%' THEN 'Limpieza'
+            WHEN $text LIKE '%rezag%' OR $text LIKE '%rezad%' OR $text LIKE '%resag%' OR $text LIKE '%rezurado%' OR $text LIKE '%rasurado%' THEN 'Rezago'
+            WHEN $text LIKE '%anill%' OR $text LIKE '%anil%' OR $text LIKE '%celof%' OR $text LIKE '%cello%' OR $text LIKE '%sello%' OR $text LIKE '%esponj%' OR $text LIKE '%lamina%' OR $text LIKE '%lámina%' OR $text LIKE '%tapon%' OR $text LIKE '%tapón%' OR $text LIKE '%banda%' OR $text LIKE '%cinta%' OR $text LIKE '%rolado%' THEN 'Anillado'
+            WHEN $text LIKE '%llenad%' OR $text LIKE '%kretek%' OR $text LIKE '%display%' OR $text LIKE '%bolsa%' OR $text LIKE '%bolsas%' OR $text LIKE '%sellado%' OR $text LIKE '%costura%' OR $text LIKE '%jarra%' OR $text LIKE '%petaca%' OR $text LIKE '%sampler%' OR ($text LIKE '%paquete%' AND $text LIKE '%tubo%') OR $text LIKE '%doblado de bolsa%' THEN 'Llenado'
+            WHEN ($text LIKE '%limpieza%' OR $text LIKE '%limpiad%') AND $text NOT LIKE '%llenado de bolsa%' THEN 'Limpieza'
             ELSE 'Otros'
         END";
     }

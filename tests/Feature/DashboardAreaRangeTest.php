@@ -78,4 +78,31 @@ class DashboardAreaRangeTest extends TestCase
         $this->assertEquals('2026-08-01', $response->json('fecha_desde'));
         $this->assertEquals('2026-08-15', $response->json('fecha_hasta'));
     }
+
+    public function test_dashboard_endpoint_ajax_ranking_mes(): void
+    {
+        $user = $this->createAuthorizedUser();
+
+        $response = $this->actingAs($user)->get(route('dashboard', [
+            'ranking_mes' => 1,
+            'mes' => '2026-08',
+        ]), [
+            'X-Requested-With' => 'XMLHttpRequest',
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonStructure([
+            'ok',
+            'mes',
+            'label',
+            'ranking' => [
+                'rezago' => ['key', 'label', 'color', 'rows'],
+                'anillado' => ['key', 'label', 'color', 'rows'],
+                'llenado' => ['key', 'label', 'color', 'rows'],
+            ],
+        ]);
+        $this->assertTrue($response->json('ok'));
+        $this->assertEquals('2026-08', $response->json('mes'));
+        $this->assertEquals('Agosto 2026', $response->json('label'));
+    }
 }

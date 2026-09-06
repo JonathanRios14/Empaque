@@ -32,7 +32,7 @@ class VinetaRegistroController extends Controller
         $validator = Validator::make($request->query(), [
             'fecha' => ['required', 'date_format:Y-m-d'],
             'todo' => ['nullable', 'in:0,1'],
-            'grupo' => ['nullable', 'in:rezago,anillado,llenado'],
+            'grupo' => ['nullable', 'in:rezago,anillado,llenado,limpieza'],
         ]);
 
         if ($validator->fails()) {
@@ -95,6 +95,7 @@ class VinetaRegistroController extends Controller
                 'orden_del_cliente' => $registro->orden,
                 'codigo_actividad' => $registro->actividad_codigo,
                 'actividad' => $registro->actividad_nombre,
+                'grupo' => $this->grupoActividadRegistro($registro),
                 'empleado_codigo' => $registro->empleado_codigo,
                 'empleado_nombre' => $registro->empleado_nombre,
                 'cantidad_puros' => (int) $registro->cantidad_puros,
@@ -466,11 +467,17 @@ class VinetaRegistroController extends Controller
             ->orderBy('fecha_registro')
             ->orderBy('hora_registro')
             ->orderBy('id');
-        $periodRecords = $query->get();
+        $periodRecords = $query->with('empleado')->get();
+        $codigos = $periodRecords->pluck('empleado_codigo')->filter()->unique()->values();
+        $empleadosMap = Empleado::query()->whereIn('codigo', $codigos)->get()->keyBy('codigo');
+
         $scopedRecords = $scope === 'global'
             ? $periodRecords
             : $periodRecords
-                ->filter(fn (VinetaRegistro $registro) => $this->grupoActividadRegistro($registro) === $scope)
+                ->filter(function (VinetaRegistro $registro) use ($empleadosMap, $scope) {
+                    $emp = $registro->empleado ?? $empleadosMap->get((string) $registro->empleado_codigo);
+                    return EmployeeProductionGroup::fromCargo($emp?->cargo, $registro->empleado_codigo) === $scope;
+                })
                 ->values();
 
         return response()->json([
@@ -485,8 +492,8 @@ class VinetaRegistroController extends Controller
             ],
             'employee' => $this->seguimientoEmpleadoPayload($empleado),
             'summary' => $this->seguimientoResumenPayload($scopedRecords),
-            'group_counts' => $this->seguimientoGrupoCountsPayload($periodRecords),
-            'employee_summaries' => $this->seguimientoEmpleadoSummariesPayload($scopedRecords),
+            'group_counts' => $this->seguimientoGrupoCountsPayload($periodRecords, $empleadosMap),
+            'employee_summaries' => $this->seguimientoEmpleadoSummariesPayload($scopedRecords, $empleadosMap),
             'activity_summaries' => $this->seguimientoActividadSummariesPayload($scopedRecords),
             'records' => $empleado
                 ? $scopedRecords->map(fn (VinetaRegistro $registro) => $this->registroPayload($registro))->values()
@@ -1143,12 +1150,12 @@ class VinetaRegistroController extends Controller
         ];
     }
 
-    private function seguimientoGrupoCountsPayload($registros): array
+    private function seguimientoGrupoCountsPayload($registros, $empleadosMap): array
     {
         $employees = [
             'global' => [],
-            'rezago' => [],
             'anillado' => [],
+            'rezago' => [],
             'llenado' => [],
         ];
 
@@ -1161,7 +1168,8 @@ class VinetaRegistroController extends Controller
             }
 
             $employees['global'][$employeeKey] = true;
-            $grupo = $this->grupoActividadRegistro($registro);
+            $emp = $registro->empleado ?? $empleadosMap->get((string) $registro->empleado_codigo);
+            $grupo = EmployeeProductionGroup::fromCargo($emp?->cargo, $registro->empleado_codigo);
 
             if ($grupo && array_key_exists($grupo, $employees)) {
                 $employees[$grupo][$employeeKey] = true;
@@ -1170,24 +1178,27 @@ class VinetaRegistroController extends Controller
 
         return [
             'global' => count($employees['global']),
-            'rezago' => count($employees['rezago']),
             'anillado' => count($employees['anillado']),
+            'rezago' => count($employees['rezago']),
             'llenado' => count($employees['llenado']),
         ];
     }
 
-    private function seguimientoEmpleadoSummariesPayload($registros): array
+    private function seguimientoEmpleadoSummariesPayload($registros, $empleadosMap): array
     {
         return $registros
             ->groupBy(fn (VinetaRegistro $registro) => trim((string) $registro->empleado_codigo).'|'.trim((string) $registro->empleado_nombre))
-            ->map(function ($items) {
+            ->map(function ($items) use ($empleadosMap) {
                 /** @var VinetaRegistro $first */
                 $first = $items->first();
+                $emp = $first?->empleado ?? $empleadosMap->get((string) $first?->empleado_codigo);
                 $summary = $this->seguimientoResumenPayload($items);
 
                 return [
                     'codigo' => $first?->empleado_codigo,
                     'nombre' => $first?->empleado_nombre,
+                    'cargo' => $emp?->cargo,
+                    'area' => $emp?->area,
                     'registros' => $summary['registros'],
                     'puros' => $summary['puros'],
                     'cajones' => $summary['cajones'],
@@ -1256,7 +1267,7 @@ class VinetaRegistroController extends Controller
                 /** @var VinetaRegistro $first */
                 $first = $items->first();
 
-                return EmployeeProductionGroup::fromCargo($first->empleado?->cargo)
+                return EmployeeProductionGroup::fromCargo($first->empleado?->cargo, $first->empleado_codigo)
                     ?? $items
                         ->map(fn (VinetaRegistro $registro) => $this->grupoActividadRegistro($registro))
                         ->first(fn (?string $grupo) => $grupo !== null);
@@ -1272,34 +1283,60 @@ class VinetaRegistroController extends Controller
             return null;
         }
 
-        if (str_contains($texto, 'rezag') || str_contains($texto, 'rezad') || str_contains($texto, 'resag')) {
+        // 1. Rezago
+        if (
+            str_contains($texto, 'rezag')
+            || str_contains($texto, 'rezad')
+            || str_contains($texto, 'resag')
+            || str_contains($texto, 'rezurado')
+            || str_contains($texto, 'rasurado')
+        ) {
             return 'rezago';
         }
 
-        if (
-            str_contains($texto, 'llenad')
-            || str_contains($texto, 'llenado')
-            || str_contains($texto, 'kretek')
-            || str_contains($texto, 'petaca')
-            || str_contains($texto, 'sampler')
-            || str_contains($texto, 'display')
-            || str_contains($texto, 'bolsa')
-            || str_contains($texto, 'sellado')
-            || (str_contains($texto, 'sell') && ! str_contains($texto, 'celof') && ! str_contains($texto, 'anill'))
-            || (str_contains($texto, 'paquete') && str_contains($texto, 'tubo'))
-        ) {
-            return 'llenado';
-        }
-
+        // 2. Anillado: Anillo, celofan, cello, sello, lamina, esponja, tapon, banda, cinta, rolado
         if (
             str_contains($texto, 'anill')
             || str_contains($texto, 'anil')
             || str_contains($texto, 'celof')
+            || str_contains($texto, 'cello')
             || str_contains($texto, 'sello')
-            || str_contains($texto, 'esponj')
             || str_contains($texto, 'lamina')
+            || str_contains($texto, 'esponj')
+            || str_contains($texto, 'tapon')
+            || str_contains($texto, 'banda')
+            || str_contains($texto, 'cinta')
+            || str_contains($texto, 'rolado')
         ) {
             return 'anillado';
+        }
+
+        // 3. Llenado: Llenado, petaca, sampler, display, bolsa, caja, paquete, sellado, jarra, tubo, costura
+        if (
+            str_contains($texto, 'llenad')
+            || str_contains($texto, 'petaca')
+            || str_contains($texto, 'sampler')
+            || str_contains($texto, 'display')
+            || str_contains($texto, 'bolsa')
+            || str_contains($texto, 'caja')
+            || str_contains($texto, 'paquet')
+            || str_contains($texto, 'tubo')
+            || str_contains($texto, 'costura')
+            || str_contains($texto, 'sellado')
+            || str_contains($texto, 'jarra')
+            || str_contains($texto, 'kretek')
+            || str_contains($texto, 'swisher')
+        ) {
+            return 'llenado';
+        }
+
+        // 4. Limpieza: Limpieza de puros, limpiado de brocha
+        if (
+            str_contains($texto, 'limpieza')
+            || str_contains($texto, 'limpiad')
+            || str_contains($texto, 'limpia')
+        ) {
+            return 'limpieza';
         }
 
         return null;
@@ -1349,7 +1386,7 @@ class VinetaRegistroController extends Controller
         $grupoEmpleado = $registro->esPorHoraOrdinario()
             ? 'por_hora'
             : $grupoEmpleado
-                ?? EmployeeProductionGroup::fromCargo($registro->empleado?->cargo)
+                ?? EmployeeProductionGroup::fromCargo($registro->empleado?->cargo, $registro->empleado_codigo)
                 ?? $this->grupoActividadRegistro($registro);
 
         return [

@@ -188,6 +188,57 @@ class EmpleadoHorasResumenTest extends TestCase
             ->assertJsonPath('resumen.total_actividades', 40);
     }
 
+    public function test_it_classifies_8219_and_8217_in_rezago_for_ordinary_hours(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+
+        $emp8219 = $this->createEmpleado('8219', 'SAYRA MISAELA', 'Limpia Brochas');
+        $emp8217 = $this->createEmpleado('8217', 'JHORMY LYZETH', 'Limpia Brochas');
+        $llenadora = $this->createEmpleado('500', 'Maria Llenadora', 'Llenado de Cajas y Paquetes');
+
+        $limpiaPuros = $this->createEmpleado('600', 'Karla Limpieza', 'Limpia Puros');
+        $celofanadora = $this->createEmpleado('700', 'Rosa Celofan', 'Celofanadora');
+
+        // 8219 did an anillado task, but should be classified in rezago
+        $this->createRegistro(2001, $emp8219, '2 Anillo, Celofan, Cello (3)', 100, 1, 60);
+        // 8217 did a rezago task
+        $this->createRegistro(2002, $emp8217, 'Rezagado', 100, 1, 60);
+        // Llenadora did an anillado task, but should be classified in llenado
+        $this->createRegistro(2003, $llenadora, 'Anillado y Celofan', 100, 1, 60);
+        // Limpia puros did an anillado task, but should be classified in limpieza
+        $this->createRegistro(2004, $limpiaPuros, '2 Anillo, Celofan, Cello', 100, 1, 60);
+        // Celofanadora did celofan task -> anillado
+        $this->createRegistro(2005, $celofanadora, 'Celofan', 100, 1, 60);
+
+        $response = $this->getJson('/api/empleados/horas-ordinarias/resumen?fecha=2026-08-13');
+
+        $response->assertOk()
+            ->assertJsonPath('grupos.rezago', 2)
+            ->assertJsonPath('grupos.llenado', 1)
+            ->assertJsonPath('grupos.anillado', 1)
+            ->assertJsonPath('grupos.limpieza', 1);
+
+        $this->getJson("/api/empleados/{$emp8219->id}/horas-ordinarias?fecha=2026-08-13&grupo=rezago")
+            ->assertOk()
+            ->assertJsonPath('grupo', 'rezago')
+            ->assertJsonCount(1, 'cajones');
+
+        $this->getJson("/api/empleados/{$llenadora->id}/horas-ordinarias?fecha=2026-08-13&grupo=llenado")
+            ->assertOk()
+            ->assertJsonPath('grupo', 'llenado')
+            ->assertJsonCount(1, 'cajones');
+
+        $this->getJson("/api/empleados/{$limpiaPuros->id}/horas-ordinarias?fecha=2026-08-13&grupo=limpieza")
+            ->assertOk()
+            ->assertJsonPath('grupo', 'limpieza')
+            ->assertJsonCount(1, 'cajones');
+
+        $this->getJson("/api/empleados/{$celofanadora->id}/horas-ordinarias?fecha=2026-08-13&grupo=anillado")
+            ->assertOk()
+            ->assertJsonPath('grupo', 'anillado')
+            ->assertJsonCount(1, 'cajones');
+    }
+
     private function createEmpleado(string $codigo, string $nombre, string $cargo, bool $activo = true): Empleado
     {
         return Empleado::create([

@@ -142,6 +142,11 @@ class EmpleadoHoraOrdinaria extends Model
         return $hora ? $fecha . ' ' . $hora : $fecha;
     }
 
+    public function empleado()
+    {
+        return $this->belongsTo(Empleado::class, 'empleado_id');
+    }
+
     public function registradoPor()
     {
         return $this->belongsTo(User::class, 'registrado_por_user_id');

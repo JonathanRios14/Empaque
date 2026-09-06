@@ -454,4 +454,51 @@ class VinetaRegistroUpdateTest extends TestCase
             'raw_payload' => ['modo_registro' => 'por_tarea'],
         ]);
     }
+
+    public function test_it_allows_scanning_and_registering_for_future_dates_one_week_ahead(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+
+        $empleado = Empleado::create([
+            'codigo' => 'EMP-FUTURO',
+            'nombre' => 'Empleado Adelanto',
+            'cargo' => 'Anillador',
+            'area' => 'Empaque',
+            'activo' => true,
+        ]);
+
+        $vineta = Vineta::create([
+            'api_id' => 9001,
+            'item' => 'ITEM-9001',
+            'nombre' => 'Producto Futuro',
+            'cantidad_puros' => 25,
+            'orden' => 'ORD-9001',
+        ]);
+
+        $fechaFutura = now('America/Tegucigalpa')->addDays(7)->format('Y-m-d');
+
+        $response = $this->postJson("/api/vinetas/{$vineta->id}/registros", [
+            'empleado_codigo' => $empleado->codigo,
+            'actividad_nombre' => '2 Anillo, Celofan, Cello',
+            'cantidad_puros' => 25,
+            'fecha_registro' => $fechaFutura,
+            'hora_registro' => '10:00',
+            'modo_registro' => 'por_tarea',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('registro.fecha_registro', $fechaFutura)
+            ->assertJsonPath('registro.empleado.codigo', $empleado->codigo);
+
+        $this->assertDatabaseHas('vineta_registros', [
+            'vineta_id' => $vineta->id,
+            'empleado_codigo' => $empleado->codigo,
+            'fecha_registro' => $fechaFutura.' 00:00:00',
+        ]);
+
+        $resumenResponse = $this->getJson("/api/empleados/{$empleado->id}/resumen-diario?fecha={$fechaFutura}");
+        $resumenResponse->assertOk()
+            ->assertJsonPath('resumen_diario.fecha', $fechaFutura)
+            ->assertJsonPath('resumen_diario.total_actividades', 100);
+    }
 }

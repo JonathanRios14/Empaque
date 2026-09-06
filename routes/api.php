@@ -31,6 +31,7 @@ Route::get('/app/download/{file?}', [AppUpdateController::class, 'download'])->n
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/user', [AuthController::class, 'me']);
+    Route::post('/user/photo', [AuthController::class, 'updatePhoto']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/vinetas/scan', [ApiVinetaController::class, 'scan']);
     Route::get('/vinetas/seguimiento', [ApiVinetaRegistroController::class, 'seguimiento']);

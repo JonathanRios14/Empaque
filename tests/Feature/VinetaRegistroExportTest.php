@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Empleado;
+use App\Models\EmpleadoHoraOrdinaria;
 use App\Models\User;
 use App\Models\Vineta;
 use App\Models\VinetaRegistro;
@@ -76,6 +78,7 @@ class VinetaRegistroExportTest extends TestCase
             $this->assertSame('Etiquetas de fila', $rezagoRows[2][0] ?? null);
             $this->assertSame('Suma de Cantidad Procesada', $rezagoRows[2][1] ?? null);
             $this->assertSame('Suma de Horas Trabajadas', $rezagoRows[2][2] ?? null);
+            $this->assertSame('Suma de Horas Ordinarias', $rezagoRows[2][3] ?? null);
 
             $subtotal = collect($rows)->first(fn (array $row) => ($row[3] ?? null) === 'Subtotal producto'
                 && ($row[1] ?? null) === 'AGUILAR VALLADARES NALLELY MARIBEL'
@@ -103,6 +106,155 @@ class VinetaRegistroExportTest extends TestCase
             $this->assertSame('307', $totalEmpleado[13]);
             $this->assertSame('5 h 7 min', $totalEmpleado[14]);
             $this->assertSame(2, collect($rows)->where(3, 'Total empleado')->count());
+        } finally {
+            $zip->close();
+            @unlink($path);
+        }
+    }
+
+    public function test_it_groups_excel_area_sheets_by_puesto_de_trabajo_and_places_8219_in_rezago(): void
+    {
+        $user = User::factory()->create();
+
+        // 8219 has cargo 'Limpia Brochas' but must be placed in Resumen Rezago
+        Empleado::create([
+            'codigo' => '8219',
+            'nombre' => 'SALGADO SAYRA',
+            'cargo' => 'Limpia Brochas',
+            'area' => 'Empaque de Brocha Permanente',
+            'activo' => true,
+        ]);
+
+        // Llenadora has cargo 'Llenado de Cajas y Paquetes' and did an Anillado activity, but must be in Resumen Llenado
+        Empleado::create([
+            'codigo' => '3001',
+            'nombre' => 'LLENADORA MARIA',
+            'cargo' => 'Llenado de Cajas y Paquetes',
+            'area' => 'Empaque a Tarea Permanente',
+            'activo' => true,
+        ]);
+
+        $v1 = Vineta::create(['api_id' => 9101, 'impreso' => true]);
+        $this->createRegistro($v1, [
+            'empleado_codigo' => '8219',
+            'empleado_nombre' => 'SALGADO SAYRA',
+            'actividad_nombre' => '2 Anillo, Celofan, Cello',
+            'cantidad_puros' => 100,
+            'cantidad_actividades' => 1,
+            'minutos_trabajados' => 60,
+        ]);
+
+        $v2 = Vineta::create(['api_id' => 9102, 'impreso' => true]);
+        $this->createRegistro($v2, [
+            'empleado_codigo' => '3001',
+            'empleado_nombre' => 'LLENADORA MARIA',
+            'actividad_nombre' => 'Anillado especial',
+            'cantidad_puros' => 150,
+            'cantidad_actividades' => 1,
+            'minutos_trabajados' => 90,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('vineta-registros.export', [
+            'fecha_desde' => '2026-08-18',
+            'fecha_hasta' => '2026-08-18',
+        ]));
+
+        $response->assertOk();
+        $path = $response->baseResponse->getFile()->getPathname();
+        $zip = new ZipArchive;
+
+        $this->assertTrue($zip->open($path) === true);
+
+        try {
+            $rezagoRows = $this->xlsxRows((string) $zip->getFromName('xl/worksheets/sheet4.xml'));
+            $llenadoRows = $this->xlsxRows((string) $zip->getFromName('xl/worksheets/sheet5.xml'));
+
+            // 8219 appears in Rezago sheet
+            $rezagoText = json_encode($rezagoRows);
+            $this->assertStringContainsString('SALGADO SAYRA', $rezagoText);
+            $this->assertStringContainsString('8219', $rezagoText);
+            $this->assertStringContainsString('2 Anillo, Celofan, Cello', $rezagoText);
+
+            // Llenadora appears in Llenado sheet with her Anillado activity
+            $llenadoText = json_encode($llenadoRows);
+            $this->assertStringContainsString('LLENADORA MARIA', $llenadoText);
+            $this->assertStringContainsString('3001', $llenadoText);
+            $this->assertStringContainsString('Anillado especial', $llenadoText);
+        } finally {
+            $zip->close();
+            @unlink($path);
+        }
+    }
+
+    public function test_it_includes_suma_de_horas_ordinarias_in_resumen_rezago_sheet(): void
+    {
+        $user = User::factory()->create();
+
+        $empleado = Empleado::create([
+            'codigo' => '8219',
+            'nombre' => 'SALGADO SAYRA',
+            'cargo' => 'Limpia Brochas',
+            'area' => 'Empaque de Brocha Permanente',
+            'activo' => true,
+        ]);
+
+        $v1 = Vineta::create(['api_id' => 9201, 'impreso' => true]);
+        $this->createRegistro($v1, [
+            'empleado_codigo' => '8219',
+            'empleado_nombre' => 'SALGADO SAYRA',
+            'actividad_nombre' => 'Rezagado',
+            'cantidad_puros' => 120,
+            'cantidad_actividades' => 1,
+            'minutos_trabajados' => 90,
+        ]);
+
+        EmpleadoHoraOrdinaria::create([
+            'empleado_id' => $empleado->id,
+            'empleado_codigo' => '8219',
+            'empleado_nombre' => 'SALGADO SAYRA',
+            'fecha' => '2026-08-18',
+            'minutos' => 60,
+            'observacion' => 'Hora ordinaria rezago',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('vineta-registros.export', [
+            'fecha_desde' => '2026-08-18',
+            'fecha_hasta' => '2026-08-18',
+        ]));
+
+        $response->assertOk();
+        $path = $response->baseResponse->getFile()->getPathname();
+        $zip = new ZipArchive;
+
+        $this->assertTrue($zip->open($path) === true);
+
+        try {
+            $rezagoRows = $this->xlsxRows((string) $zip->getFromName('xl/worksheets/sheet4.xml'));
+
+            $this->assertSame([
+                'Etiquetas de fila',
+                'Suma de Cantidad Procesada',
+                'Suma de Horas Trabajadas',
+                'Suma de Horas Ordinarias',
+            ], $rezagoRows[2]);
+
+            // Employee row:
+            $this->assertSame('SALGADO SAYRA', $rezagoRows[3][0]);
+            $this->assertSame('120', $rezagoRows[3][1]);
+            $this->assertSame('1.5', $rezagoRows[3][2]);
+            $this->assertSame('1', $rezagoRows[3][3]);
+
+            // Employee code row:
+            $this->assertSame('   8219', $rezagoRows[4][0]);
+            $this->assertSame('120', $rezagoRows[4][1]);
+            $this->assertSame('1.5', $rezagoRows[4][2]);
+            $this->assertSame('1', $rezagoRows[4][3]);
+
+            // Activity row:
+            $this->assertSame('      Rezagado', $rezagoRows[5][0]);
+            $this->assertSame('120', $rezagoRows[5][1]);
+            $this->assertSame('1.5', $rezagoRows[5][2]);
+            $this->assertSame('1', $rezagoRows[5][3]);
         } finally {
             $zip->close();
             @unlink($path);

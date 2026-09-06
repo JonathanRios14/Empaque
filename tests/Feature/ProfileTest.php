@@ -96,4 +96,33 @@ class ProfileTest extends TestCase
 
         $this->assertNotNull($user->fresh());
     }
+
+    public function test_user_can_update_profile_photo_via_api(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $user = User::factory()->create();
+        $file = \Illuminate\Http\UploadedFile::fake()->image('avatar.jpg', 200, 200);
+
+        $response = $this
+            ->actingAs($user, 'sanctum')
+            ->postJson('/api/user/photo', [
+                'photo' => $file,
+            ]);
+
+        $response->assertOk();
+        $response->assertJsonStructure([
+            'message',
+            'user' => [
+                'id',
+                'name',
+                'email',
+                'photo',
+                'photo_url',
+            ],
+        ]);
+
+        $user->refresh();
+        $this->assertNotNull($user->photo);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($user->photo);
+    }
 }

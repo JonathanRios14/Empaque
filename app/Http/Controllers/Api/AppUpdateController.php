@@ -45,10 +45,10 @@ class AppUpdateController extends Controller
 
         // Buscar en posibles ubicaciones
         $possiblePaths = [
-            storage_path('app/public/apks/' . $fileName),
-            storage_path('app/apks/' . $fileName),
             public_path('downloads/' . $fileName),
             public_path('apks/' . $fileName),
+            storage_path('app/public/apks/' . $fileName),
+            storage_path('app/apks/' . $fileName),
         ];
 
         foreach ($possiblePaths as $path) {
@@ -72,12 +72,12 @@ class AppUpdateController extends Controller
     private function getVersionInfo(Request $request): array
     {
         $default = [
-            'version_name' => '1.0.0',
-            'version_code' => 7,
-            'release_notes' => "Versión actual del sistema de empaque Plasencia.\n• Escaneo rápido de actividades\n• Soporte de sincronización offline\n• Selector de tema claro y oscuro",
+            'version_name' => '2.0.0',
+            'version_code' => 23,
+            'release_notes' => "Versión 2.0.0 (Build 23)\n• Ranking mensual de empleados por área (Anillado, Rezago y Llenado) con podio Top 3\n• Filtro estricto por puesto de trabajo (anilladoras/celofanadoras en Anillado, rezagadoras y 8219/8217 en Rezago, llenadoras de paquetes en Llenado)\n• Selector interactivo de mes",
             'apk_filename' => 'app-arm64-v8a-release.apk',
             'force_update' => false,
-            'published_at' => '2026-08-29 08:00:00',
+            'published_at' => '2026-09-02 08:30:00',
             'download_url' => null,
             'split_apks' => [
                 'arm64-v8a' => null,
@@ -86,12 +86,25 @@ class AppUpdateController extends Controller
             ],
         ];
 
-        if (Storage::disk('local')->exists($this->versionFilePath)) {
-            try {
-                $saved = json_decode(Storage::disk('local')->get($this->versionFilePath), true) ?: [];
-                $default = array_merge($default, $saved);
-            } catch (\Throwable $e) {
-                // Usar valores por defecto si hay error al parsear
+        $possibleJsonPaths = [
+            public_path('downloads/app-version.json'),
+            public_path('app-version.json'),
+            storage_path('app/app-version.json'),
+            storage_path('app/private/app-version.json'),
+            base_path('app-version.json'),
+        ];
+
+        foreach ($possibleJsonPaths as $jsonPath) {
+            if (File::exists($jsonPath)) {
+                try {
+                    $saved = json_decode(File::get($jsonPath), true) ?: [];
+                    if (!empty($saved)) {
+                        $default = array_merge($default, $saved);
+                        break;
+                    }
+                } catch (\Throwable $e) {
+                    // Usar valores por defecto si hay error al parsear
+                }
             }
         }
 

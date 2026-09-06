@@ -104,6 +104,7 @@ class VinetaRegistroFeedTest extends TestCase
             ->assertJsonPath('registros.0.orden_del_cliente', 'OC-100')
             ->assertJsonPath('registros.0.codigo_actividad', 'ACT-REZ')
             ->assertJsonPath('registros.0.actividad', 'Rezagado')
+            ->assertJsonPath('registros.0.grupo', 'rezago')
             ->assertJsonPath('registros.0.empleado_codigo', 'EMP-001')
             ->assertJsonPath('registros.0.empleado_nombre', 'Empleado Uno')
             ->assertJsonPath('registros.0.cantidad_puros', 100)

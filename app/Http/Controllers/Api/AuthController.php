@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -80,6 +82,47 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Sesión cerrada correctamente.',
+        ]);
+    }
+
+    public function updatePhoto(Request $request): JsonResponse
+    {
+        $request->validate([
+            'photo' => ['required', 'image', 'max:10240'],
+        ]);
+
+        $user = $request->user();
+        $file = $request->file('photo');
+        $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+        $relativePath = 'profile-photos/' . $filename;
+
+        // Delete old photo if exists
+        if ($user->photo) {
+            if (Storage::disk('public')->exists($user->photo)) {
+                Storage::disk('public')->delete($user->photo);
+            }
+            $oldPublicPhoto = public_path('storage/' . $user->photo);
+            if (File::exists($oldPublicPhoto)) {
+                @File::delete($oldPublicPhoto);
+            }
+        }
+
+        // Save to storage/app/public/profile-photos
+        $file->storeAs('profile-photos', $filename, 'public');
+
+        // Also copy to public/storage/profile-photos
+        $publicDir = public_path('storage/profile-photos');
+        if (! File::isDirectory($publicDir)) {
+            File::makeDirectory($publicDir, 0777, true, true);
+        }
+        @copy($file->getRealPath(), $publicDir . '/' . $filename);
+
+        $user->photo = $relativePath;
+        $user->save();
+
+        return response()->json([
+            'message' => 'Foto de perfil actualizada correctamente.',
+            'user' => $this->userPayload($user),
         ]);
     }
 

@@ -214,39 +214,6 @@
             transition: opacity .18s ease;
         }
 
-        .process-chart-wrap::after {
-            animation: process-spinner .7s linear infinite;
-            border: 3px solid #dbeafe;
-            border-radius: 999px;
-            border-top-color: #2563eb;
-            content: '';
-            height: 2rem;
-            left: calc(50% - 1rem);
-            opacity: 0;
-            pointer-events: none;
-            position: absolute;
-            top: calc(50% - 1rem);
-            transition: opacity .18s ease;
-            width: 2rem;
-        }
-
-        .process-chart-wrap.is-loading #processChart {
-            opacity: .28;
-        }
-
-        .process-chart-wrap.is-loading::after {
-            opacity: 1;
-        }
-
-        html.dark-navy .process-chart-wrap::after {
-            border-color: #263650;
-            border-top-color: #38bdf8;
-        }
-
-        @keyframes process-spinner {
-            to { transform: rotate(360deg); }
-        }
-
         .area-card-rezago {
             --area-color: #2563eb;
             --area-soft: rgba(37, 99, 235, .12);
@@ -645,12 +612,64 @@
         ->first(fn ($group) => count($group['rows'] ?? []) > 0)['key'] ?? 'rezago';
 @endphp
 
+<script>
+    window.rankingEmployeeSection = function() {
+        return {
+            rankingArea: '{{ $defaultRankingArea }}',
+            selectedMonth: '{{ $selectedMonth->format('Y-m') }}',
+            currentLoadedMonth: '{{ $selectedMonth->format('Y-m') }}',
+            monthLabel: '{{ ucfirst($selectedMonth->locale('es')->translatedFormat('F Y')) }}',
+            rankingData: @json($rankingEmpleados),
+            loading: false,
+            error: false,
+            get areas() {
+                return Object.values(this.rankingData || {});
+            },
+            async loadMonth(month) {
+                if (!month || month === this.currentLoadedMonth) return;
+                this.loading = true;
+                this.error = false;
+                try {
+                    const endpoint = new URL(@json(route('dashboard')), window.location.origin);
+                    endpoint.searchParams.set('mes', month);
+                    endpoint.searchParams.set('ranking_mes', '1');
+
+                    const response = await fetch(endpoint.toString(), {
+                        credentials: 'same-origin',
+                        headers: {
+                            Accept: 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (!response.ok) throw new Error(`Error ${response.status}`);
+                    const payload = await response.json();
+                    if (payload.ok && payload.ranking) {
+                        this.rankingData = payload.ranking;
+                        this.selectedMonth = payload.mes;
+                        this.currentLoadedMonth = payload.mes;
+                        if (payload.label) {
+                            this.monthLabel = payload.label;
+                        }
+                    } else {
+                        throw new Error('Respuesta inválida');
+                    }
+                } catch (e) {
+                    console.error('Error loading ranking month:', e);
+                    this.error = true;
+                } finally {
+                    this.loading = false;
+                }
+            }
+        };
+    };
+</script>
+
 <div x-data="{
     sidebarOpen: localStorage.getItem('sidebarOpen') === null ? true : localStorage.getItem('sidebarOpen') === 'true',
     catalogos: false,
     seguridad: false,
-    produccion: true,
-    rankingArea: '{{ $defaultRankingArea }}'
+    produccion: true
 }" class="flex min-h-screen">
 
     @include('layouts.sidebar')
@@ -986,12 +1005,16 @@
                                 value="{{ $selectedDay->format('Y-m-d') }}"
                                 max="{{ $today->format('Y-m-d') }}"
                                 data-current-date="{{ $selectedDay->format('Y-m-d') }}"
-                                class="process-date-input rounded-xl"
+                                class="process-date-input rounded-xl text-xs"
                             >
                         </header>
 
                         <div class="p-4 lg:p-5">
-                            <div id="processChartWrap" class="process-chart-wrap">
+                            <div id="processChartWrap" class="process-chart-wrap relative min-h-[240px]">
+                                <!-- Spinner centered in chart, transparent without dark background -->
+                                <div id="processDateSpinner" class="hidden absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+                                    <div class="h-8 w-8 animate-spin rounded-full border-[3px] border-blue-600 dark:border-sky-400 border-t-transparent"></div>
+                                </div>
                                 <div id="processChart" class="w-full h-[240px]"></div>
                             </div>
                             <div id="processLegend" class="mt-1"></div>
@@ -1001,44 +1024,95 @@
                         </div>
                     </section>
 
-                    <section class="dark-clean-panel dashboard-panel reveal-on-scroll rounded-[1.75rem] overflow-hidden" style="--reveal-delay: 110ms">
+                    <section
+                        x-data="rankingEmployeeSection()"
+                        class="dark-clean-panel dashboard-panel reveal-on-scroll rounded-[1.75rem] overflow-hidden"
+                        style="--reveal-delay: 110ms"
+                    >
                         <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-4 border-b theme-border">
                             <h2 class="theme-title text-lg font-black">Ranking de empleados</h2>
                             <div class="flex flex-wrap items-center gap-3">
                                 <div class="dashboard-tabs inline-flex self-start rounded-xl p-1">
-                                    @foreach($rankingEmpleados as $key => $grupo)
-                                        <button type="button" @click="rankingArea = '{{ $key }}'" :class="rankingArea === '{{ $key }}' ? 'is-active' : ''" class="dashboard-tab rounded-lg px-3 py-2 text-xs font-black">
-                                            {{ $grupo['label'] }}
-                                        </button>
-                                    @endforeach
+                                    <template x-for="grupo in areas" :key="grupo.key">
+                                        <button
+                                            type="button"
+                                            @click="rankingArea = grupo.key"
+                                            :class="rankingArea === grupo.key ? 'is-active' : ''"
+                                            class="dashboard-tab rounded-lg px-3 py-2 text-xs font-black"
+                                            x-text="grupo.label"
+                                        ></button>
+                                    </template>
                                 </div>
-                                <span class="theme-text text-xs font-black uppercase tracking-[.12em]">{{ $periodLabels['dia'] }}</span>
+                                <div>
+                                    <label for="rankingMonth" class="sr-only">Seleccionar mes</label>
+                                    <input
+                                        id="rankingMonth"
+                                        type="month"
+                                        :value="selectedMonth"
+                                        max="{{ $today->format('Y-m') }}"
+                                        @change="loadMonth($event.target.value)"
+                                        @input="loadMonth($event.target.value)"
+                                        class="process-date-input rounded-xl text-xs"
+                                        :disabled="loading"
+                                        title="Seleccionar mes para el ranking"
+                                    >
+                                </div>
                             </div>
                         </header>
 
-                        <div class="p-3 lg:p-4">
-                            @foreach($rankingEmpleados as $key => $grupo)
-                                <div x-show="rankingArea === '{{ $key }}'" x-cloak class="ranking-list space-y-0.5">
-                                    @forelse($grupo['rows'] as $index => $empleado)
-                                        @php($position = $index + 1)
-                                        <div class="ranking-row {{ $position === 1 ? 'ranking-top-1 py-2' : 'py-1.5' }} flex items-center gap-3 rounded-xl px-3">
-                                            <div class="ranking-position area-card-{{ $key }} {{ $position === 1 ? 'h-9 w-9 rounded-xl text-sm' : 'h-7 w-7 rounded-lg text-[11px]' }} shrink-0 flex items-center justify-center font-black text-white" style="background: var(--area-color)">
-                                                {{ $position }}
-                                            </div>
-                                            <div class="min-w-0 flex-1">
-                                                <p class="theme-title {{ $position === 1 ? 'text-sm' : 'text-[13px]' }} truncate font-black">{{ $empleado['nombre'] }}</p>
-                                            </div>
-                                            <div class="text-right">
-                                                <p class="theme-title {{ $position === 1 ? 'text-base' : 'text-sm' }} font-black">{{ number_format($empleado['actividades']) }}</p>
-                                            </div>
+                        <div class="p-3 lg:p-4 relative min-h-[300px]">
+                            <!-- Spinner centered in ranking list, transparent without dark background -->
+                            <div x-show="loading" x-cloak class="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+                                <div class="h-8 w-8 animate-spin rounded-full border-[3px] border-blue-600 dark:border-sky-400 border-t-transparent"></div>
+                            </div>
+                            <template x-for="grupo in areas" :key="grupo.key">
+                                <div x-show="rankingArea === grupo.key" class="ranking-list space-y-0.5">
+                                    <template x-if="grupo.rows && grupo.rows.length > 0">
+                                        <div>
+                                            <template x-for="(empleado, index) in grupo.rows" :key="empleado.codigo || index">
+                                                <div
+                                                    class="ranking-row flex items-center gap-3 rounded-xl px-3"
+                                                    :class="index === 0 ? 'ranking-top-1 py-2' : 'py-1.5'"
+                                                >
+                                                    <div
+                                                        class="ranking-position shrink-0 flex items-center justify-center font-black text-white"
+                                                        :class="[
+                                                            'area-card-' + grupo.key,
+                                                            index === 0 ? 'h-9 w-9 rounded-xl text-sm' : 'h-7 w-7 rounded-lg text-[11px]'
+                                                        ]"
+                                                        :style="'background: ' + (grupo.color || 'var(--area-color)')"
+                                                        x-text="index + 1"
+                                                    ></div>
+                                                    <div class="min-w-0 flex-1">
+                                                        <p
+                                                            class="theme-title truncate font-black"
+                                                            :class="index === 0 ? 'text-sm' : 'text-[13px]'"
+                                                            x-text="empleado.nombre"
+                                                        ></p>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <p
+                                                            class="theme-title font-black"
+                                                            :class="index === 0 ? 'text-base' : 'text-sm'"
+                                                            x-text="Number(empleado.actividades).toLocaleString('es-HN')"
+                                                        ></p>
+                                                    </div>
+                                                </div>
+                                            </template>
                                         </div>
-                                    @empty
+                                    </template>
+
+                                    <template x-if="!grupo.rows || grupo.rows.length === 0">
                                         <div class="py-16 text-center">
-                                            <p class="theme-text text-sm font-bold">Sin producción en {{ strtolower($grupo['label']) }}</p>
+                                            <p class="theme-text text-sm font-bold" x-text="'Sin producción en ' + (grupo.label ? grupo.label.toLowerCase() : '')"></p>
                                         </div>
-                                    @endforelse
+                                    </template>
                                 </div>
-                            @endforeach
+                            </template>
+
+                            <p x-show="error" x-cloak class="mt-3 text-center text-xs font-bold text-red-600" role="alert">
+                                No se pudo actualizar el ranking para el mes seleccionado.
+                            </p>
                         </div>
                     </section>
                 </div>
@@ -1327,17 +1401,16 @@
 
         async function loadProcessDate(date) {
             const input = document.querySelector('#processDate');
-            const chartWrap = document.querySelector('#processChartWrap');
+            const spinner = document.querySelector('#processDateSpinner');
             const error = document.querySelector('#processDateError');
 
-            if (! input || ! chartWrap || ! date) {
+            if (! input || ! date) {
                 return;
             }
 
             const previousDate = input.dataset.currentDate;
             input.disabled = true;
-            chartWrap.classList.add('is-loading');
-            chartWrap.setAttribute('aria-busy', 'true');
+            if (spinner) spinner.classList.remove('hidden');
             error?.classList.add('hidden');
 
             try {
@@ -1377,8 +1450,7 @@
                 error?.classList.remove('hidden');
             } finally {
                 input.disabled = false;
-                chartWrap.classList.remove('is-loading');
-                chartWrap.removeAttribute('aria-busy');
+                if (spinner) spinner.classList.add('hidden');
             }
         }
 

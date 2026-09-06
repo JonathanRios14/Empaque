@@ -62,7 +62,7 @@ class EmpleadoHoraOrdinariaController extends Controller
                 ->pluck('minutos', 'empleado_codigo');
         }
 
-        $items = collect(['rezago', 'anillado', 'llenado'])
+        $items = collect(['rezago', 'anillado', 'llenado', 'limpieza'])
             ->flatMap(function (string $grupo) use ($registros, $empleados, $gruposEmpleados, $minutosOrdinarios) {
                 return $registros
                     ->filter(
@@ -102,6 +102,7 @@ class EmpleadoHoraOrdinariaController extends Controller
                 'rezago' => $items->where('grupo', 'rezago')->count(),
                 'anillado' => $items->where('grupo', 'anillado')->count(),
                 'llenado' => $items->where('grupo', 'llenado')->count(),
+                'limpieza' => $items->where('grupo', 'limpieza')->count(),
             ],
             'empleados' => $items,
         ]);
@@ -111,7 +112,7 @@ class EmpleadoHoraOrdinariaController extends Controller
     {
         $data = $request->validate([
             'fecha' => ['required', 'date_format:Y-m-d'],
-            'grupo' => ['nullable', 'string', 'in:rezago,anillado,llenado'],
+            'grupo' => ['nullable', 'string', 'in:rezago,anillado,llenado,limpieza'],
         ]);
 
         $fecha = $data['fecha'];
@@ -270,7 +271,7 @@ class EmpleadoHoraOrdinariaController extends Controller
 
         $data = $request->validate([
             'fecha' => ['required', 'date_format:Y-m-d'],
-            'grupo' => ['nullable', 'string', 'in:rezago,anillado,llenado'],
+            'grupo' => ['nullable', 'string', 'in:rezago,anillado,llenado,limpieza'],
         ]);
         $registros = $this->registrosTareaEmpleado($empleado, $data['fecha']);
         $grupo = $data['grupo'] ?? null;
@@ -380,7 +381,7 @@ class EmpleadoHoraOrdinariaController extends Controller
 
         $data = $request->validate([
             'fecha' => ['required', 'date_format:Y-m-d'],
-            'grupo' => ['nullable', 'string', 'in:rezago,anillado,llenado'],
+            'grupo' => ['nullable', 'string', 'in:rezago,anillado,llenado,limpieza'],
         ]);
         $fecha = $data['fecha'];
         $grupo = $data['grupo'] ?? null;
@@ -432,10 +433,19 @@ class EmpleadoHoraOrdinariaController extends Controller
 
     private function grupoProduccionEmpleado(Empleado $empleado, Collection $registros): ?string
     {
-        return EmployeeProductionGroup::fromCargo($empleado->cargo)
-            ?? $registros
-                ->map(fn (VinetaRegistro $registro) => $this->grupoActividadRegistro($registro))
-                ->first(fn (?string $grupo) => $grupo !== null);
+        $codigoTrim = trim((string) $empleado->codigo);
+        if ($codigoTrim === '8219' || $codigoTrim === '8217') {
+            return 'rezago';
+        }
+
+        $grupoPuesto = EmployeeProductionGroup::fromCargo($empleado->cargo, $codigoTrim);
+        if ($grupoPuesto !== null && in_array($grupoPuesto, ['rezago', 'anillado', 'llenado', 'limpieza'], true)) {
+            return $grupoPuesto;
+        }
+
+        return $registros
+            ->map(fn (VinetaRegistro $registro) => $this->grupoActividadRegistro($registro))
+            ->first(fn (?string $grupo) => $grupo !== null && in_array($grupo, ['rezago', 'anillado', 'llenado', 'limpieza'], true));
     }
 
     /**
@@ -560,6 +570,14 @@ class EmpleadoHoraOrdinariaController extends Controller
             return 'llenado';
         }
 
+        if (
+            str_contains($texto, 'limpia')
+            || str_contains($texto, 'limpiad')
+            || str_contains($texto, 'limpi')
+        ) {
+            return 'limpieza';
+        }
+
         return null;
     }
 
@@ -601,7 +619,7 @@ class EmpleadoHoraOrdinariaController extends Controller
     {
         $data = $request->validate([
             'fecha' => ['required', 'date_format:Y-m-d'],
-            'grupo' => ['nullable', 'string', 'in:rezago,anillado,llenado'],
+            'grupo' => ['nullable', 'string', 'in:rezago,anillado,llenado,limpieza'],
             'horas' => ['nullable', 'integer', 'min:0', 'max:9'],
             'minutos' => ['nullable', 'integer', 'min:0', 'max:570'],
         ]);

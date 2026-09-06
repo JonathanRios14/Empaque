@@ -21,7 +21,7 @@ use HasRoles;
     protected $fillable = [
         'name',
         'email',
-        'phpto',
+        'photo',
         'is_active',
         'password',
     ];

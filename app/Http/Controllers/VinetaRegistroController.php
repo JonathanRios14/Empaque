@@ -470,6 +470,11 @@ class VinetaRegistroController extends Controller
             'llenado' => ['empleados' => []],
         ];
 
+        $empleadosMap = Empleado::query()
+            ->select(['codigo', 'cargo', 'area'])
+            ->get()
+            ->keyBy(fn (Empleado $e) => trim((string) $e->codigo));
+
         foreach ($registros as $registro) {
             $porHora = $registro->esPorHoraOrdinario();
             $estadistico = (int) $registro->total_actividades;
@@ -484,11 +489,18 @@ class VinetaRegistroController extends Controller
                 $minutos
             );
 
-            $grupoArea = $this->grupoActividadProceso(
-                $registro->actividad_nombre,
-                $registro->actividad_tipo_empaque,
-                $registro->actividad_codigo
-            ) ?? 'anillado';
+            $empCodigo = trim((string) $registro->empleado_codigo);
+            $empleadoObj = $empleadosMap->get($empCodigo);
+            $cargo = $empleadoObj?->cargo;
+
+            $grupoPuesto = EmployeeProductionGroup::fromCargo($cargo, $empCodigo);
+            $grupoArea = in_array($grupoPuesto, ['rezago', 'anillado', 'llenado'], true)
+                ? $grupoPuesto
+                : ($this->grupoActividadProceso(
+                    $registro->actividad_nombre,
+                    $registro->actividad_tipo_empaque,
+                    $registro->actividad_codigo
+                ) ?? 'anillado');
 
             $this->acumularAreaExport(
                 $areaData[$grupoArea]['empleados'],
@@ -662,7 +674,11 @@ class VinetaRegistroController extends Controller
             }
         }
 
-        $grupo = EmployeeProductionGroup::fromCargo($cargo) ?? 'anillado';
+        $empCodigo = trim((string) $codigo);
+        $grupoPuesto = EmployeeProductionGroup::fromCargo($cargo, $empCodigo);
+        $grupo = in_array($grupoPuesto, ['rezago', 'anillado', 'llenado'], true)
+            ? $grupoPuesto
+            : 'anillado';
 
         if (! isset($areaData[$grupo]['empleados'][$key])) {
             $areaData[$grupo]['empleados'][$key] = [
@@ -732,34 +748,41 @@ class VinetaRegistroController extends Controller
                 'Etiquetas de fila',
                 'Suma de Cantidad Procesada',
                 'Suma de Horas Trabajadas',
+                'Suma de Horas Ordinarias',
             ],
         ];
 
         foreach ($empleados as $emp) {
             $totalPuros = (int) $emp['puros'];
             $totalHoras = round($emp['minutos'] / 60, 2);
+            $totalOrdinarias = round(($emp['minutos_ordinarios'] ?? 0) / 60, 2);
 
             $rows[] = [
                 $emp['empleado'],
                 $totalPuros,
                 $totalHoras,
+                $totalOrdinarias,
             ];
 
             $rows[] = [
                 '   '.$emp['codigo_empleado'],
                 $totalPuros,
                 $totalHoras,
+                $totalOrdinarias,
             ];
 
             $actividades = $emp['actividades'];
             uksort($actividades, 'strnatcasecmp');
+            $first = true;
 
             foreach ($actividades as $act) {
                 $rows[] = [
                     '      '.$act['nombre'],
                     (int) $act['puros'],
                     round($act['minutos'] / 60, 2),
+                    $first ? $totalOrdinarias : 0,
                 ];
+                $first = false;
             }
         }
 
@@ -1482,6 +1505,22 @@ class VinetaRegistroController extends Controller
 
     private function tipoReporteEmpleado(Empleado $empleado, $registros): string
     {
+        $codigoTrim = trim((string) $empleado->codigo);
+        if ($codigoTrim === '8219' || $codigoTrim === '8217') {
+            return 'rezago';
+        }
+
+        $puesto = EmployeeProductionGroup::fromCargo($empleado->cargo, $codigoTrim);
+        if ($puesto === 'rezago') {
+            return 'rezago';
+        }
+        if ($puesto === 'anillado') {
+            return 'anillado';
+        }
+        if ($puesto === 'llenado') {
+            return 'llenado';
+        }
+
         $texto = $this->normalizarTextoReporte(($empleado->cargo ?? '').' '.($empleado->area ?? ''));
 
         if (str_contains($texto, 'rezag') || str_contains($texto, 'rezad')) {
@@ -2282,7 +2321,7 @@ class VinetaRegistroController extends Controller
         }
 
         if ($format === 'pivot_rezago') {
-            return [45, 28, 26];
+            return [45, 28, 26, 26];
         }
 
         if ($format === 'pivot_llenado') {
@@ -2685,7 +2724,21 @@ class VinetaRegistroController extends Controller
                         ->orWhere('vineta_registros.empleado_nombre', 'like', $like);
                 });
             })
-            ->when($actividadGrupo !== '', fn ($query) => $this->applyActividadGrupo($query, $actividadGrupo))
+            ->when($actividadGrupo !== '', function ($query) use ($actividadGrupo) {
+                if (str_ends_with($actividadGrupo, '_hora') || in_array($actividadGrupo, ['por_hora', 'hora'], true)) {
+                    $query->whereRaw('0 = 1');
+
+                    return;
+                }
+
+                if (str_contains($actividadGrupo, '_')) {
+                    [$empleadoGrupo, $actGrupo] = explode('_', $actividadGrupo, 2);
+                    $this->applyEmpleadoGrupoFilter($query, $empleadoGrupo);
+                    $this->applyActividadGrupo($query, $actGrupo);
+                } else {
+                    $this->applyActividadGrupo($query, $actividadGrupo);
+                }
+            })
             ->when($fechaDesde, fn ($query) => $query->whereDate('vineta_registros.fecha_registro', '>=', $fechaDesde))
             ->when($fechaHasta, fn ($query) => $query->whereDate('vineta_registros.fecha_registro', '<=', $fechaHasta))
             ->where('vineta_registros.estado', VinetaRegistro::ESTADO_ACTIVO);
@@ -2715,16 +2768,109 @@ class VinetaRegistroController extends Controller
                         ->orWhere('empleado_nombre', 'like', $like);
                 });
             })
-            ->when($actividadGrupo !== '', fn ($query) => $query->whereRaw('0 = 1'))
+            ->when($actividadGrupo !== '', function ($query) use ($actividadGrupo) {
+                if (in_array($actividadGrupo, ['por_hora', 'hora'], true)) {
+                    return;
+                }
+
+                if (str_ends_with($actividadGrupo, '_hora')) {
+                    $empleadoGrupo = substr($actividadGrupo, 0, -5);
+                    $this->applyEmpleadoGrupoFilter($query, $empleadoGrupo);
+
+                    return;
+                }
+
+                $query->whereRaw('0 = 1');
+            })
             ->when($fechaDesde, fn ($query) => $query->whereDate('fecha', '>=', $fechaDesde))
             ->when($fechaHasta, fn ($query) => $query->whereDate('fecha', '<=', $fechaHasta));
     }
 
     private function actividadGrupo($value): string
     {
-        $value = is_string($value) ? trim($value) : '';
+        $value = is_string($value) ? trim(strtolower($value)) : '';
 
-        return in_array($value, ['anillado', 'rezago', 'llenado'], true) ? $value : '';
+        $validGroups = [
+            'anillado',
+            'rezago',
+            'llenado',
+            'limpieza',
+            'por_hora',
+            'hora',
+            'anilladoras_anillado',
+            'anilladoras_rezago',
+            'anilladoras_llenado',
+            'anilladoras_hora',
+            'rezagadoras_rezago',
+            'rezagadoras_anillado',
+            'rezagadoras_llenado',
+            'rezagadoras_hora',
+            'llenadoras_llenado',
+            'llenadoras_rezago',
+            'llenadoras_anillado',
+            'llenadoras_hora',
+            'limpiadoras_limpieza',
+            'limpiadoras_rezago',
+            'limpiadoras_anillado',
+            'limpiadoras_llenado',
+            'limpiadoras_hora',
+        ];
+
+        return in_array($value, $validGroups, true) ? $value : '';
+    }
+
+    private function applyEmpleadoGrupoFilter($query, string $empleadoGrupo): void
+    {
+        $query->where(function ($query) use ($empleadoGrupo) {
+            $query->whereHas('empleado', function ($q) use ($empleadoGrupo) {
+                $this->applyCargoCondition($q, $empleadoGrupo);
+            })->orWhere(function ($q) use ($empleadoGrupo) {
+                $q->whereNull('empleado_id')
+                    ->whereExists(function ($sub) use ($empleadoGrupo) {
+                        $sub->select(DB::raw(1))
+                            ->from('empleados')
+                            ->whereColumn('empleados.codigo', 'empleado_codigo');
+                        $this->applyCargoCondition($sub, $empleadoGrupo);
+                    });
+            });
+        });
+    }
+
+    private function applyCargoCondition($query, string $empleadoGrupo): void
+    {
+        match ($empleadoGrupo) {
+            'rezagadoras', 'rezago' => $query->where(function ($q) {
+                $q->whereIn('codigo', ['8219', '8217'])
+                    ->orWhereRaw('LOWER(cargo) LIKE ?', ['%rezag%'])
+                    ->orWhereRaw('LOWER(cargo) LIKE ?', ['%resag%']);
+            }),
+            'anilladoras', 'anillado' => $query->where(function ($q) {
+                $q->whereNotIn('codigo', ['8219', '8217'])
+                    ->where(function ($sub) {
+                        $sub->whereRaw('LOWER(cargo) LIKE ?', ['%anill%'])
+                            ->orWhereRaw('LOWER(cargo) LIKE ?', ['%celofan%'])
+                            ->orWhereRaw('LOWER(cargo) LIKE ?', ['%etiquet%'])
+                            ->orWhereRaw('LOWER(cargo) LIKE ?', ['%pega%']);
+                    });
+            }),
+            'llenadoras', 'llenado' => $query->where(function ($q) {
+                $q->whereNotIn('codigo', ['8219', '8217'])
+                    ->where(function ($sub) {
+                        $sub->whereRaw('LOWER(cargo) LIKE ?', ['%llenad%'])
+                            ->orWhereRaw('LOWER(cargo) LIKE ?', ['%embasad%'])
+                            ->orWhereRaw('LOWER(cargo) LIKE ?', ['%paquet%'])
+                            ->orWhereRaw('LOWER(cargo) LIKE ?', ['%sellado%']);
+                    });
+            }),
+            'limpiadoras', 'limpieza' => $query->where(function ($q) {
+                $q->whereNotIn('codigo', ['8219', '8217'])
+                    ->where(function ($sub) {
+                        $sub->whereRaw('LOWER(cargo) LIKE ?', ['%limpia%'])
+                            ->orWhereRaw('LOWER(cargo) LIKE ?', ['%limpi%']);
+                    });
+            }),
+            default => null,
+        };
     }
 
     private function applyActividadGrupo($query, string $grupo): void
@@ -2735,25 +2881,52 @@ class VinetaRegistroController extends Controller
                     $query->whereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%anill%'])
                         ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%anil%'])
                         ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%celof%'])
+                        ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%cello%'])
                         ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%sello%'])
-                        ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%sell%'])
                         ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%esponj%'])
                         ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%lamina%'])
-                        ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%lámina%']);
+                        ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%lámina%'])
+                        ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%tapon%'])
+                        ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%tapón%'])
+                        ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%banda%'])
+                        ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%cinta%'])
+                        ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%rolado%']);
                 }),
                 'rezago' => $query->where(function ($query) {
                     $query->whereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%rezag%'])
                         ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%rezad%'])
-                        ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%resag%']);
+                        ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%resag%'])
+                        ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%rezurado%'])
+                        ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%rasurado%']);
                 }),
                 'llenado' => $query->where(function ($query) {
-                    $query->whereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%llenad%'])
-                        ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%petaca%'])
-                        ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%sampler%'])
-                        ->orWhere(function ($query) {
-                            $query->whereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%paquete%'])
-                                ->whereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%tubo%']);
-                        });
+                    $query->where(function ($q) {
+                        $q->whereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%llenad%'])
+                            ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%kretek%'])
+                            ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%petaca%'])
+                            ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%sampler%'])
+                            ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%display%'])
+                            ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%bolsa%'])
+                            ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%bolsas%'])
+                            ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%caja%'])
+                            ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%paquet%'])
+                            ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%sellado%'])
+                            ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%costura%'])
+                            ->orWhereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%jarra%'])
+                            ->orWhere(function ($sub) {
+                                $sub->whereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%paquete%'])
+                                    ->whereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%tubo%']);
+                            });
+                    })
+                    ->whereRaw('LOWER(vineta_registros.actividad_nombre) NOT LIKE ?', ['%anill%'])
+                    ->whereRaw('LOWER(vineta_registros.actividad_nombre) NOT LIKE ?', ['%celof%'])
+                    ->whereRaw('LOWER(vineta_registros.actividad_nombre) NOT LIKE ?', ['%cello%'])
+                    ->whereRaw('LOWER(vineta_registros.actividad_nombre) NOT LIKE ?', ['%lamina%'])
+                    ->whereRaw('LOWER(vineta_registros.actividad_nombre) NOT LIKE ?', ['%esponj%']);
+                }),
+                'limpieza' => $query->where(function ($query) {
+                    $query->whereRaw('LOWER(vineta_registros.actividad_nombre) LIKE ?', ['%limpi%'])
+                        ->whereRaw('LOWER(vineta_registros.actividad_nombre) NOT LIKE ?', ['%llenado de bolsa%']);
                 }),
                 default => null,
             };
